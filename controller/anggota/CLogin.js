@@ -26,7 +26,7 @@ export const Login = async (req, res) => {
     }
 
     const payload = {
-      id: user.id,
+      nik: user.nik,
       email: user.email,
       nama: user.nama,
       roles: user.roles,

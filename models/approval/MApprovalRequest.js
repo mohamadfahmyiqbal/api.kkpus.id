@@ -29,6 +29,11 @@ const MApprovalRequest = pus.define(
       type: DataTypes.ENUM("pending", "approved", "rejected"),
       defaultValue: "pending",
     },
+    approver: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "Data dinamis sesuai tipe request",
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

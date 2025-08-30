@@ -9,6 +9,7 @@ import MApprovalRequest from "./approval/MApprovalRequest.js";
 import MAnggotaBank from "./anggota/MAnggotaBank.js"; // import model bank
 import MAnggotaJob from "./anggota/MAnggotaJob.js";
 import MAnggotaReq from "./anggota/MAnggotaReq.js";
+import MAnggotaCategory from "./anggota/MAnggotaCategory.js";
 
 //
 // 1) Anggota ↔ ApprovalRequest
@@ -39,17 +40,43 @@ MAnggota.hasMany(MApprovalFlow, {
 });
 
 //
-// 3) ApprovalRequest ↔ ApprovalFlow (berdasarkan type)
+// 3) ApprovalRequest ↔ ApprovalFlow (One-to-One berdasarkan type)
 //
-MApprovalRequest.hasMany(MApprovalFlow, {
-  sourceKey: "type",
-  foreignKey: "type",
+MApprovalRequest.hasOne(MApprovalFlow, {
+  foreignKey: "level",
+  sourceKey: "flow",
   as: "flows",
 });
 MApprovalFlow.belongsTo(MApprovalRequest, {
-  foreignKey: "type",
-  targetKey: "type",
+  foreignKey: "level",
+  targetKey: "flow",
   as: "requestType",
+});
+
+// Relasi One-to-One antara MApprovalRequest dan MApproval
+MApprovalRequest.hasOne(MApproval, {
+  foreignKey: "level",
+  sourceKey: "flow",
+  as: "approval",
+});
+MApproval.belongsTo(MApprovalRequest, {
+  foreignKey: "level",
+  targetKey: "flow",
+  as: "request",
+});
+
+// Relasi One-to-One antara MApprovalFlow dan MAnggota (setiap flow punya satu anggota sebagai approver detail)
+MApprovalFlow.hasOne(MAnggota, {
+  foreignKey: "nik",
+  sourceKey: "approver_id",
+  as: "approverDetail",
+  constraints: false,
+});
+MAnggota.belongsTo(MApprovalFlow, {
+  foreignKey: "nik",
+  targetKey: "approver_id",
+  as: "approvalFlowDetail",
+  constraints: false,
 });
 
 //
@@ -143,6 +170,22 @@ MAnggota.hasOne(MAnggotaReq, {
 MAnggotaReq.belongsTo(MAnggota, {
   foreignKey: "nik",
   targetKey: "nik",
+  as: "anggota",
+  constraints: false,
+});
+
+//
+// 10) Anggota ↔ AnggotaCategory (One-to-One)
+//
+MAnggota.hasOne(MAnggotaCategory, {
+  foreignKey: "id", // field di MAnggotaCategory yang mengacu ke id kategori
+  sourceKey: "roles", // field di MAnggota (pastikan field ini ada)
+  as: "AnggotaRoles",
+  constraints: false,
+});
+MAnggotaCategory.belongsTo(MAnggota, {
+  foreignKey: "id",
+  targetKey: "roles",
   as: "anggota",
   constraints: false,
 });

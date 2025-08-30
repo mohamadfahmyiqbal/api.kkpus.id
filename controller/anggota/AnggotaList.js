@@ -7,8 +7,6 @@ export const AnggotaList = async (req, res) => {
     const data = await MAnggota.findAll({
       raw: true,
       nest: true,
-      // Aktifkan baris berikut untuk memilih field tertentu:
-      // attributes: ['id', 'nama', 'alamat'],
       order: [["nama", "ASC"]], // opsional: urutkan berdasarkan nama
     });
 
