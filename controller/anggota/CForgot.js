@@ -137,6 +137,7 @@ export const Forgot = async (req, res) => {
         error: mailError.message,
       });
     }
+    console.log(otp);
 
     return res.status(200).json({
       message:
