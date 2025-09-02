@@ -131,6 +131,7 @@ export const getApprovalDetail = async (req, res) => {
           : null,
         approval: request.anggota.requestsApproval,
       };
+      console.log(send)
       return res.status(200).json(send);
     }
   } catch (error) {
