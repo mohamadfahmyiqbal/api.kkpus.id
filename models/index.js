@@ -17,12 +17,12 @@ import MAnggotaCategory from "./anggota/MAnggotaCategory.js";
 MApprovalRequest.belongsTo(MAnggota, {
   foreignKey: "requester_id",
   targetKey: "nik",
-  as: "requester",
+  as: "requesterApproval",
 });
 MAnggota.hasMany(MApprovalRequest, {
   foreignKey: "requester_id",
   sourceKey: "nik",
-  as: "requests",
+  as: "requestsApproval",
 });
 
 //
@@ -97,8 +97,8 @@ MAnggota.hasMany(MApproval, {
 // 5) Approval ↔ ApprovalFlow (berdasarkan approver_id)
 //
 MApprovalFlow.hasMany(MApproval, {
-  foreignKey: "approver_id",
-  sourceKey: "approver_id",
+  foreignKey: "level",
+  sourceKey: "level",
   as: "approvals",
   constraints: false,
 });
@@ -187,6 +187,20 @@ MAnggotaCategory.belongsTo(MAnggota, {
   foreignKey: "id",
   targetKey: "roles",
   as: "anggota",
+  constraints: false,
+});
+
+// Relasi One-to-One antara MAnggotaReq dan MAnggotaCategory
+MAnggotaReq.hasOne(MAnggotaCategory, {
+  foreignKey: "nama", // field di MAnggotaCategory yang mengacu ke id kategori
+  sourceKey: "tipe_anggota", // field di MAnggotaReq (pastikan field ini ada)
+  as: "AnggotaRoles",
+  constraints: false,
+});
+MAnggotaCategory.belongsTo(MAnggotaReq, {
+  foreignKey: "nama",
+  targetKey: "tipe_anggota",
+  as: "req",
   constraints: false,
 });
 
