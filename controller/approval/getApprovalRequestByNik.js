@@ -19,7 +19,7 @@ export const getApprovalRequestByNik = async (req, res) => {
       include: [
         {
           model: MAnggota,
-          as: "requester",
+          as: "approvalAnggota",
           attributes: ["nik", "nama", "email"], // hanya ambil kolom penting
         },
       ],
