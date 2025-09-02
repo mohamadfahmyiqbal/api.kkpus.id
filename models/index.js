@@ -66,13 +66,13 @@ MApproval.belongsTo(MApprovalRequest, {
 });
 
 MApprovalRequest.hasOne(MAnggota, {
-  foreignKey: "requester_id",
-  sourceKey: "nik",
+  foreignKey: "nik",
+  sourceKey: "requester_id",
   as: "approvalAnggota",
 });
 MAnggota.belongsTo(MApprovalRequest, {
-  foreignKey: "requester_id",
-  targetKey: "nik",
+  foreignKey: "nik",
+  targetKey: "requester_id",
   as: "requestAnggota",
 });
 
