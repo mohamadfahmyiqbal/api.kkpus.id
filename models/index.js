@@ -65,6 +65,17 @@ MApproval.belongsTo(MApprovalRequest, {
   as: "request",
 });
 
+MApprovalRequest.hasOne(MAnggota, {
+  foreignKey: "requester_id",
+  sourceKey: "nik",
+  as: "approval",
+});
+MAnggota.belongsTo(MApprovalRequest, {
+  foreignKey: "requester_id",
+  targetKey: "nik",
+  as: "request",
+});
+
 // Relasi One-to-One antara MApprovalFlow dan MAnggota (setiap flow punya satu anggota sebagai approver detail)
 MApprovalFlow.hasOne(MAnggota, {
   foreignKey: "nik",
