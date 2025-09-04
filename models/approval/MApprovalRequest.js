@@ -11,6 +11,10 @@ const MApprovalRequest = pus.define(
       autoIncrement: true,
       primaryKey: true,
     },
+    token: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     requester_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

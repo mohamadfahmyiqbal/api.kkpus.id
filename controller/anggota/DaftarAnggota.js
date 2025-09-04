@@ -9,7 +9,7 @@ import MAnggotaBank from "../../models/anggota/MAnggotaBank.js";
 import MApprovalRequest from "../../models/approval/MApprovalRequest.js";
 import MNotification from "../../models/notifikasi/MNotification.js";
 import { MApprovalFlow } from "../../models/index.js";
-import MAnggotaReq from "../../models/anggota/MAnggotaReq.js";
+import MRequest from "../../models/transaksi/MRequest.js";
 
 /**
  * Kompres dan simpan gambar. Mengembalikan objek metadata.
@@ -77,7 +77,7 @@ export async function DaftarAnggota(req, res) {
 
   const sequelize = MAnggota.sequelize;
   const savedFiles = []; // track file paths untuk cleanup jika rollback
-
+  const token = `REG${Math.random().toString(36).substr(2, 10)}`;
   const transaction = await sequelize.transaction();
   try {
     // cari anggota berdasarkan `nia` (sesuaikan jika model berbeda)
@@ -109,7 +109,7 @@ export async function DaftarAnggota(req, res) {
     const ktpData = await compressAndSaveImage(ktpFile, ktpFolder, ktpFilename);
     // track file-path untuk cleanup bila rollback
     savedFiles.push(fotoData.path, ktpData.path);
-    //   // upsert detail pekerjaan / bank / detail anggota
+    // upsert detail pekerjaan / bank / detail anggota
     await MAnggotaDetail.upsert(
       {
         token: nia,
@@ -126,6 +126,7 @@ export async function DaftarAnggota(req, res) {
       },
       { transaction }
     );
+
     await MAnggotaJob.upsert(
       {
         token: nia,
@@ -136,6 +137,7 @@ export async function DaftarAnggota(req, res) {
       },
       { transaction }
     );
+
     await MAnggotaBank.upsert(
       {
         token: nia,
@@ -146,25 +148,30 @@ export async function DaftarAnggota(req, res) {
       },
       { transaction }
     );
-    await MAnggotaReq.upsert(
+
+    await MRequest.upsert(
       {
-        token: `REG${Math.random().toString(36).substr(2, 10)}`,
+        token: token,
         nik: nia,
-        tipe_anggota: jenis_anggota,
+        tipe_request: "pendaftaran_anggota",
+        tipe_anggota: Number(jenis_anggota),
         status_payment: null,
         status_approval: null,
         updatedAt: new Date(),
       },
       { transaction }
     );
+
     // Buat request approval — lakukan sequentially untuk menjamin konsistensi
     if (Array.isArray(approvalFlows) && approvalFlows.length) {
       for (const flow of approvalFlows) {
         await MApprovalRequest.upsert(
           {
             requester_id: nia,
+            token: token,
             type: "pendaftaran_anggota",
             flow: flow.level ?? flow.flow ?? null,
+            approver: flow.approver_id,
             status: "pending",
             created_at: new Date(),
             updated_at: new Date(),

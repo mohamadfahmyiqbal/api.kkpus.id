@@ -2,15 +2,16 @@ import moment from "moment";
 import MAnggota from "../../models/anggota/MAnggota.js";
 import fs from "fs";
 import path from "path";
-import { MAnggotaReq } from "../../models/index.js";
+import { MRequest } from "../../models/index.js";
 
 export const getApprovalDetail = async (req, res) => {
   const { type, nik } = req.body;
   try {
     if (type === "pendaftaran_anggota") {
-      const request = await MAnggotaReq.findOne({
+      const request = await MRequest.findOne({
         where: {
           nik,
+          tipe_request: type,
         },
         include: [
           {
@@ -21,27 +22,6 @@ export const getApprovalDetail = async (req, res) => {
                 association: "detail",
               },
               {
-                association: "requestsApproval",
-                include: [
-                  {
-                    association: "requesterApproval",
-                    attributes: { exclude: ["password", "token"] },
-                  },
-                  {
-                    association: "flows",
-                  },
-                  {
-                    association: "approval",
-                    include: [
-                      {
-                        association: "approver",
-                        attributes: { exclude: ["password", "token"] },
-                      },
-                    ],
-                  },
-                ],
-              },
-              {
                 association: "bank",
               },
               {
@@ -50,12 +30,23 @@ export const getApprovalDetail = async (req, res) => {
             ],
           },
           {
-            association: "AnggotaRoles",
+            association: "RequestApproval",
+            include: [
+              {
+                association: "requesterAnggota",
+                attributes: { exclude: ["password", "token"] },
+              },
+              {
+                association: "approverAnggota",
+                attributes: { exclude: ["password", "token"] },
+              },
+            ],
+            separate: true,
+            order: [["flow", "ASC"]],
           },
         ],
-        // raw: true,
-        // nest: true,
       });
+      console.log(request.RequestApproval);
 
       let ktpImg = null;
       let fotoImg = null;
@@ -82,57 +73,12 @@ export const getApprovalDetail = async (req, res) => {
         fotoImg = null;
       }
 
-      const send = {
-        request: {
-          id: request.id,
-          token: request.token,
-          nik: request.nik,
-          tipe_anggota: request.tipe_anggota,
-          status_payment: request.status_payment,
-          status_approval: request.status_approval,
-          createdAt: request.createdAt,
-          updatedAt: request.updatedAt,
-        },
-        requester: {
-          nama: request.anggota.nama,
-          jenis_kelamin: request.anggota.detail?.jenis_kelamin,
-          alamat: request.anggota.detail?.alamat,
-          nikKtp: request.anggota.detail.nik,
-          ktp: ktpImg,
-          foto: fotoImg,
-          no_tlp: request.anggota.no_tlp,
-          tlp_darurat: request.anggota.detail?.tlp_darurat,
-          hubungan: request.anggota.detail?.hubungan,
-        },
-        akun: {
-          waktu_daftar: request?.createdAt,
-          tipe_anggota: request?.tipe_anggota,
-          roles: request.AnggotaRoles
-            ? {
-                value: request.AnggotaRoles.id,
-                label: request.AnggotaRoles.nama,
-              }
-            : null,
-          email: request.anggota.email,
-        },
-        job: request.anggota.job
-          ? {
-              pekerjaan: request.anggota.job.pekerjaan,
-              tempat_kerja: request.anggota.job.tempat_kerja,
-              alamat_kerja: request.anggota.job.alamat_kerja,
-            }
-          : null,
-        bank: request.anggota.bank
-          ? {
-              bank: request.anggota.bank.bank,
-              no_rekening: request.anggota.bank.no_rekening,
-              nama_nasabah: request.anggota.bank.nama_nasabah,
-            }
-          : null,
-        approval: request.anggota.requestsApproval,
-      };
-      console.log(send)
-      return res.status(200).json(send);
+      // Masukkan ktpImg dan fotoImg ke dalam request.anggota
+      let plainRequest = request.toJSON();
+      plainRequest.anggota.ktpImg = ktpImg;
+      plainRequest.anggota.fotoImg = fotoImg;
+
+      return res.status(200).json(plainRequest);
     }
   } catch (error) {
     console.log(error);
