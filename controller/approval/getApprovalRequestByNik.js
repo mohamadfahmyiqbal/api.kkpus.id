@@ -3,52 +3,38 @@ import MApprovalRequest from "../../models/approval/MApprovalRequest.js";
 import { MApprovalFlow } from "../../models/index.js";
 
 export const getApprovalRequestByNik = async (req, res) => {
-  const { nik } = req.body;
+  const { nik } = req.anggota;
 
   if (!nik) {
     return res.status(400).json({ message: "NIK wajib diisi" });
   }
 
   try {
-    // Ambil semua approval request yang statusnya pending
     const approvalRequests = await MApprovalRequest.findAll({
-      where: {
-        status: "pending",
-      },
-      attributes: ["id", "type", "flow", "status", "created_at", "updated_at"],
+      where: { status: "pending" },
       include: [
         {
           model: MAnggota,
-          as: "approvalAnggota",
-          attributes: ["nik", "nama", "email"], // hanya ambil kolom penting
+          as: "requesterAnggota",
+          attributes: { exclude: ["token", "password"] },
+        },
+        {
+          model: MAnggota,
+          as: "approverAnggota",
+          attributes: { exclude: ["token", "password"] },
         },
       ],
-      order: [["created_at", "DESC"]],
-      raw: false, // gunakan false agar relasi bisa diakses
+      raw: true,
+      nest: true,
     });
-
-    // Filter approvalRequests yang memang harus di-approve oleh nik ini di level flow-nya
-    const filteredRequests = [];
-    for (const apr of approvalRequests) {
-      const flow = await MApprovalFlow.findOne({
-        where: {
-          level: apr.flow,
-          approver_id: nik,
-          type: apr.type,
-        },
-      });
-      if (flow) {
-        // Tambahkan info flow jika perlu
-        filteredRequests.push({
-          ...apr.toJSON(),
-          flowInfo: flow.toJSON(),
-        });
-      }
-    }
-
+    // Filter hanya approvalRequest yang approverAnggota.nik === nik
+    const filteredApprovalRequests = approvalRequests.filter(
+      (req) => req.approverAnggota && req.approverAnggota.nik === nik
+    );
+    // console.log(approvalRequests);
     return res.status(200).json({
       message: "Data approval request berhasil diambil",
-      data: filteredRequests,
+      data: filteredApprovalRequests,
     });
   } catch (error) {
     console.error("Error getApprovalRequestByNik:", error);

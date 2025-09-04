@@ -3,8 +3,8 @@ import pus from "../../config/pus.js";
 
 const { DataTypes } = Sequelize;
 
-const MAnggotaReq = pus.define(
-  "anggota_req",
+const MRequest = pus.define(
+  "request",
   {
     token: {
       type: DataTypes.STRING,
@@ -12,6 +12,9 @@ const MAnggotaReq = pus.define(
     nik: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    tipe_request: {
+      type: DataTypes.STRING,
     },
     tipe_anggota: {
       type: DataTypes.STRING,
@@ -29,4 +32,4 @@ const MAnggotaReq = pus.define(
   }
 );
 
-export default MAnggotaReq;
+export default MRequest;

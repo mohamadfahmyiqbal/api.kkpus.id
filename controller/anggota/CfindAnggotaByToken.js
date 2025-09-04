@@ -20,9 +20,7 @@ export const FindAnggotaByToken = async (req, res) => {
       attributes: { exclude: ["password", "token"] },
       include: [
         {
-          model: MAnggotaDetail,
-          as: "detail",
-          attributes: ["foto"], // hanya ambil kolom foto
+          association: "detail",
         },
       ],
     });
