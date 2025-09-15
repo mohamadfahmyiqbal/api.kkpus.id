@@ -7,7 +7,7 @@ const MInvoices = pus.define(
   "invoices",
   {
     invoice_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING,
       primaryKey: true,
     },
     recipient_id: {
@@ -26,23 +26,26 @@ const MInvoices = pus.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    bank_name: {
+    method: {
       type: DataTypes.STRING(100),
     },
     virtual_account: {
       type: DataTypes.STRING(50),
     },
     payment_status: {
-      type: DataTypes.ENUM(
-        "Menunggu Pembayaran",
-        "Sudah Dibayar",
-        "Kadaluarsa"
-      ),
-      defaultValue: "Menunggu Pembayaran",
+      type: DataTypes.STRING(255),
     },
     total_amount: {
       type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
+    },
+    type_trans: {
+      type: DataTypes.DECIMAL(15, 2),
+    },
+    order_id: {
+      type: DataTypes.DECIMAL(15, 2),
+    },
+    payment_desc: {
+      type: DataTypes.DECIMAL(15, 2),
     },
   },
   {

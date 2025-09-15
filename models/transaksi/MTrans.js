@@ -24,13 +24,19 @@ const MTrans = pus.define(
     nik: {
       type: DataTypes.STRING,
     },
-    cek: {
+    token: {
+      type: DataTypes.STRING,
+    },
+    orderId: {
       type: DataTypes.STRING,
     },
     jumlah: {
       type: DataTypes.STRING,
     },
     batch: {
+      type: DataTypes.STRING,
+    },
+    payment_status: {
       type: DataTypes.STRING,
     },
     createdAt: {

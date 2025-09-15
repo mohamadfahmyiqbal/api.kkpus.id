@@ -46,7 +46,7 @@ export const getApprovalDetail = async (req, res) => {
           },
         ],
       });
-      console.log(request.RequestApproval);
+      // console.log(request.RequestApproval);
 
       let ktpImg = null;
       let fotoImg = null;

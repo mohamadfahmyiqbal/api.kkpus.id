@@ -12,6 +12,7 @@ import { CekPendaftaranAnggota } from "../controller/anggota/CekPendaftaranAnggo
 import authAnggota from "../midlleware/MidAnggota.js";
 import { getAnggotaCategory } from "../controller/anggota/GetAnggotaCategory.js";
 import { getDetailAnggotaByToken } from "../controller/anggota/getDetailAnggotaByToken.js";
+import { AnnggotaDetailByNIK } from "../controller/anggota/AnnggotaDetailByNIK.js";
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.post("/resetPassword", resetPassword);
 // Route tanpa autentikasi (authAnggota dilepas)
 router.post("/logout", authAnggota, Logout);
 router.post("/findAnggotaByToken", authAnggota, FindAnggotaByToken);
+router.post("/AnnggotaDetailByNIK", authAnggota, AnnggotaDetailByNIK);
 router.post("/anggotaList", authAnggota, AnggotaList);
 router.post("/getAnggotaCategory", authAnggota, getAnggotaCategory);
 

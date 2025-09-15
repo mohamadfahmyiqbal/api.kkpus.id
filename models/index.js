@@ -10,6 +10,9 @@ import MAnggotaBank from "./anggota/MAnggotaBank.js"; // import model bank
 import MAnggotaJob from "./anggota/MAnggotaJob.js";
 import MRequest from "./transaksi/MRequest.js";
 import MAnggotaCategory from "./anggota/MAnggotaCategory.js";
+import MPaymentRules from "./payment/MPaymentRules.js";
+import MInvoices from "./payment/MInvoices.js";
+import MInvoices_detail from "./payment/MInvoices_detail.js";
 
 // Relasi: Satu MRequest berelasi dengan satu MAnggota (requester)
 MRequest.belongsTo(MAnggota, {
@@ -21,6 +24,40 @@ MAnggota.hasMany(MRequest, {
   foreignKey: "nik",
   sourceKey: "nik",
   as: "requests",
+});
+
+// Relasi: Satu MRequest berelasi dengan satu MAnggotaCategory
+MRequest.belongsTo(MAnggotaCategory, {
+  foreignKey: "tipe_anggota",
+  targetKey: "id",
+  as: "categoryAnggota",
+});
+MAnggotaCategory.hasMany(MRequest, {
+  foreignKey: "tipe_anggota",
+  sourceKey: "id",
+  as: "requests",
+});
+
+MRequest.hasMany(MPaymentRules, {
+  foreignKey: "type", // kolom di MPaymentRules
+  sourceKey: "tipe_request", // kolom di MRequest
+  as: "paymentRules",
+  scope: {
+    tipe_anggota: {
+      [pus.Sequelize.Op.ne]: null,
+    },
+  },
+});
+
+MPaymentRules.belongsTo(MRequest, {
+  foreignKey: "type", // kolom di MPaymentRules
+  targetKey: "tipe_request", // kolom di MRequest
+  as: "request",
+  scope: {
+    tipe_anggota: {
+      [pus.Sequelize.Op.ne]: null,
+    },
+  },
 });
 
 // Relasi: Satu MRequest bisa punya banyak MApprovalRequest
@@ -88,6 +125,29 @@ MAnggotaJob.belongsTo(MAnggota, {
   foreignKey: "token",
   targetKey: "nik",
   as: "anggota",
+});
+
+// Relasi: Satu MAnggota punya satu MAnggotaCategory
+MAnggota.belongsTo(MAnggotaCategory, {
+  foreignKey: "status_anggota",
+  sourceKey: "id",
+  as: "categoryAnggota",
+});
+MAnggotaCategory.hasMany(MAnggota, {
+  foreignKey: "status_anggota",
+  sourceKey: "id",
+  as: "anggota",
+});
+
+MInvoices.hasMany(MInvoices_detail, {
+  foreignKey: "invoice_id",
+  sourceKey: "invoice_id",
+  as: "detailsInvoice",
+});
+MInvoices_detail.belongsTo(MInvoices, {
+  foreignKey: "invoice_id",
+  targetKey: "invoice_id",
+  as: "invoiceDetails",
 });
 
 //
