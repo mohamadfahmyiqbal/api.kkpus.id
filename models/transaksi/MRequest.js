@@ -17,7 +17,7 @@ const MRequest = pus.define(
       type: DataTypes.STRING,
     },
     tipe_anggota: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
     },
     status_payment: {
       type: DataTypes.STRING,

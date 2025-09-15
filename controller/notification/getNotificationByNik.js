@@ -1,14 +1,15 @@
+import { Op } from "sequelize";
 import MNotification from "../../models/notifikasi/MNotification.js";
 
 export const getNotificationByNik = async (req, res) => {
-  const { nik } = req.body;
+  const { nik } = req.anggota;
+  const { status } = req.body;
   if (!nik) {
     return res.status(400).json({ message: "NIK tidak boleh kosong" });
   }
   try {
-    // Ambil notifikasi yang belum dibaca untuk user dengan NIK tertentu
     const notifications = await MNotification.findAll({
-      where: { is_read: 0 },
+      where: { is_read: { [Op.in]: status }, user_id: nik },
       raw: true,
     });
 

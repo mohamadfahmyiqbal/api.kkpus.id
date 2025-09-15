@@ -14,6 +14,9 @@ const MPaymentRules = pus.define(
     category: {
       type: DataTypes.STRING,
     },
+    type: {
+      type: DataTypes.STRING,
+    },
     jenis_payment: {
       type: DataTypes.STRING,
     },
