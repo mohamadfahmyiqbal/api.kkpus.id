@@ -21,15 +21,6 @@ export const generateInvoice = async (req, res) => {
   const t = await pus.transaction();
 
   try {
-    const cekTrans = await cekTransByToken({
-      body: { ret: "ret", token },
-    });
-    if (cekTrans) {
-      return res.status(400).json({
-        success: false,
-        message: "Transaksi sudah ada",
-      });
-    }
     const cekInv = await cekInvoiceByToken({
       body: { ret: "ret", token },
     });
@@ -83,35 +74,34 @@ export const generateInvoice = async (req, res) => {
         type_trans: "Setor",
         payment_desc: `Pembayaran Pendaftaran ${getRequest.categoryAnggota.nama}`,
       };
-      console.log(invoiceData);
 
-      // const saveInv = await MInvoices.create(invoiceData, { transaction: t });
-      // if (!saveInv) {
-      //   await t.rollback();
-      //   return res.status(500).json({
-      //     success: false,
-      //     message: "Gagal menyimpan invoice",
-      //   });
-      // }
+      const saveInv = await MInvoices.create(invoiceData, { transaction: t });
+      if (!saveInv) {
+        await t.rollback();
+        return res.status(500).json({
+          success: false,
+          message: "Gagal menyimpan invoice",
+        });
+      }
 
-      // const saveInvDetail = await MInvoices_detail.bulkCreate(detailData, {
-      //   transaction: t,
-      // });
-      // if (!saveInvDetail) {
-      //   await t.rollback();
-      //   return res.status(500).json({
-      //     success: false,
-      //     message: "Gagal menyimpan detail invoice",
-      //   });
-      // }
+      const saveInvDetail = await MInvoices_detail.bulkCreate(detailData, {
+        transaction: t,
+      });
+      if (!saveInvDetail) {
+        await t.rollback();
+        return res.status(500).json({
+          success: false,
+          message: "Gagal menyimpan detail invoice",
+        });
+      }
 
-      // await t.commit();
+      await t.commit();
 
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Invoice berhasil dibuat",
-      //   data: invoiceData,
-      // });
+      return res.status(200).json({
+        success: true,
+        message: "Invoice berhasil dibuat",
+        data: invoiceData,
+      });
     } else {
       console.log(cekInv);
     }
