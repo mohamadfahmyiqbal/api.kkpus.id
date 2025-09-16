@@ -7,13 +7,9 @@ import { getPaymentFees } from "../controller/invoice/getPaymentFees.js";
 
 const router = express.Router();
 
-<<<<<<< HEAD
-router.post("/generateInvoice", generateInvoice);
-=======
 router.post("/generateInvoice", authAnggota, generateInvoice);
 router.post("/payInvoice", authAnggota, payInvoice);
 router.post("/getPaymentFees", authAnggota, getPaymentFees);
 router.post("/midtransCallback", midtransCallback);
->>>>>>> 53307aa (160925)
 
 export default router;

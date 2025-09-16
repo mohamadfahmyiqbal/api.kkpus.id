@@ -103,7 +103,23 @@ export const generateInvoice = async (req, res) => {
         data: invoiceData,
       });
     } else {
-      console.log(cekInv);
+      const invoiceData = {
+        invoice_id: cekInv.invoice_id,
+        recipient_id: cekInv.recipient_id,
+        recipient_name: cekInv.recipient_name,
+        invoice_date: moment(cekInv.invoice_date).format("YYYY-MM-DD"),
+        expiration_date: moment(cekInv.expiration_date).format("YYYY-MM-DD"),
+        paymentDetails: cekInv.detailsInvoice,
+        total_amount: cekInv.total_amount,
+        payment_status: cekInv.payment_status,
+        type_trans: cekInv.type_trans,
+        payment_desc: cekInv.payment_desc,
+      };
+      return res.status(200).json({
+        success: true,
+        message: "Invoice berhasil dibuat",
+        data: invoiceData,
+      });
     }
   } catch (error) {
     await t.rollback();
