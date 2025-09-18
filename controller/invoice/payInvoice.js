@@ -60,15 +60,21 @@ export const payInvoice = async (req, res) => {
     );
 
     // Simpan transaksi (ambil description dari paymentDetails[0])
+    const cekDetail = await MInvoices_detail.destroy({ where: { invoice_id } });
+    if (cekDetail) {
+      paymentDetails.map(async (det) => {
+        console.log(det);
+        const updateDetail = await MInvoices_detail.create({
+          invoice_id,
+          name: det.name,
+          ammount: det.ammount,
+        });
+      });
+    }
     let jenis = null;
     if (Array.isArray(paymentDetails) && paymentDetails.length > 0) {
       jenis = paymentDetails[0].name || null;
     }
-    await MInvoices_detail.create({
-      invoice_id,
-      name: invoices_detail.name,
-      ammount: invoices_detail.ammount,
-    });
     await MTrans.create({
       type,
       jenis,
