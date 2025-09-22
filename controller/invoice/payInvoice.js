@@ -1,36 +1,36 @@
 import moment from "moment";
 import snap from "../utils/midtrans.js";
-import MInvoices from "../../models/payment/MInvoices.js";
-import MTrans from "../../models/transaksi/MTrans.js";
-import MInvoices_detail from "../../models/payment/MInvoices_detail.js";
 
 export const payInvoice = async (req, res) => {
   try {
-    const {
-      invoice_id,
-      recipient_name,
-      total_amount,
-      selected_method,
-      paymentDetails,
-      recipient_id,
-      base_amount,
-      type,
-      payment_status,
-      invoices_detail,
-    } = req.body;
+    const { invoice_id, recipient_name, detailsInvoice, selected_method } =
+      req.body;
 
-    if (!invoice_id || !total_amount) {
+    if (
+      !invoice_id ||
+      !detailsInvoice?.length ||
+      !Array.isArray(detailsInvoice)
+    ) {
       return res.status(400).json({
         success: false,
-        message: "invoice_id dan total_amount wajib diisi",
+        message: "invoice_id dan detailsInvoice wajib diisi",
       });
     }
 
-    // Buat order_id unik (invoice + timestamp detik)
     const orderId = `${invoice_id}-${moment().format("YYMMDDHHmmss")}`;
-    const grossAmount = parseInt(total_amount, 10);
 
-    // Parameter transaksi ke Midtrans
+    const grossAmount = detailsInvoice.reduce(
+      (sum, item) => sum + Number(item.ammount || 0),
+      0
+    );
+
+    const itemDetails = detailsInvoice.map((detail, idx) => ({
+      id: detail.id?.toString() || `item-${idx + 1}`,
+      price: Number(detail.ammount || 0),
+      quantity: Number(detail.qty || 1),
+      name: detail.name || `Item ${idx + 1}`,
+    }));
+
     const parameter = {
       transaction_details: {
         order_id: orderId,
@@ -39,68 +39,33 @@ export const payInvoice = async (req, res) => {
       customer_details: {
         first_name: recipient_name || "Customer",
       },
+      item_details: itemDetails,
+      expiry: {
+        unit: "minutes",
+        duration: 120,
+      },
+      enabled_payments: selected_method ? [selected_method] : undefined,
+      finish_redirect_url: "https://kkpus.id/invoice",
     };
 
-    if (selected_method) {
-      parameter.enabled_payments = [selected_method];
-    }
-
-    // Buat transaksi Snap
     const transaction = await snap.createTransaction(parameter);
 
-    // Update invoice berdasarkan invoice_id
-    await MInvoices.update(
-      {
-        method: selected_method,
-        total_amount: grossAmount,
-        payment_token: orderId,
-        payment_status,
-      },
-      { where: { invoice_id } }
-    );
-
-    // Simpan transaksi (ambil description dari paymentDetails[0])
-    const cekDetail = await MInvoices_detail.destroy({ where: { invoice_id } });
-    if (cekDetail) {
-      paymentDetails.map(async (det) => {
-        console.log(det);
-        const updateDetail = await MInvoices_detail.create({
-          invoice_id,
-          name: det.name,
-          ammount: det.ammount,
-        });
-      });
-    }
-    let jenis = null;
-    if (Array.isArray(paymentDetails) && paymentDetails.length > 0) {
-      jenis = paymentDetails[0].name || null;
-    }
-    await MTrans.create({
-      type,
-      jenis,
-      nik: recipient_id,
-      cek: orderId,
-      jumlah: base_amount,
-      payment_status,
-    });
-
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: "Invoice berhasil diproses",
+      message: "Transaksi berhasil dibuat",
       data: {
-        invoice_id,
         order_id: orderId,
-        payment_status: "Menunggu Pembayaran",
-        snap_token: transaction.token,
-        snap_redirect_url: transaction.redirect_url,
+        gross_amount: grossAmount,
+        redirect_url: transaction.redirect_url,
+        token: transaction.token,
       },
     });
   } catch (error) {
-    console.error("PayInvoice Error:", error);
+    console.error("Midtrans Error:", error);
     return res.status(500).json({
       success: false,
       message: "Gagal membuat transaksi Midtrans",
-      error: error.message || "Unknown error",
+      error: error.message || error,
     });
   }
 };

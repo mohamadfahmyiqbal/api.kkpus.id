@@ -23,7 +23,7 @@ const MAnggota = pus.define(
       type: DataTypes.STRING,
     },
     roles: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
     },
     password: {
       type: DataTypes.STRING,

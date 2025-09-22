@@ -4,7 +4,7 @@ import MPaymentRules from "../../models/payment/MPaymentRules.js";
 export const getPaymentRules = async (req, res) => {
   const { ret, tipe_anggota, type } = req.body;
   try {
-    const paymentRules = await MPaymentRules.findAll({
+    const paymentRules = await MPaymentRules.findOne({
       where: {
         tipe_anggota,
         type,
@@ -12,7 +12,6 @@ export const getPaymentRules = async (req, res) => {
       raw: true,
       nest: true,
     });
-    console.log(paymentRules);
 
     if (ret === "ret") {
       return paymentRules;

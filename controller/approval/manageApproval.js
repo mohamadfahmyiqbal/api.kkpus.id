@@ -1,47 +1,65 @@
 import MApprovalRequest from "../../models/approval/MApprovalRequest.js";
 import MNotification from "../../models/notifikasi/MNotification.js";
+import { generateInvoice } from "../invoice/generateInvoice.js";
+import { getApprovalRequestByNikToken } from "./getApprovalRequestByNikToken.js";
 
 export const manageApproval = async (req, res) => {
-  const { nik, nama } = req.anggota;
-  const { btn, id } = req.body;
-
-  // Validasi parameter
-  if (!btn || !id) {
-    return res
-      .status(400)
-      .json({ message: "Parameter btn dan id wajib diisi." });
-  }
-
-  if (!["approved", "rejected"].includes(btn)) {
-    return res.status(400).json({ message: "Status approval tidak valid." });
-  }
-
   try {
-    // Cari approval request berdasarkan ID
-    const approval = await MApprovalRequest.findOne({ where: { id } });
+    const { nik, nama } = req.anggota;
+    const { btn, token } = req.body;
 
-    if (!approval) {
+    // 🔹 Validasi parameter
+    if (!btn || !token) {
+      return res
+        .status(400)
+        .json({ message: "Parameter btn dan token wajib diisi." });
+    }
+
+    if (!["approved", "rejected"].includes(btn)) {
+      return res.status(400).json({ message: "Status approval tidak valid." });
+    }
+
+    // 🔹 Ambil data approval berdasarkan token & nik
+    const getApproval = await getApprovalRequestByNikToken({
+      body: { ret: "ret", token, nik },
+    });
+
+    if (!getApproval) {
       return res
         .status(404)
         .json({ message: "Approval request tidak ditemukan." });
     }
 
-    if (approval.status !== "pending") {
+    // 🔹 Pastikan user yang login adalah approver
+    if (getApproval.approverAnggota?.nik !== nik) {
       return res
-        .status(400)
-        .json({ message: "Approval request sudah diproses." });
+        .status(403)
+        .json({ message: "Anda tidak berhak melakukan approval ini." });
     }
 
-    // Update approval request
+    // 🔹 Jika flow terakhir (misalnya flow = 2), generate invoice
+    if (getApproval.flow === 2 && btn === "approved") {
+      try {
+        await generateInvoice({
+          body: {
+            ret: "ret",
+            type: "pendaftaran_anggota",
+            token,
+          },
+        });
+      } catch (err) {
+        console.error("Gagal generate invoice:", err);
+        return res.status(500).json({ message: "Gagal generate invoice." });
+      }
+    }
+
+    // 🔹 Update approval request
     const [updated] = await MApprovalRequest.update(
       {
-        approver: nik,
         status: btn,
         updated_at: new Date(),
       },
-      {
-        where: { id },
-      }
+      { where: { id: getApproval.id } }
     );
 
     if (updated === 0) {
@@ -50,33 +68,20 @@ export const manageApproval = async (req, res) => {
         .json({ message: "Gagal memperbarui approval request." });
     }
 
-    // Buat notifikasi ke requester
-    try {
-      await MNotification.create({
-        user_id: approval.requester_id,
-        type: approval.type,
-        title:
-          btn === "approved" ? "Permintaan Disetujui" : "Permintaan Ditolak",
-        body: `Permintaan Anda dengan ID ${id} telah ${
-          btn === "approved" ? "disetujui" : "ditolak"
-        } oleh ${nama}`,
-        data: { approval_id: id, status: btn },
-        is_read: false,
-        created_at: new Date(),
-      });
-    } catch (notifErr) {
-      // Notifikasi gagal, tapi approval tetap berhasil
-      console.error("Gagal membuat notifikasi:", notifErr);
-    }
+    // 🔹 Tambahkan notifikasi ke pemilik request
+    await MNotification.create({
+      user_id: getApproval.requester_id,
+      title: `Request ${btn}`,
+      message: `Request dengan token ${token} telah ${btn} oleh ${nama}`,
+      status: "unread",
+    });
 
     return res.status(200).json({
-      message: `Approval request berhasil di${
-        btn === "approved" ? "setujui" : "tolak"
-      }.`,
-      status: btn,
+      message: `Approval berhasil di-${btn}`,
+      approval: { id: getApproval.id, status: btn },
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    console.error("Error manageApproval:", error);
+    return res.status(500).json({ message: "Terjadi kesalahan server." });
   }
 };

@@ -3,13 +3,23 @@ import MNotification from "../../models/notifikasi/MNotification.js";
 
 export const getNotificationByNik = async (req, res) => {
   const { nik } = req.anggota;
-  const { status } = req.body;
+  let { status } = req.body;
+
   if (!nik) {
     return res.status(400).json({ message: "NIK tidak boleh kosong" });
   }
+
   try {
+    // normalisasi status agar selalu array
+    if (!Array.isArray(status)) {
+      status = status !== undefined ? [status] : [];
+    }
+
     const notifications = await MNotification.findAll({
-      where: { is_read: { [Op.in]: status }, user_id: nik },
+      where: {
+        user_id: nik,
+        ...(status.length > 0 && { is_read: { [Op.in]: status } }),
+      },
       raw: true,
     });
 

@@ -5,12 +5,18 @@ import authAnggota from "../midlleware/MidAnggota.js";
 import { getApprovalRequestByNik } from "../controller/approval/getApprovalRequestByNik.js";
 import { getApprovalDetail } from "../controller/approval/getApprovalDetail.js";
 import { manageApproval } from "../controller/approval/manageApproval.js";
+import { getApprovalRequestByNikToken } from "../controller/approval/getApprovalRequestByNikToken.js";
 
 const router = express.Router();
 
 router.post("/getApprovalByNikAndType", authAnggota, getApprovalByNikAndType);
 router.post("/getApprovalList", authAnggota, getApprovalList);
 router.post("/getApprovalRequestByNik", authAnggota, getApprovalRequestByNik);
+router.post(
+  "/getApprovalRequestByNikToken",
+  authAnggota,
+  getApprovalRequestByNikToken
+);
 router.post("/getApprovalDetail", authAnggota, getApprovalDetail);
 router.post("/manageApproval", authAnggota, manageApproval);
 
