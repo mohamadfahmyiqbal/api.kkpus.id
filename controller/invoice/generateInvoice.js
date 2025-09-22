@@ -1,133 +1,166 @@
 import moment from "moment";
-import pus from "../../config/pus.js";
 import MInvoices from "../../models/payment/MInvoices.js";
 import MRequest from "../../models/transaksi/MRequest.js";
 import MInvoices_detail from "../../models/payment/MInvoices_detail.js";
-import { cekTransByToken } from "../transactions/cekTransByToken.js";
+import { cekInvoiceByToken } from "./cekInvoiceByToken.js";
 import { getRequestByToken } from "../request/getRequestByToken.js";
 import { getPaymentRules } from "../payment/getPaymentRules.js";
-import { cekInvoiceByToken } from "./cekInvoiceByToken.js";
+import { generateMonthIndo } from "../utils/generateMonthIndo.js";
+import MTrans from "../../models/transaksi/MTrans.js";
 
+/**
+ * Generate Invoice berdasarkan request & aturan pembayaran
+ */
 export const generateInvoice = async (req, res) => {
-  const { type, token } = req.body;
-
-  if (type !== "pendaftaran_anggota") {
-    return res.status(400).json({
-      success: false,
-      message: "Jenis invoice tidak dikenali",
-    });
-  }
-
-  const t = await pus.transaction();
-
   try {
-    const cekInv = await cekInvoiceByToken({
-      body: { ret: "ret", token },
+    const { ret, type, token } = req.body;
+
+    if (!token || !type) {
+      const result = { message: "Token dan type wajib diisi" };
+      return ret === "ret" ? result : res.status(400).json(result);
+    }
+
+    // Cek apakah invoice sudah ada
+    const cekInv = await cekInvoiceByToken({ body: { ret, token } });
+    if (cekInv) {
+      const result = { message: "Invoice sudah ada", data: cekInv };
+      return ret === "ret" ? result : res.status(200).json(result);
+    }
+
+    // Ambil request terkait token
+    const getRequest = await getRequestByToken({ body: { ret, token } });
+    if (!getRequest) {
+      const result = { message: "Request tidak ditemukan" };
+      return ret === "ret" ? result : res.status(404).json(result);
+    }
+
+    // Ambil aturan pembayaran utama
+    const payRules = await getPaymentRules({
+      body: {
+        ret,
+        tipe_anggota: getRequest.categoryAnggota?.nama,
+        type: getRequest.tipe_request,
+      },
     });
 
-    if (!cekInv) {
-      const getRequest = await getRequestByToken({
-        body: { ret: "ret", token },
-      });
-      if (!getRequest) {
-        return res.status(404).json({
-          success: false,
-          message: "Data request tidak ditemukan",
-        });
-      }
+    if (!payRules) {
+      const result = { message: "Aturan pembayaran tidak ditemukan" };
+      return ret === "ret" ? result : res.status(404).json(result);
+    }
 
-      const getRules = await getPaymentRules({
+    let setTransArray = [];
+    let setInvDetail = [];
+    let payment_desc = "";
+
+    // Jika request adalah pendaftaran anggota dengan tipe_anggota 3
+    if (
+      getRequest.tipe_request === "pendaftaran_anggota" &&
+      getRequest.tipe_anggota === 3
+    ) {
+      const payRulesMonthly = await getPaymentRules({
         body: {
-          ret: "ret",
-          tipe_anggota: getRequest.categoryAnggota.nama,
-          type: getRequest.tipe_request,
+          ret,
+          tipe_anggota: getRequest.categoryAnggota?.nama,
+          type: "payment_anggota",
         },
       });
 
-      if (!getRules || getRules.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Aturan pembayaran tidak ditemukan",
-        });
+      if (!payRulesMonthly) {
+        const result = { message: "Aturan pembayaran bulanan tidak ditemukan" };
+        return ret === "ret" ? result : res.status(404).json(result);
       }
 
-      const totalAmount = getRules.reduce(
-        (acc, curr) => acc + (parseFloat(curr.ammount) || 0),
-        0
-      );
+      const currentMonth = moment().month() + 1; // bulan saat ini (1-12)
 
-      const detailData = getRules.map((rule) => ({
-        invoice_id: getRequest.token,
-        name: `Pembayaran ${rule.name}`,
-        ammount: rule.ammount,
-      }));
+      for (let month = currentMonth; month <= 12; month++) {
+        const isCurrentMonth = month === currentMonth;
 
-      const invoiceData = {
-        invoice_id: getRequest.token,
-        recipient_id: getRequest.anggota.nik,
-        recipient_name: getRequest.anggota.nama,
-        invoice_date: moment().format("YYYY-MM-DD"),
-        expiration_date: moment().add(1, "month").format("YYYY-MM-DD"),
-        paymentDetails: detailData,
-        total_amount: totalAmount,
-        payment_status: "Menunggu Pembayaran",
-        type_trans: "Setor",
-        payment_desc: `Pembayaran Pendaftaran ${getRequest.categoryAnggota.nama}`,
-      };
+        const transData = {
+          ret,
+          type: "Setor",
+          jenis: `Pembayaran Simpanan Pokok Bulan ${generateMonthIndo(month)}`,
+          nik: getRequest.nik,
+          token: isCurrentMonth ? token : null, // ✅ token hanya untuk bulan berjalan
+          jumlah: payRulesMonthly.ammount,
+          payment_status: "Menunggu Pembayaran",
+          bulan: month,
+          tahun: moment().year(),
+        };
 
-      const saveInv = await MInvoices.create(invoiceData, { transaction: t });
-      if (!saveInv) {
-        await t.rollback();
-        return res.status(500).json({
-          success: false,
-          message: "Gagal menyimpan invoice",
-        });
+        const invDetail = {
+          ret,
+          invoice_id: getRequest.token,
+          name: `Pembayaran Simpanan Pokok Bulan ${generateMonthIndo(month)}`,
+          ammount: payRulesMonthly.ammount,
+        };
+
+        // Bulan berjalan masuk ke detail invoice
+        if (isCurrentMonth) {
+          setInvDetail.push(invDetail);
+        }
+
+        setTransArray.push(transData);
       }
 
-      const saveInvDetail = await MInvoices_detail.bulkCreate(detailData, {
-        transaction: t,
-      });
-      if (!saveInvDetail) {
-        await t.rollback();
-        return res.status(500).json({
-          success: false,
-          message: "Gagal menyimpan detail invoice",
-        });
-      }
-
-      await t.commit();
-
-      return res.status(200).json({
-        success: true,
-        message: "Invoice berhasil dibuat",
-        data: invoiceData,
-      });
-    } else {
-      const invoiceData = {
-        invoice_id: cekInv.invoice_id,
-        recipient_id: cekInv.recipient_id,
-        recipient_name: cekInv.recipient_name,
-        invoice_date: moment(cekInv.invoice_date).format("YYYY-MM-DD"),
-        expiration_date: moment(cekInv.expiration_date).format("YYYY-MM-DD"),
-        paymentDetails: cekInv.detailsInvoice,
-        total_amount: cekInv.total_amount,
-        payment_status: cekInv.payment_status,
-        type_trans: cekInv.type_trans,
-        payment_desc: cekInv.payment_desc,
-      };
-      return res.status(200).json({
-        success: true,
-        message: "Invoice berhasil dibuat",
-        data: invoiceData,
-      });
+      payment_desc = `Pembayaran Pendaftaran ${getRequest.categoryAnggota?.nama}`;
     }
-  } catch (error) {
-    await t.rollback();
-    console.error("Error generate invoice:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan saat membuat invoice",
-      error: error.message,
+
+    // Tambahkan detail dari aturan pembayaran utama
+    setInvDetail.push({
+      ret,
+      invoice_id: getRequest.token,
+      name: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
+      ammount: payRules.ammount,
     });
+
+    const total_amount = setInvDetail.reduce(
+      (sum, item) => sum + item.ammount,
+      0
+    );
+
+    // Data invoice utama
+    const invoiceData = {
+      ret,
+      invoice_id: getRequest.token,
+      recipient_id: getRequest.anggota?.nik,
+      recipient_name: getRequest.anggota?.nama,
+      invoice_date: moment().format("YYYY-MM-DD"),
+      jenis_trans: type,
+      expiration_date: moment().add(1, "month").format("YYYY-MM-DD"),
+      paymentDetails: setInvDetail,
+      total_amount: total_amount,
+      payment_status: "Menunggu Pembayaran",
+      type_trans: "Setor",
+      payment_desc,
+    };
+
+    // Simpan ke database
+    const newInvoice = await MInvoices.create(invoiceData);
+
+    if (setInvDetail.length > 0) {
+      await MInvoices_detail.bulkCreate(
+        setInvDetail.map((detail) => ({
+          ...detail,
+          invoice_id: newInvoice.invoice_id,
+        }))
+      );
+    }
+
+    if (setTransArray.length > 0) {
+      await MTrans.bulkCreate(setTransArray);
+    }
+
+    const result = {
+      message: "Invoice berhasil dibuat",
+      invoice: newInvoice,
+      transaksi: setTransArray,
+      details: setInvDetail,
+    };
+
+    return ret === "ret" ? result : res.status(201).json(result);
+  } catch (error) {
+    console.error("Error generateInvoice:", error);
+    const result = { message: "Terjadi kesalahan server" };
+    return req.body.ret === "ret" ? result : res.status(500).json(result);
   }
 };

@@ -29,8 +29,8 @@ const MInvoices = pus.define(
     method: {
       type: DataTypes.STRING(100),
     },
-    virtual_account: {
-      type: DataTypes.STRING(50),
+    jenis_trans: {
+      type: DataTypes.STRING(255),
     },
     payment_status: {
       type: DataTypes.STRING(255),
@@ -39,18 +39,18 @@ const MInvoices = pus.define(
       type: DataTypes.DECIMAL(15, 2),
     },
     type_trans: {
-      type: DataTypes.DECIMAL(15, 2),
+      type: DataTypes.STRING(50), // <- perbaikan
     },
     order_id: {
-      type: DataTypes.DECIMAL(15, 2),
+      type: DataTypes.STRING(100), // <- perbaikan
     },
     payment_desc: {
-      type: DataTypes.DECIMAL(15, 2),
+      type: DataTypes.STRING(255), // <- perbaikan
     },
   },
   {
     freezeTableName: true,
-    timestamps: true, // createdAt & updatedAt otomatis
+    timestamps: true,
   }
 );
 

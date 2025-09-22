@@ -24,14 +24,11 @@ export const getApprovalRequestByNik = async (req, res) => {
           attributes: { exclude: ["token", "password"] },
         },
       ],
-      raw: true,
-      nest: true,
     });
     // Filter hanya approvalRequest yang approverAnggota.nik === nik
     const filteredApprovalRequests = approvalRequests.filter(
       (req) => req.approverAnggota && req.approverAnggota.nik === nik
     );
-    // console.log(approvalRequests);
     return res.status(200).json({
       message: "Data approval request berhasil diambil",
       data: filteredApprovalRequests,

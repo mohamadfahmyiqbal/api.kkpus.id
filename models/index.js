@@ -129,12 +129,12 @@ MAnggotaJob.belongsTo(MAnggota, {
 
 // Relasi: Satu MAnggota punya satu MAnggotaCategory
 MAnggota.belongsTo(MAnggotaCategory, {
-  foreignKey: "status_anggota",
+  foreignKey: "roles",
   sourceKey: "id",
   as: "categoryAnggota",
 });
 MAnggotaCategory.hasMany(MAnggota, {
-  foreignKey: "status_anggota",
+  foreignKey: "roles",
   sourceKey: "id",
   as: "anggota",
 });

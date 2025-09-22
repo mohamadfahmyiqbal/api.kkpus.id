@@ -23,6 +23,10 @@ const MInvoices_detail = pus.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
+    fee: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   },
   {
     freezeTableName: true,

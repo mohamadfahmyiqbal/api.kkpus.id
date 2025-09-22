@@ -35,10 +35,12 @@ export const getApprovalDetail = async (req, res) => {
               {
                 association: "requesterAnggota",
                 attributes: { exclude: ["password", "token"] },
+                include: [{ association: "categoryAnggota" }],
               },
               {
                 association: "approverAnggota",
                 attributes: { exclude: ["password", "token"] },
+                include: [{ association: "categoryAnggota" }],
               },
             ],
             separate: true,

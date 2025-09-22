@@ -1,11 +1,11 @@
+import "dotenv/config"; // harus paling atas sebelum import midtrans.js
+
 import midtransClient from "midtrans-client";
 
 const snap = new midtransClient.Snap({
-  isProduction: false, // set true kalau sudah live
-  // serverKey: process.env.MIDTRANS_SERVER_KEY,
-  // clientKey: process.env.MIDTRANS_CLIENT_KEY,
-  clientKey: "Mid-client-1UWKlkYfZ4OiE2I3",
-  serverKey: "Mid-server-tPgh9u6SjOHXV0ZuA26-f-xW",
+  isProduction: false, // Sandbox mode
+  serverKey: process.env.MIDTRANS_SERVER_KEY.replace(/[\r\n]+/g, "").trim(),
+  // clientKey di backend TIDAK perlu
 });
 
 export default snap;
