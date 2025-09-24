@@ -8,9 +8,6 @@ import { getPaymentRules } from "../payment/getPaymentRules.js";
 import { generateMonthIndo } from "../utils/generateMonthIndo.js";
 import MTrans from "../../models/transaksi/MTrans.js";
 
-/**
- * Generate Invoice berdasarkan request & aturan pembayaran
- */
 export const generateInvoice = async (req, res) => {
   try {
     const { ret, type, token } = req.body;
@@ -52,7 +49,7 @@ export const generateInvoice = async (req, res) => {
     let setInvDetail = [];
     let payment_desc = "";
 
-    // Jika request adalah pendaftaran anggota dengan tipe_anggota 3
+    // Jika request adalah pendaftaran anggota tipe 3
     if (
       getRequest.tipe_request === "pendaftaran_anggota" &&
       getRequest.tipe_anggota === 3
@@ -70,7 +67,7 @@ export const generateInvoice = async (req, res) => {
         return ret === "ret" ? result : res.status(404).json(result);
       }
 
-      const currentMonth = moment().month() + 1; // bulan saat ini (1-12)
+      const currentMonth = moment().month() + 1;
 
       for (let month = currentMonth; month <= 12; month++) {
         const isCurrentMonth = month === currentMonth;
@@ -78,13 +75,14 @@ export const generateInvoice = async (req, res) => {
         const transData = {
           ret,
           type: "Setor",
-          jenis: `Pembayaran Simpanan Pokok Bulan ${generateMonthIndo(month)}`,
+          name: `Pembayaran Simpanan Wajib Bulan ${generateMonthIndo(month)}`,
           nik: getRequest.nik,
-          token: isCurrentMonth ? token : null, // ✅ token hanya untuk bulan berjalan
+          token: isCurrentMonth ? token : null,
           jumlah: payRulesMonthly.ammount,
           payment_status: "Menunggu Pembayaran",
           bulan: month,
           tahun: moment().year(),
+          payment_rule_id: payRulesMonthly.id || null,
         };
 
         const invDetail = {
@@ -94,31 +92,61 @@ export const generateInvoice = async (req, res) => {
           ammount: payRulesMonthly.ammount,
         };
 
-        // Bulan berjalan masuk ke detail invoice
-        if (isCurrentMonth) {
-          setInvDetail.push(invDetail);
-        }
-
+        if (isCurrentMonth) setInvDetail.push(invDetail);
         setTransArray.push(transData);
       }
 
       payment_desc = `Pembayaran Pendaftaran ${getRequest.categoryAnggota?.nama}`;
     }
 
-    // Tambahkan detail dari aturan pembayaran utama
-    setInvDetail.push({
-      ret,
-      invoice_id: getRequest.token,
-      name: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
-      ammount: payRules.ammount,
-    });
+    // Tambahkan transaksi dari payRules utama
+    if (Array.isArray(payRules)) {
+      payRules.forEach((rule) => {
+        setInvDetail.push({
+          ret,
+          invoice_id: getRequest.token,
+          name: rule.name,
+          ammount: rule.ammount,
+        });
+
+        setTransArray.push({
+          ret,
+          type: "Setor",
+          name: rule.name,
+          nik: getRequest.nik,
+          token: token,
+          jumlah: rule.ammount,
+          payment_status: "Menunggu Pembayaran",
+          tahun: moment().year(),
+          payment_rule_id: rule.id || null,
+        });
+      });
+    } else {
+      setInvDetail.push({
+        ret,
+        invoice_id: getRequest.token,
+        name: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
+        ammount: payRules.ammount,
+      });
+
+      setTransArray.push({
+        ret,
+        type: "Setor",
+        jenis: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
+        nik: getRequest.nik,
+        token: token,
+        jumlah: payRules.ammount,
+        payment_status: "Menunggu Pembayaran",
+        tahun: moment().year(),
+        payment_rule_id: payRules.id || null,
+      });
+    }
 
     const total_amount = setInvDetail.reduce(
       (sum, item) => sum + item.ammount,
       0
     );
 
-    // Data invoice utama
     const invoiceData = {
       ret,
       invoice_id: getRequest.token,
@@ -134,7 +162,6 @@ export const generateInvoice = async (req, res) => {
       payment_desc,
     };
 
-    // Simpan ke database
     const newInvoice = await MInvoices.create(invoiceData);
 
     if (setInvDetail.length > 0) {
