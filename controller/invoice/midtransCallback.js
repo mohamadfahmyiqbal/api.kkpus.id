@@ -1,130 +1,198 @@
 import snap from "../utils/midtrans.js";
 import MInvoices from "../../models/payment/MInvoices.js";
+import MInvoices_detail from "../../models/payment/MInvoices_detail.js";
 import MTrans from "../../models/transaksi/MTrans.js";
 import { MAnggota, MRequest } from "../../models/index.js";
-import { getPaymentFeesByName } from "./getPaymentFeesByName.js";
-import MInvoices_detail from "../../models/payment/MInvoices_detail.js";
+import pus from "../../config/pus.js"; // Sequelize instance
+import MAnggotaWallet from "../../models/anggota/MAnggotaWallet.js";
 
+// 🔹 Mapping status Midtrans ke status internal sistem
 const mapPaymentStatus = (transaction_status, fraud_status) => {
-  switch (transaction_status) {
-    case "capture":
-      return fraud_status === "challenge"
+  const map = {
+    capture:
+      fraud_status === "challenge"
         ? "Challenge oleh FDS"
-        : "Pembayaran Berhasil";
-    case "settlement":
-      return "Pembayaran Berhasil";
-    case "pending":
-      return "Menunggu Pembayaran";
-    case "deny":
-      return "Pembayaran Ditolak";
-    case "expire":
-      return "Pembayaran Kadaluarsa";
-    case "cancel":
-      return "Pembayaran Dibatalkan";
-    default:
-      return "UNKNOWN";
-  }
+        : "Pembayaran Berhasil",
+    settlement: "Pembayaran Berhasil",
+    pending: "Menunggu Pembayaran",
+    deny: "Pembayaran Ditolak",
+    expire: "Pembayaran Kadaluarsa",
+    cancel: "Pembayaran Dibatalkan",
+  };
+  return map[transaction_status] || "UNKNOWN";
 };
 
 export const midtransCallback = async (req, res) => {
-  try {
-    const notificationJson = req.body;
-    const statusResponse = await snap.transaction.notification(
-      notificationJson
-    );
+  const transaction = await pus.transaction();
 
-    const { order_id, transaction_status, fraud_status, gross_amount } =
-      statusResponse;
+  try {
+    // 🔹 Ambil notifikasi dari Midtrans
+    const statusResponse = await snap.transaction.notification(req.body);
+    const {
+      order_id,
+      recipient_id,
+      transaction_status,
+      fraud_status,
+      custom_field1,
+      custom_field2,
+    } = statusResponse;
+
+    // 🔹 Parse custom field (gunakan default {} jika gagal)
+    let customFieldData = {};
+    let paymentMethod = {};
+    try {
+      customFieldData = JSON.parse(custom_field1);
+      paymentMethod = JSON.parse(custom_field2);
+    } catch {
+      console.warn("⚠️ Gagal parse custom_field, gunakan default kosong");
+    }
+
+    // 🔹 Validasi invoice_id
+    if (!customFieldData?.invoice_id) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ message: "Invoice ID tidak ditemukan di custom_field1" });
+    }
+
     const statusMessage = mapPaymentStatus(transaction_status, fraud_status);
 
-    if (transaction_status === "settlement") {
-      const paymentMethod = statusResponse.acquirer;
-
-      const findTransFee = await getPaymentFeesByName({
-        body: { ret: "ret", name: paymentMethod },
+    // 🔹 Fungsi pembaruan invoice dan tabel terkait
+    const updateInvoiceStatus = async () => {
+      // Ambil data invoice lengkap
+      const invoice = await MInvoices.findOne({
+        where: { invoice_id: customFieldData.invoice_id },
+        include: [
+          { association: "detailsInvoice", required: false },
+          {
+            association: "requestInvoice",
+            include: [{ association: "categoryAnggota" }],
+          },
+          {
+            association: "transInvoice",
+            include: [
+              {
+                association: "anggota",
+                include: [{ association: "categoryAnggota" }],
+              },
+            ],
+          },
+          { association: "invoiceWallet" },
+        ],
+        transaction,
       });
 
-      const parts = order_id.split("-");
+      // console.log(Number(invoice.total_ammount), Number(invoice.balance));
 
-      const findInv = await MInvoices.findOne({
-        where: { invoice_id: parts[0] },
-      });
-
-      const cekReq = await MRequest.findOne({
-        where: { token: parts[0] },
-        include: [{ association: "categoryAnggota" }],
-      });
-
-      let fee = 0;
-      if (findTransFee.fee_type === "percentage") {
-        // hitung fee berdasarkan persentase
-        fee = (findInv.total_ammount * findTransFee.fee_value) / 100;
-      } else {
-        // gunakan langsung nilai fee
-        fee = findTransFee.fee_value;
+      if (!invoice) {
+        console.warn(
+          `⚠️ Invoice tidak ditemukan untuk ID: ${customFieldData.invoice_id}`
+        );
+        throw new Error("Invoice tidak ditemukan");
       }
 
-      // Update invoice & transaksi
+      // 🔹 Update status pembayaran di semua tabel terkait
+      const updateData = { order_id, payment_status: statusMessage };
       await Promise.all([
-        MInvoices.update(
-          {
-            method: paymentMethod,
-            total_ammount: gross_amount,
-            order_id: order_id,
-            payment_status: statusMessage,
-          },
-          { where: { invoice_id: parts[0] } }
-        ),
-        MInvoices_detail.create({
-          invoice_id: parts[0],
-          name: findTransFee.description,
-          ammount: fee,
+        MInvoices.update(updateData, {
+          where: { invoice_id: invoice.invoice_id },
+          transaction,
         }),
-        MTrans.update(
-          { payment_status: statusMessage },
+        MTrans.update(updateData, {
+          where: { token: invoice.invoice_id },
+          transaction,
+        }),
+        MRequest.update(
+          { status_payment: statusMessage },
+          { where: { token: invoice.invoice_id }, transaction }
+        ),
+        MAnggotaWallet.update(
+          {
+            balance:
+              Number(invoice?.total_amount) +
+              Number(invoice.invoiceWallet.balance),
+          },
           {
             where: {
-              token: parts[0],
+              nik: invoice?.recipient_id,
             },
           }
         ),
       ]);
-      if (findInv.jenis_trans === "pendaftaran_anggota") {
-        await MAnggota.update(
-          { status_anggota: "Approved", roles: cekReq.categoryAnggota.nama },
-          { where: { nik: findInv.recipient_id } }
+
+      // 🔹 Tambah detail pembayaran jika belum ada
+      const isDetailExist = invoice.detailsInvoice?.some(
+        (d) =>
+          d.name === paymentMethod?.desc && d.ammount === paymentMethod?.ammount
+      );
+
+      if (!isDetailExist && paymentMethod?.desc && paymentMethod?.ammount) {
+        await MInvoices_detail.create(
+          {
+            invoice_id: invoice.invoice_id,
+            name: paymentMethod.desc,
+            ammount: paymentMethod.ammount,
+          },
+          { transaction }
         );
+        console.log(`✅ Detail pembayaran '${paymentMethod.desc}' ditambahkan`);
       }
+
+      // 🔹 Jika jenis transaksi = pendaftaran anggota → update status anggota
+      if (invoice.jenis_trans === "pendaftaran_anggota") {
+        await MAnggota.update(
+          {
+            status_anggota: invoice?.requestInvoice?.tipe_anggota,
+            roles: invoice?.requestInvoice?.tipe_anggota,
+          },
+          {
+            where: { nik: invoice?.requestInvoice?.nik },
+            transaction,
+          }
+        );
+        console.log("✅ Status anggota diperbarui");
+      }
+    };
+
+    // 🔹 Tangani setiap status transaksi Midtrans
+    switch (transaction_status) {
+      case "pending":
+        console.log("🕒 Transaksi masih pending, status disimpan sementara.");
+        break;
+
+      case "settlement":
+        console.log("✅ Pembayaran berhasil, update status & tandai lunas.");
+        await updateInvoiceStatus();
+        break;
+
+      case "expire":
+        console.log("⛔ Transaksi kadaluarsa, update status invoice.");
+        await updateInvoiceStatus();
+        break;
+
+      case "deny":
+      case "cancel":
+        console.log("🚫 Transaksi dibatalkan atau ditolak.");
+        await updateInvoiceStatus();
+        break;
+
+      default:
+        console.log("⚠️ Status tidak dikenal:", transaction_status);
+        break;
     }
 
-    // // Kalau pembayaran settlement (berhasil), baru cek invoice & request
-    // if (transaction_status === "settlement") {
-    //   const cekInv = await MInvoices.findOne({
-    //     where: { order_id },
-    //     raw: true,
-    //   });
-    //   if (cekInv?.invoice_id) {
-    //     const cekReq = await MRequest.findOne({
-    //       where: { token: cekInv.invoice_id },
-    //       include: [{ association: "categoryAnggota" }],
-    //     });
-
-    //     if (cekReq && cekReq.tipe_request === "pendaftaran_anggota") {
-    //     }
-    //   }
-    // }
-
+    // 🔹 Commit transaksi jika semua sukses
+    await transaction.commit();
     return res.status(200).json({
-      success: true,
-      message: "Notifikasi berhasil diproses",
+      message: "Callback Midtrans berhasil diproses",
       status: statusMessage,
+      order_id,
     });
   } catch (error) {
-    console.error("⚠️ Midtrans Callback Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal memproses notifikasi",
-      error: error.message,
-    });
+    console.error("❌ Error midtransCallback:", error);
+    if (transaction) await transaction.rollback();
+    return res
+      .status(500)
+      .json({ message: "Terjadi kesalahan internal", error: error.message });
   }
 };

@@ -18,11 +18,7 @@ export const FindAnggotaByToken = async (req, res) => {
     const user = await MAnggota.findOne({
       where: { token },
       attributes: { exclude: ["password", "token"] },
-      include: [
-        {
-          association: "detail",
-        },
-      ],
+      include: [{ association: "detail" }, { association: "bankAnggota" }],
     });
 
     if (!user) {

@@ -18,6 +18,9 @@ const MTrans = pus.define(
     type: {
       type: DataTypes.STRING,
     },
+    name: {
+      type: DataTypes.STRING,
+    },
     jenis: {
       type: DataTypes.STRING,
     },

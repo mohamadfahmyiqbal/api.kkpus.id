@@ -13,6 +13,8 @@ import MAnggotaCategory from "./anggota/MAnggotaCategory.js";
 import MPaymentRules from "./payment/MPaymentRules.js";
 import MInvoices from "./payment/MInvoices.js";
 import MInvoices_detail from "./payment/MInvoices_detail.js";
+import MAnggotaWallet from "./anggota/MAnggotaWallet.js";
+import MTrans from "./transaksi/MTrans.js";
 
 // Relasi: Satu MRequest berelasi dengan satu MAnggota (requester)
 MRequest.belongsTo(MAnggota, {
@@ -139,6 +141,18 @@ MAnggotaCategory.hasMany(MAnggota, {
   as: "anggota",
 });
 
+// Relasi: Satu MAnggotaBank punya satu MAnggota
+MAnggotaBank.belongsTo(MAnggota, {
+  foreignKey: "token",
+  targetKey: "nik",
+  as: "anggotaBank",
+});
+MAnggota.hasOne(MAnggotaBank, {
+  foreignKey: "token",
+  sourceKey: "nik",
+  as: "bankAnggota",
+});
+
 MInvoices.hasMany(MInvoices_detail, {
   foreignKey: "invoice_id",
   sourceKey: "invoice_id",
@@ -147,7 +161,67 @@ MInvoices.hasMany(MInvoices_detail, {
 MInvoices_detail.belongsTo(MInvoices, {
   foreignKey: "invoice_id",
   targetKey: "invoice_id",
-  as: "invoiceDetails",
+  as: "invoice",
+});
+
+// Relasi: Satu MInvoices punya satu MRequest
+MInvoices.hasOne(MRequest, {
+  foreignKey: "token",
+  sourceKey: "invoice_id",
+  as: "requestInvoice",
+});
+MRequest.belongsTo(MInvoices, {
+  foreignKey: "token",
+  targetKey: "invoice_id",
+  as: "invoiceRequest",
+});
+
+// Relasi: Satu MTrans punya satu MInvoices
+MTrans.belongsTo(MInvoices, {
+  foreignKey: "token",
+  targetKey: "invoice_id",
+  as: "invoiceTrans",
+});
+MInvoices.hasMany(MTrans, {
+  foreignKey: "token",
+  sourceKey: "invoice_id",
+  as: "transInvoice",
+});
+
+// Relasi: Satu MAnggotaWallet punya banyak MInvoices
+MAnggotaWallet.hasMany(MInvoices, {
+  foreignKey: "recipient_id",
+  sourceKey: "nik",
+  as: "walletInvoices",
+});
+MInvoices.belongsTo(MAnggotaWallet, {
+  foreignKey: "recipient_id",
+  targetKey: "nik",
+  as: "invoiceWallet",
+});
+
+// Relasi: Satu MAnggota punya satu MAnggotaWallet
+MAnggota.hasOne(MAnggotaWallet, {
+  foreignKey: "nik",
+  sourceKey: "nik",
+  as: "walletAnggota",
+});
+MAnggotaWallet.belongsTo(MAnggota, {
+  foreignKey: "nik",
+  targetKey: "nik",
+  as: "anggotaWallet",
+});
+
+// Relasi: Satu MAnggotaWallet punya satu MAnggotaBank
+MAnggotaWallet.hasOne(MAnggotaBank, {
+  foreignKey: "token",
+  sourceKey: "nik",
+  as: "bankWallet",
+});
+MAnggotaBank.belongsTo(MAnggotaWallet, {
+  foreignKey: "token",
+  targetKey: "nik",
+  as: "walletBank",
 });
 
 //

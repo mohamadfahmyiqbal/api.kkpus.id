@@ -148,13 +148,14 @@ export async function DaftarAnggota(req, res) {
       },
       { transaction }
     );
+    console.log(jenis_anggota);
 
     await MRequest.upsert(
       {
         token: token,
         nik: nia,
         tipe_request: "pendaftaran_anggota",
-        tipe_anggota: Number(jenis_anggota),
+        tipe_anggota: jenis_anggota,
         status_payment: null,
         status_approval: null,
         updatedAt: new Date(),
