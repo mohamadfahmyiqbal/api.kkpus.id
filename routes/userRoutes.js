@@ -13,6 +13,7 @@ import authAnggota from "../midlleware/MidAnggota.js";
 import { getAnggotaCategory } from "../controller/anggota/GetAnggotaCategory.js";
 import { getDetailAnggotaByToken } from "../controller/anggota/getDetailAnggotaByToken.js";
 import { AnnggotaDetailByNIK } from "../controller/anggota/AnnggotaDetailByNIK.js";
+import { GetAnggotaSaldo } from "../controller/anggota/GetAnggotaSaldo.js";
 
 const router = express.Router();
 
@@ -33,5 +34,7 @@ router.post("/getAnggotaCategory", authAnggota, getAnggotaCategory);
 // Route daftarAnggota: upload file middleware + controller (tanpa auth)
 router.post("/daftarAnggota", authAnggota, uploadFotoKtp, DaftarAnggota);
 router.post("/cekPendaftaranAnggota", authAnggota, CekPendaftaranAnggota);
+
+router.post("/GetAnggotaSaldo", authAnggota, GetAnggotaSaldo);
 
 export default router;

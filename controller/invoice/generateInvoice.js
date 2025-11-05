@@ -1,12 +1,11 @@
 import moment from "moment";
 import MInvoices from "../../models/payment/MInvoices.js";
-import MRequest from "../../models/transaksi/MRequest.js";
 import MInvoices_detail from "../../models/payment/MInvoices_detail.js";
+import MTrans from "../../models/transaksi/MTrans.js";
 import { cekInvoiceByToken } from "./cekInvoiceByToken.js";
 import { getRequestByToken } from "../request/getRequestByToken.js";
 import { getPaymentRules } from "../payment/getPaymentRules.js";
 import { generateMonthIndo } from "../utils/generateMonthIndo.js";
-import MTrans from "../../models/transaksi/MTrans.js";
 
 export const generateInvoice = async (req, res) => {
   try {
@@ -72,73 +71,57 @@ export const generateInvoice = async (req, res) => {
       for (let month = currentMonth; month <= 12; month++) {
         const isCurrentMonth = month === currentMonth;
 
-        const transData = {
-          ret,
+        // Transaksi MTrans
+        setTransArray.push({
           type: "Setor",
+          jenis: `Simpanan Wajib`,
           name: `Pembayaran Simpanan Wajib Bulan ${generateMonthIndo(month)}`,
           nik: getRequest.nik,
           token: isCurrentMonth ? token : null,
+          orderId: null,
           jumlah: payRulesMonthly.ammount,
+          batch: null,
           payment_status: "Menunggu Pembayaran",
-          bulan: month,
-          tahun: moment().year(),
-          payment_rule_id: payRulesMonthly.id || null,
-        };
+          createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
+        });
 
-        const invDetail = {
-          ret,
-          invoice_id: getRequest.token,
-          name: `Pembayaran Simpanan Pokok Bulan ${generateMonthIndo(month)}`,
-          ammount: payRulesMonthly.ammount,
-        };
-
-        if (isCurrentMonth) setInvDetail.push(invDetail);
-        setTransArray.push(transData);
+        // Detail invoice untuk bulan pertama saja
+        if (isCurrentMonth) {
+          setInvDetail.push({
+            ret,
+            invoice_id: getRequest.token,
+            name: `Pembayaran Simpanan Wajib Bulan ${generateMonthIndo(month)}`,
+            ammount: payRulesMonthly.ammount,
+          });
+        }
       }
 
       payment_desc = `Pembayaran Pendaftaran ${getRequest.categoryAnggota?.nama}`;
     }
 
     // Tambahkan transaksi dari payRules utama
-    if (Array.isArray(payRules)) {
-      payRules.forEach((rule) => {
-        setInvDetail.push({
-          ret,
-          invoice_id: getRequest.token,
-          name: rule.name,
-          ammount: rule.ammount,
-        });
-
-        setTransArray.push({
-          ret,
-          type: "Setor",
-          name: rule.name,
-          nik: getRequest.nik,
-          token: token,
-          jumlah: rule.ammount,
-          payment_status: "Menunggu Pembayaran",
-          tahun: moment().year(),
-          payment_rule_id: rule.id || null,
-        });
-      });
-    } else {
+    const rulesArray = Array.isArray(payRules) ? payRules : [payRules];
+    for (const rule of rulesArray) {
+      // Detail invoice
       setInvDetail.push({
         ret,
         invoice_id: getRequest.token,
-        name: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
-        ammount: payRules.ammount,
+        name: rule.name || `Pembayaran ${getRequest.tipe_request}`,
+        ammount: rule.ammount,
       });
 
+      // Transaksi MTrans
       setTransArray.push({
-        ret,
         type: "Setor",
-        jenis: payRules.name || `Pembayaran ${getRequest.tipe_request}`,
+        jenis: rule.name,
+        name: `Pembayaran ${getRequest.tipe_request}`,
         nik: getRequest.nik,
         token: token,
-        jumlah: payRules.ammount,
+        orderId: null,
+        jumlah: rule.ammount,
+        batch: null,
         payment_status: "Menunggu Pembayaran",
-        tahun: moment().year(),
-        payment_rule_id: payRules.id || null,
+        createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
       });
     }
 
@@ -147,23 +130,24 @@ export const generateInvoice = async (req, res) => {
       0
     );
 
+    // Data invoice
     const invoiceData = {
-      ret,
       invoice_id: getRequest.token,
       recipient_id: getRequest.anggota?.nik,
       recipient_name: getRequest.anggota?.nama,
       invoice_date: moment().format("YYYY-MM-DD"),
       jenis_trans: type,
       expiration_date: moment().add(1, "month").format("YYYY-MM-DD"),
-      paymentDetails: setInvDetail,
-      total_amount: total_amount,
+      total_amount,
       payment_status: "Menunggu Pembayaran",
       type_trans: "Setor",
       payment_desc,
     };
 
+    // Buat invoice
     const newInvoice = await MInvoices.create(invoiceData);
 
+    // Buat detail invoice
     if (setInvDetail.length > 0) {
       await MInvoices_detail.bulkCreate(
         setInvDetail.map((detail) => ({
@@ -173,6 +157,7 @@ export const generateInvoice = async (req, res) => {
       );
     }
 
+    // Buat transaksi MTrans
     if (setTransArray.length > 0) {
       await MTrans.bulkCreate(setTransArray);
     }

@@ -6,6 +6,12 @@ const { DataTypes } = Sequelize;
 const MRequest = pus.define(
   "request",
   {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      autoIncrementIdentity: true,
+    },
     token: {
       type: DataTypes.STRING,
     },

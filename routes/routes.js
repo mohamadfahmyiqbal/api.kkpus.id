@@ -5,6 +5,8 @@ import utilRoutes from "./utilsRoutes.js";
 import approvalRoutes from "./approvalRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
 import invoiceRoutes from "./invoiceRoutes.js";
+import simpananRoutes from "./simpananRoutes.js";
+import transRoutes from "./transRoutes.js";
 import {
   perbaikanPinjamanAnggota,
   perbaikanPinjamanTrans,
@@ -23,6 +25,8 @@ router.use(approvalRoutes);
 router.use(pinjamanRoutes);
 router.use(utilRoutes);
 router.use(invoiceRoutes);
+router.use(simpananRoutes);
+router.use(transRoutes);
 // router.use(importRoutes);
 
 export default router;

@@ -13,19 +13,15 @@ const MInvoices_detail = pus.define(
     },
     invoice_id: {
       type: DataTypes.STRING, // Harus sama dengan MInvoices
-      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false,
     },
     ammount: {
       type: DataTypes.STRING(100),
-      allowNull: false,
     },
     fee: {
       type: DataTypes.INTEGER,
-      allowNull: false,
     },
   },
   {

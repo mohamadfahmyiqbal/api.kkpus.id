@@ -8,6 +8,7 @@ export const cekInvoiceByToken = async (req, res) => {
       include: [
         {
           association: "detailsInvoice",
+          exclude: ["createdAt", "updatedAt", "fee"],
         },
       ],
       raw: false,

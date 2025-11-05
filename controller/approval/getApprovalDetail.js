@@ -46,6 +46,9 @@ export const getApprovalDetail = async (req, res) => {
             separate: true,
             order: [["flow", "ASC"]],
           },
+          {
+            association: "categoryAnggota",
+          },
         ],
       });
       // console.log(request.RequestApproval);
