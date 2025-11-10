@@ -1,4 +1,4 @@
-import { MApprovalFlow } from "../../models/";
+import MApprovalFlow from "../../models/approval/MApprovalFlow.js";
 
 export const reqPencairanSimpanan = async (req, res) => {
   const { title, selected, jenis, type, back } = req.body;
@@ -27,9 +27,9 @@ export const reqPencairanSimpanan = async (req, res) => {
     const approval = {
       token: selected[0].id,
       requester_id: nik,
-      type: selected[0].name,
+      type: back,
     };
-    console.log({ req: requestSave, trans: transaksi });
+    console.log({ req: requestSave, trans: transaksi, appr: approval });
   } catch (error) {
     console.log(error);
   }
