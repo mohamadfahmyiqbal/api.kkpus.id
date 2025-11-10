@@ -1,4 +1,0 @@
-RewriteEngine On
-RewriteCond %{HTTP_HOST} ^api\.kkpus\.id$ [NC]
-RewriteRule ^(.*)$ http://202.52.146.217:5010/$1 [L,R=302]
-`
