@@ -1,3 +1,4 @@
 #ignore semua env
 .env*
 !.env.example
+tmp/
