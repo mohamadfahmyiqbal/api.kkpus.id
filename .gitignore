@@ -1,4 +1,2 @@
+#ignore semua env
 .env
-config/local.json
-
-node_modules/
