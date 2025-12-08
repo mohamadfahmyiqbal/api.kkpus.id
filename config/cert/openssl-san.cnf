@@ -1,0 +1,16 @@
+[req]
+distinguished_name = dn
+x509_extensions = EXT
+prompt = no
+
+[dn]
+CN = localhost
+
+[EXT]
+subjectAltName = @alt_names
+keyUsage = digitalSignature
+extendedKeyUsage = serverAuth
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
