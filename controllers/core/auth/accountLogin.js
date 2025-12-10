@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import db from "../../../models/index.js"; // Sesuaikan path ke model Sequelize Anda
+import db from "../../../models/index.js"; 
 
-const MemberRegistration = db.MemberRegistration;
+// Hapus referensi ke MemberRegistration
 const Member = db.Member;
 const Sequelize = db.Sequelize;
 const Op = Sequelize.Op;
@@ -11,11 +11,11 @@ const Op = Sequelize.Op;
 const JWT_SECRET = "naila";
 
 /**
- * Kontroler untuk menangani proses login anggota.
+ * Kontroler untuk menangani proses login anggota, langsung menggunakan tabel 'members'.
  */
 export const accountLogin = async (req, res) => {
-  // Input dari frontend (LoginPage.jsx)
   const { emailHp, password } = req.body;
+  
   // 1. Validasi Input Dasar
   if (!emailHp || !password) {
     return res.status(400).json({
@@ -25,38 +25,13 @@ export const accountLogin = async (req, res) => {
   }
 
   try {
-    // 2. Cari Akun Pendaftaran (di member_registrations)
-    const registrationRecord = await MemberRegistration.findOne({
+    // 2. CARI AKUN di tabel 'members'
+    // Mencari berdasarkan email ATAU phone_number
+    const member = await Member.findOne({
       where: {
         [Op.or]: [{ email: emailHp }, { phone_number: emailHp }],
       },
-    });
-
-    // 3. Cek Keberadaan Record Pendaftaran
-    if (!registrationRecord) {
-      return res.status(401).json({
-        success: false,
-        message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
-      });
-    }
-
-    // 4. Bandingkan Password menggunakan bcrypt
-    const isMatch = await bcrypt.compare(
-      password,
-      registrationRecord.password_hash
-    );
-
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
-      });
-    }
-
-    // 5. Ambil Data Anggota Utama (dari tabel members)
-    // PERBAIKAN: Hanya masukkan kolom yang ada di model members.js dan database.
-    // Kolom yang menyebabkan error (address_details, religion, dll.) telah dihapus.
-    const member = await Member.findByPk(registrationRecord.member_id, {
+      // Mengambil semua atribut yang diperlukan, termasuk 'password_hash' untuk otentikasi.
       attributes: [
         "member_id",
         "full_name",
@@ -69,20 +44,32 @@ export const accountLogin = async (req, res) => {
         "nik_ktp",
         "address",
         "status_id",
-        // Kolom-kolom yang tidak ada di model members.js (address_details, religion, dll.)
-        // DENGAN SENGAJA TIDAK DIMASUKKAN di sini untuk MENGHILANGKAN ERROR.
+        "password_hash", // WAJIB: Digunakan untuk membandingkan password
       ],
     });
 
+    // 3. Cek Keberadaan Member
     if (!member) {
       return res.status(401).json({
         success: false,
-        message:
-          "Data Anggota tidak ditemukan di database utama. Hubungi admin.",
+        message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
       });
     }
 
-    // 6. Generate JWT Token
+    // 4. Bandingkan Password menggunakan bcrypt
+    const isMatch = await bcrypt.compare(
+      password,
+      member.password_hash // Menggunakan hash dari record Member
+    );
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
+      });
+    }
+
+    // 5. Generate JWT Token
     const tokenPayload = {
       member_id: member.member_id,
       member_no: member.member_no,
@@ -95,22 +82,27 @@ export const accountLogin = async (req, res) => {
       expiresIn: "1d",
     });
 
-    // 7. Respon Sukses
+    // 6. Respon Sukses
+    // Mengembalikan atribut user, kecuali password_hash (Sequelize secara otomatis tidak menyertakannya jika tidak diminta secara spesifik, 
+    // namun kita telah meminta di atas. Pastikan Anda menghapus atribut password_hash di response, atau atur default scope pada model)
+    
+    // Hapus password_hash dari objek member sebelum dikirim ke frontend
+    const userResponse = member.toJSON();
+    delete userResponse.password_hash;
+    
     return res.status(200).json({
       success: true,
       message: "Login berhasil!",
       data: {
         token: token,
-        user: member, // Mengembalikan semua atribut yang telah difilter
+        user: userResponse, // Mengembalikan data member
       },
     });
   } catch (error) {
     console.error("Login API Error:", error);
-    // Pastikan Anda mengembalikan status 500 dan pesan yang ramah pengguna
     return res.status(500).json({
       success: false,
       message: "Login gagal. Terjadi kesalahan server internal.",
-      // Opsional: Hapus baris 'error: error.message' di produksi
       error: error.message,
     });
   }

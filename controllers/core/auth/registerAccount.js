@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import db from '../../../models/index.js';
 
-const MemberRegistration = db.MemberRegistration;
-const Member = db.Member; // Menggunakan model Member
+// Menggunakan model Member saja
+const Member = db.Member;
 
 /**
  * Fungsi pembantu untuk membuat Member No. dalam format 00DDMMYYHHmm
+ * @returns {string} Member Number yang unik
  */
 const generateMemberNo = () => {
  const now = new Date();
@@ -21,16 +22,46 @@ const generateMemberNo = () => {
 };
 
 export const registerAccount = async (req, res) => {
- const { name, email, password, phone_number } = req.body;
+ // KOREKSI: Mengambil 'full_name' dari req.body, bukan 'name'
+ const {
+  full_name,
+  email,
+  password,
+  phone_number,
+  nik_ktp,
+  gender,
+  address
+ } = req.body;
+
+ // Memberikan nilai default untuk kolom yang opsional/null
+ const final_nik_ktp = nik_ktp || null;
+ const final_gender = gender || null;
+ const final_address = address || null;
+
  let transaction;
 
  try {
-  // 1. Cek duplikasi email di tabel pendaftaran
-  const existingRegistration = await MemberRegistration.findOne({
+  // --- 0. Validasi Input Wajib ---
+  if (!full_name || full_name.trim() === '') {
+   return res.status(400).json({
+    success: false,
+    message: "Nama lengkap wajib diisi."
+   });
+  }
+  if (!email || email.trim() === '' || !password) {
+   return res.status(400).json({
+    success: false,
+    message: "Email dan Password wajib diisi."
+   });
+  }
+
+
+  // 1. Cek duplikasi email di tabel UTAMA: 'members'
+  const existingMember = await Member.findOne({
    where: { email: email }
   });
 
-  if (existingRegistration) {
+  if (existingMember) {
    return res.status(409).json({
     success: false,
     message: "Email sudah terdaftar. Silakan login atau gunakan email lain."
@@ -45,36 +76,32 @@ export const registerAccount = async (req, res) => {
   const memberNo = generateMemberNo();
 
   // =========================================================
-  // 4. MEMULAI TRANSAKSI: Memastikan kedua insert berhasil
+  // 4. MEMULAI TRANSAKSI: Hanya Insert ke tabel members
   // =========================================================
   transaction = await db.sequelize.transaction();
 
-  // 4a. Buat Record di Tabel Induk: 'members'
-  // CATATAN: Field status_id (FK) harus diisi ID yang valid dari tabel member_status
+  // 4a. Buat Record di Tabel UTAMA: 'members'
   const newMember = await Member.create({
-   full_name: name,
+   // Kolom Wajib/Input
+   full_name: full_name,
    email: email,
+   password_hash: password_hash, // Menyimpan hash password di sini
    phone_number: phone_number,
-   member_no: memberNo, // <-- String ID (00DDMMYYHHmm)
+
+   // Kolom Opsional/Default
+   member_no: memberNo,
    join_date: new Date(),
-   member_type: 'reguler', // ASUMSI: default type
-   status_id: 1, // ASUMSI: ID 3 adalah status 'Aktif'
-   // nik_ktp, address, dan gender dibiarkan null atau diisi default
+   member_type: 'calon',
+   status_id: 1, // ASUMSI: ID 1 = Status Aktif
+   nik_ktp: final_nik_ktp,
+   gender: final_gender,
+   address: final_address,
   }, { transaction });
 
-  // Ambil Primary Key (BIGINT) yang dibuat oleh DB
+  // Ambil Primary Key
   const memberId = newMember.member_id;
 
-  // 4b. Buat Record di Tabel Anak: 'member_registrations'
-  await MemberRegistration.create({
-   name,
-   email,
-   password_hash,
-   phone_number,
-
-   registration_status: 'aktif', // Status aktif
-   member_id: memberId, // <-- FK merujuk ke PK tabel members
-  }, { transaction });
+  // 4b. Insert ke MemberRegistration Dihilangkan
 
   // 5. Commit Transaksi
   await transaction.commit();
@@ -82,12 +109,12 @@ export const registerAccount = async (req, res) => {
   // 6. Respon sukses
   return res.status(201).json({
    success: true,
-   message: "Pendaftaran dan aktivasi Member berhasil!",
+   message: "Pendaftaran Member berhasil!",
    data: {
     registration_email: email,
     member_id_numeric: memberId,
     member_no: memberNo,
-    registration_status: 'aktif',
+    member_type: 'calon',
    },
   });
 
@@ -101,7 +128,7 @@ export const registerAccount = async (req, res) => {
 
   return res.status(500).json({
    success: false,
-   message: "Terjadi kesalahan server saat mendaftar. Data tidak disimpan."
+   message: "Terjadi kesalahan server saat mendaftar. Silakan cek log server."
   });
  }
 };

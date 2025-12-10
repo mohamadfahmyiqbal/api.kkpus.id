@@ -59,9 +59,13 @@ app.use(router);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // SSL config (pastikan file ada)
+// const sslOptions = {
+//   key: fs.readFileSync(path.join(__dirname, "config/cert/localhost-key.pem")),
+//   cert: fs.readFileSync(path.join(__dirname, "config/cert/localhost.pem")),
+// };
 const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, "config/cert/localhost-key.pem")),
-  cert: fs.readFileSync(path.join(__dirname, "config/cert/localhost.pem")),
+  key: fs.readFileSync(path.join(__dirname, "config/pik1com074/private.key")),
+  cert: fs.readFileSync(path.join(__dirname, "config/pik1com074/certificate.cer")),
 };
 
 // ... (Kode untuk menangani HTTP dan HTTPS server)

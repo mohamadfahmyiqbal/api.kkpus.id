@@ -1,6 +1,5 @@
+// models/members.js
 import { Sequelize } from "sequelize";
-
-// --- DEFINISI MODEL MEMBER ---
 
 const Member = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -14,7 +13,8 @@ const Member = (sequelize) => {
         autoIncrement: true,
         allowNull: false,
       },
-      full_name: {
+      // Menggunakan full_name (Sesuai skema database yang Anda berikan)
+      full_name: { 
         type: DataTypes.STRING(255),
         allowNull: false,
       },
@@ -27,6 +27,7 @@ const Member = (sequelize) => {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
+      // Kolom lain sesuai skema
       gender: {
         type: DataTypes.STRING(10),
         allowNull: true,
@@ -56,19 +57,21 @@ const Member = (sequelize) => {
       },
       status_id: {
         type: DataTypes.BIGINT,
-        allowNull: false, // Foreign Key ke member_status
+        allowNull: false,
       },
-      // Kolom-kolom lain...
+      password_hash: { // Ditambahkan, karena ada di skema tapi tidak di model
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
     },
     {
       tableName: "members",
       timestamps: true,
-      underscored: true,
+      underscored: false,
     }
   );
 
   return MemberModel;
 };
 
-// Hanya mengekspor definisi model
 export default Member;
