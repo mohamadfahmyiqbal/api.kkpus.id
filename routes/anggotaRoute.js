@@ -6,6 +6,7 @@ import express from "express";
 import { getAnggotaProfile } from "../controllers/core/anggota/getAnggotaProfile.js"; // Asumsi path controller
 import { MidAnggota } from "../midlleware/MidAnggota.js";
 import submitRegistration from "../controllers/core/anggota/submitRegistration.js";
+import getRegistrationStatus from "../controllers/core/anggota/getRegistrationStatus.js";
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ const router = express.Router();
  */
 router.get("/anggota/profil", MidAnggota, getAnggotaProfile);
 router.post("/anggota/pendaftaran", MidAnggota, submitRegistration);
+router.get("/anggota/getRegistrationStatus", MidAnggota, getRegistrationStatus);
 
 // Tambahkan rute anggota lainnya di sini (misalnya: update profil)
 // router.put('/profil/update', MidAnggota, updateAnggotaProfile);
