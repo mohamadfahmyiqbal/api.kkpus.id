@@ -1,11 +1,9 @@
-// models/approvals.js
-
 import { Sequelize } from "sequelize";
 
-const Approvals = (sequelize) => {
+const Approval = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const ApprovalsModel = sequelize.define(
+  const ApprovalModel = sequelize.define(
     "approvals",
     {
       approval_id: {
@@ -14,67 +12,48 @@ const Approvals = (sequelize) => {
         autoIncrement: true,
         allowNull: false,
       },
-      approval_flow_id: {
-        // FK ke tabel approval_flows
-        type: DataTypes.BIGINT,
-        allowNull: false,
-      },
       approval_step_id: {
-        // FK ke tabel approval_steps
         type: DataTypes.BIGINT,
-        allowNull: false,
+        allowNull: false, // Foreign Key ke approval_steps
       },
       approver_member_id: {
-        // FK ke tabel users/members (Siapa yang menyetujui/menolak)
         type: DataTypes.BIGINT,
-        allowNull: false,
-        comment: "ID anggota/admin yang membuat keputusan",
+        allowNull: true, // Foreign Key ke members.member_id (Boleh null jika belum disetujui/diassign)
       },
-      action: {
-        type: DataTypes.ENUM("APPROVE", "REJECT"),
+      decision: {
+        type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED", "SKIPPED"), // Menambahkan PENDING dan SKIPPED untuk kelengkapan
         allowNull: false,
-        comment: "Keputusan yang diambil",
+        defaultValue: "PENDING",
       },
-      reason: {
+      decision_datetime: {
+        type: DataTypes.DATE,
+        allowNull: true, // Null sampai ada keputusan
+      },
+      note: {
         type: DataTypes.TEXT,
         allowNull: true,
-        comment: "Catatan atau alasan penolakan",
       },
-      approved_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        comment: "Waktu keputusan dibuat",
-      },
-      // Kolom `created_at` dan `updated_at` otomatis dari `timestamps: true`
     },
     {
-      timestamps: true,
-      tableName: "approvals",
-      // Untuk memastikan satu langkah hanya disetujui sekali oleh satu approver (opsional)
-      // indexes: [{ unique: true, fields: ['approval_step_id', 'approver_member_id'] }]
+      freezeTableName: true,
+      timestamps: true, // Mengaktifkan created_at dan updated_at
     }
   );
 
-  ApprovalsModel.associate = (models) => {
-    // Log milik satu Flow
-    ApprovalsModel.belongsTo(models.ApprovalFlows, {
-      foreignKey: "approval_flow_id",
-      as: "flow",
-    });
-    // Log milik satu Langkah
-    ApprovalsModel.belongsTo(models.ApprovalSteps, {
+  ApprovalModel.associate = (models) => {
+    // Approval milik satu Step
+    ApprovalModel.belongsTo(models.ApprovalStep, {
       foreignKey: "approval_step_id",
       as: "step",
     });
-    // Siapa yang membuat keputusan
-    ApprovalsModel.belongsTo(models.Members, {
-      // Asumsi: Members/Users adalah nama model untuk approver
+    // Approval dibuat oleh satu Member (Approver)
+    ApprovalModel.belongsTo(models.Member, { // Mengacu pada models/members.js
       foreignKey: "approver_member_id",
       as: "approver",
     });
   };
 
-  return ApprovalsModel;
+  return ApprovalModel;
 };
 
-export default Approvals;
+export default Approval;

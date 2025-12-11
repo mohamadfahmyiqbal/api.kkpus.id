@@ -1,3 +1,4 @@
+// models/member_registrations.js
 import { Sequelize } from "sequelize";
 
 const MemberRegistration = (sequelize) => {
@@ -15,9 +16,8 @@ const MemberRegistration = (sequelize) => {
    member_id: {
     // FK ke tabel members
     type: DataTypes.BIGINT,
-    allowNull: true,
+    allowNull: true, // Disesuaikan dengan kebutuhan Anda
    },
-   // PERUBAHAN: Mengganti 'name' menjadi 'full_name'
    full_name: {
     type: DataTypes.STRING(255),
     allowNull: false,
@@ -27,65 +27,42 @@ const MemberRegistration = (sequelize) => {
     allowNull: false,
     unique: true,
    },
-   password_hash: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
-   },
    phone_number: {
     type: DataTypes.STRING(20),
     allowNull: true,
    },
-   // PENAMBAHAN: nik_ktp
    nik_ktp: {
     type: DataTypes.STRING(30),
     allowNull: true,
    },
-
-   // KOLOM TAMBAHAN YANG DIBUTUHKAN OLEH submitRegistration.js:
-   address_ktp: { // Diambil dari submitRegistration.js
+   address_ktp: {
     type: DataTypes.TEXT,
     allowNull: true,
    },
-   member_type: { // Diambil dari submitRegistration.js
-    type: DataTypes.ENUM("calon", "reguler", "alb"),
-    allowNull: false,
-    defaultValue: "calon",
-   },
-   ktp_photo_path: { // Diambil dari submitRegistration.js
-    type: DataTypes.STRING(255),
-    allowNull: true,
-   },
-   selfie_photo_path: { // Diambil dari submitRegistration.js
-    type: DataTypes.STRING(255),
-    allowNull: true,
-   },
-   bank_name: { // Diambil dari submitRegistration.js
-    type: DataTypes.STRING(100),
-    allowNull: true,
-   },
-   account_number: { // Diambil dari submitRegistration.js
+   member_type: {
     type: DataTypes.STRING(50),
     allowNull: true,
    },
-   account_holder_name: { // Diambil dari submitRegistration.js
-    type: DataTypes.STRING(100),
+   ktp_photo_path: {
+    type: DataTypes.TEXT,
     allowNull: true,
    },
-   registration_date: {
-    type: DataTypes.DATE,
+   selfie_photo_path: {
+    type: DataTypes.TEXT,
     allowNull: true,
-    defaultValue: DataTypes.NOW,
    },
-
-   // Approval Flow Columns:
    registration_status: {
-    type: DataTypes.ENUM(
-     "verifikasi_dokumen",
-     "verifikasi_pendaftaran",
-     "aktif"
-    ),
+    type: DataTypes.ENUM("verifikasi_dokumen", "wawancara", "verifikasi_final", "pembayaran", "selesai"),
     allowNull: false,
     defaultValue: "verifikasi_dokumen",
+    comment: "Status proses pendaftaran",
+   },
+   // 🔥 DITAMBAHKAN: Kolom 'registered_at'
+   registered_at: {
+    type: DataTypes.DATE, // Menggunakan DataTypes.DATE untuk tipe datetime
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    comment: "Tanggal/waktu pendaftaran pertama kali dikirim",
    },
    approval_flow_id: {
     type: DataTypes.BIGINT,
@@ -101,44 +78,32 @@ const MemberRegistration = (sequelize) => {
     type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED"),
     allowNull: false,
     defaultValue: "PENDING",
-    comment: "Status akhir proses persetujuan",
+    comment: "Status akhir pendaftaran",
    },
-   registered_at: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    defaultValue: DataTypes.NOW,
-   },
-   // =======================================================
+   // Kolom 'createdAt' dan 'updatedAt' akan ditangani oleh 'timestamps: true' di opsi model.
   },
   {
-   timestamps: true, // Menyimpan createdAt dan updatedAt
-   tableName: "member_registrations",
+   freezeTableName: true,
+   timestamps: true,
+   indexes: [
+    {
+     unique: true,
+     fields: ['member_id', 'final_status'],
+     where: { final_status: { [Sequelize.Op.ne]: 'REJECTED' } }, // Hanya satu PENDING/APPROVED per member
+     name: 'unique_active_registration_per_member'
+    }
+   ]
   }
  );
 
- // =======================================================
- // DEFINISI ASOSIASI (Relasi)
- // =======================================================
+ // Asosiasi (jika ada)
  MemberRegistrationModel.associate = (models) => {
-  MemberRegistrationModel.belongsTo(models.ApprovalFlows, {
-   foreignKey: "approval_flow_id",
-   as: "approvalFlow",
-   onDelete: "SET NULL",
-  });
-
-  MemberRegistrationModel.belongsTo(models.ApprovalSteps, {
-   foreignKey: "current_step_id",
-   as: "currentStep",
-   onDelete: "SET NULL",
-  });
-
-  MemberRegistrationModel.belongsTo(models.Members, {
+  MemberRegistrationModel.belongsTo(models.Member, {
    foreignKey: "member_id",
    as: "member",
-   onDelete: "SET NULL",
   });
+  // Tambahkan asosiasi lain ke ApprovalFlow, ApprovalStep, dll.
  };
- // =======================================================
 
  return MemberRegistrationModel;
 };

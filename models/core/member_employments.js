@@ -1,3 +1,4 @@
+// models/member_employments.js (KONFIRMASI)
 import { Sequelize } from "sequelize";
 
 const MemberEmployment = (sequelize) => {
@@ -30,6 +31,13 @@ const MemberEmployment = (sequelize) => {
     freezeTableName: true, 
     timestamps: true,
   });
+
+  MemberEmploymentModel.associate = (models) => {
+    MemberEmploymentModel.belongsTo(models.Member, {
+        foreignKey: "member_id",
+        as: "member",
+    });
+  };
 
   return MemberEmploymentModel;
 };

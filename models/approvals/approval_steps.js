@@ -1,11 +1,9 @@
-// models/approval_steps.js
-
 import { Sequelize } from "sequelize";
 
-const ApprovalSteps = (sequelize) => {
+const ApprovalStep = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const ApprovalStepsModel = sequelize.define(
+  const ApprovalStepModel = sequelize.define(
     "approval_steps",
     {
       approval_step_id: {
@@ -15,55 +13,47 @@ const ApprovalSteps = (sequelize) => {
         allowNull: false,
       },
       approval_flow_id: {
-        // FK ke tabel approval_flows
         type: DataTypes.BIGINT,
-        allowNull: false,
+        allowNull: false, // Foreign Key ke approval_flows
       },
       step_order: {
-        // KRUSIAL untuk dinamis: 1, 2, 3, dst.
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: "Urutan langkah persetujuan",
       },
       role_id: {
-        // FK ke tabel user_roles
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        comment: "Peran yang harus menyetujui langkah ini",
+        type: DataTypes.BIGINT,
+        allowNull: false, // Foreign Key ke user_roles.role_id
       },
       step_name: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        comment: 'Nama langkah (e.g., "Persetujuan Pengawas")',
       },
-      // Kolom `created_at` dan `updated_at` otomatis dari `timestamps: true`
     },
     {
-      timestamps: true,
-      tableName: "approval_steps",
+      freezeTableName: true,
+      timestamps: true, // Mengaktifkan created_at dan updated_at
     }
   );
 
-  ApprovalStepsModel.associate = (models) => {
-    // Langkah adalah bagian dari Flow (Induk)
-    ApprovalStepsModel.belongsTo(models.ApprovalFlows, {
+  ApprovalStepModel.associate = (models) => {
+    // Setiap Step milik satu Flow
+    ApprovalStepModel.belongsTo(models.ApprovalFlow, {
       foreignKey: "approval_flow_id",
       as: "flow",
     });
-    // Langkah disetujui oleh Role tertentu
-    ApprovalStepsModel.belongsTo(models.UserRoles, {
-      // Asumsi: UserRoles adalah nama model untuk peran
+    // Setiap Step membutuhkan Role tertentu untuk menyetujui
+    ApprovalStepModel.belongsTo(models.UserRole, { // Mengacu pada models/user_roles.js
       foreignKey: "role_id",
-      as: "requiredRole",
+      as: "required_role",
     });
-    // Langkah dapat memiliki banyak Log Approval (walaupun idealnya hanya satu log per langkah)
-    ApprovalStepsModel.hasMany(models.Approvals, {
+    // Satu Step bisa memiliki banyak persetujuan (approvals)
+    ApprovalStepModel.hasMany(models.Approval, {
       foreignKey: "approval_step_id",
-      as: "approvalLogs",
+      as: "approvals",
     });
   };
 
-  return ApprovalStepsModel;
+  return ApprovalStepModel;
 };
 
-export default ApprovalSteps;
+export default ApprovalStep;

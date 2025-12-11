@@ -1,3 +1,4 @@
+// models/member_bank_accounts.js (KOREKSI NAMA KOLOM)
 import { Sequelize } from "sequelize";
 
 const MemberBankAccount = (sequelize) => {
@@ -18,11 +19,13 @@ const MemberBankAccount = (sequelize) => {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    account_number: {
+    // 🚨 KOREKSI: Diganti dari 'account_number'
+    bank_account_no: { 
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    account_holder_name: {
+    // 🚨 KOREKSI: Diganti dari 'account_holder_name'
+    account_holder: { 
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -30,6 +33,13 @@ const MemberBankAccount = (sequelize) => {
     freezeTableName: true, 
     timestamps: true,
   });
+
+  MemberBankAccountModel.associate = (models) => {
+      MemberBankAccountModel.belongsTo(models.Member, {
+          foreignKey: "member_id",
+          as: "member",
+      });
+  };
 
   return MemberBankAccountModel;
 };

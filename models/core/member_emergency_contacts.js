@@ -1,3 +1,4 @@
+// models/member_emergency_contacts.js (KONFIRMASI)
 import { Sequelize } from "sequelize";
 
 const MemberEmergencyContact = (sequelize) => {
@@ -30,6 +31,13 @@ const MemberEmergencyContact = (sequelize) => {
     freezeTableName: true, 
     timestamps: true,
   });
+
+  MemberEmergencyContactModel.associate = (models) => {
+    MemberEmergencyContactModel.belongsTo(models.Member, {
+        foreignKey: "member_id",
+        as: "member",
+    });
+  };
 
   return MemberEmergencyContactModel;
 };
