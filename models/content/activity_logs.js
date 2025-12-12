@@ -1,10 +1,13 @@
+// 📁 models/content/activity_logs.js (KODE FINAL & FIXED)
+
 import { Sequelize } from "sequelize";
 
 const ActivityLog = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const ActivityLogModel = sequelize.define("activity_logs", {
-    log_id: {
+  const ActivityLogModel = sequelize.define("ActivityLog", {
+    // 🔥 FIX UTAMA: Ganti log_id ke activity_id
+    activity_id: { 
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
@@ -18,17 +21,25 @@ const ActivityLog = (sequelize) => {
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    description: {
+    // 🔥 FIX: Ganti 'description' ke 'detail'
+    detail: { 
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    ip_address: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
+    // 🔥 FIX: Tambahkan kolom activity_datetime
+    activity_datetime: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: DataTypes.NOW,
     },
+    // ip_address dihapus karena tidak ada di skema DB yang Anda sebutkan
   }, { 
+    tableName: 'activity_logs', // Pastikan nama tabel benar
     freezeTableName: true, 
     timestamps: true,
+    // FIX: Mapekan kolom created_at dan updated_at
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   });
 
   return ActivityLogModel;

@@ -1,4 +1,4 @@
-// src/models/bills.js
+// 📁 src/models/bills.js (FINAL & REKOMENDASI FOREIGN KEY)
 
 import { Sequelize } from "sequelize";
 
@@ -14,8 +14,18 @@ const Bill = (sequelize) => {
         autoIncrement: true,
         allowNull: false,
       },
+      // 🚨 PENAMBAHAN 1: Foreign Key ke BillType (untuk relasi Bill -> BillType)
+      bill_type_id: {
+        type: DataTypes.BIGINT, 
+        allowNull: true, 
+      },
+      // 🚨 PENAMBAHAN 2: Foreign Key ke Member (untuk relasi Bill -> Member)
+      member_id: {
+        type: DataTypes.INTEGER, // Asumsi Member PK adalah INTEGER
+        allowNull: false, 
+      },
       member_no: {
-        type: DataTypes.STRING(20), // Member_no sesuai dengan data user: "000512251717"
+        type: DataTypes.STRING(20), // Tetap dipertahankan untuk referensi cepat
         allowNull: false,
       },
       description: {
@@ -23,17 +33,17 @@ const Bill = (sequelize) => {
         allowNull: false,
       },
       amount: {
-        type: DataTypes.DECIMAL(15, 2), // Menyimpan jumlah dengan dua desimal
+        type: DataTypes.DECIMAL(15, 2), 
         allowNull: false,
       },
       due_date: {
-        type: DataTypes.DATE, // Batas waktu pembayaran
+        type: DataTypes.DATE, 
         allowNull: false,
       },
       status: {
         type: DataTypes.STRING(50),
         allowNull: false,
-        defaultValue: "pending", // Status: 'pending', 'paid', 'cancelled'
+        defaultValue: "pending", 
       },
       // Kolom timestamps (createdAt, updatedAt) otomatis ditambahkan oleh Sequelize
     },

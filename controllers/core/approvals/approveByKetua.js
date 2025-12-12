@@ -1,8 +1,20 @@
-// 📁 controllers/core/approvals/approveByKetua.js (KODE FINAL)
+// 📁 controllers/core/approvals/approveByKetua.js (KODE FINAL & FIXED)
 
 import db from "../../../models/index.js";
-// Model yang diperlukan: Pendaftaran, Anggota (untuk membuat akun baru), Notifikasi, Log
-const { member_registrations, members, Notification, ActivityLog } = db;
+// Tambahkan model Approval
+const { 
+  MemberRegistration, 
+  Member, 
+  Notification, 
+  ActivityLog, 
+  Approval, // <-- FIX: Model Approval
+  // Kita asumsikan MemberRegistration sudah diperbarui oleh Pengawas
+  // sehingga current_step_id sudah menunjuk ke step Ketua.
+} = db;
+
+// Asumsi ID Langkah Ketua adalah 2 (Perlu dicek di tabel approval_steps Anda)
+// Ini adalah step yang dilanjutkan dari Pengawas (Step ID 1 + 1)
+const APPROVAL_STEP_KETUA_ID = 2; 
 
 /**
  * Controller untuk menangani persetujuan (approve/reject) pendaftaran oleh Ketua.
@@ -10,8 +22,8 @@ const { member_registrations, members, Notification, ActivityLog } = db;
  */
 export const approveByKetua = async (req, res) => {
   const { registrationId } = req.params;
-  const { action, notes } = req.body; // action: 'approve' atau 'reject'
-  const approverId = req.userId; // ID Anggota/User yang login (dari MidAnggota)
+  const { action, notes } = req.body; 
+  const approverId = req.userId; 
 
   if (action !== "approve" && action !== "reject") {
     return res
@@ -24,7 +36,7 @@ export const approveByKetua = async (req, res) => {
   try {
     transaction = await db.sequelize.transaction(); // Mulai transaksi
 
-    const registration = await member_registrations.findByPk(registrationId, {
+    const registration = await MemberRegistration.findByPk(registrationId, {
       transaction,
     });
 
@@ -35,91 +47,93 @@ export const approveByKetua = async (req, res) => {
         .json({ message: "Data pendaftaran tidak ditemukan." });
     }
 
-    // 2. Validasi Status (Harus sudah di-APPROVED oleh Pengawas)
+    // 2. Validasi Status (Harus PENDING di FINAL STATUS dan berada di STEP KETUA)
     if (
-      registration.supervisor_status !== "APPROVED" ||
-      registration.final_status !== "PENDING"
+      registration.final_status !== "PENDING" ||
+      registration.current_step_id !== APPROVAL_STEP_KETUA_ID 
     ) {
       await transaction.rollback();
       return res.status(400).json({
         message:
-          "Pendaftaran belum disetujui oleh Pengawas atau sudah diproses.",
+          `Pendaftaran tidak berada di tahap Ketua (Step ID: ${APPROVAL_STEP_KETUA_ID}) atau sudah diselesaikan.`,
       });
     }
+    
+    // 3. LOG KEPUTUSAN KE TABEL APPROVALS (Sama dengan approveByPengawas)
+    await Approval.create({
+      approval_step_id: APPROVAL_STEP_KETUA_ID,
+      approver_member_id: approverId,
+      decision: action.toUpperCase(),
+      decision_datetime: new Date(),
+      note: notes || `Keputusan oleh Ketua (Step ${APPROVAL_STEP_KETUA_ID}).`,
+    }, { transaction });
 
-    const updateData = {
-      manager_status: action.toUpperCase(),
-      manager_approved_at: action === "approve" ? new Date() : null,
-      manager_notes: notes || `Otomatis ${action.toUpperCase()} oleh Ketua.`,
-      final_status: action.toUpperCase(), // Status akhir ditentukan Ketua
-      manager_approver_id: approverId, // ✅ FIX: Simpan ID Ketua yang menyetujui/menolak
-    };
 
+    let updateData = {};
     let responseMessage;
     let notificationMessage;
+    const isApproved = action === "approve";
 
-    if (action === "approve") {
-      // 3A. FINAL STEP: Disetujui Penuh
-
-      // Data yang diperlukan untuk membuat Member baru (Ambil dari tabel registrasi)
-      const newMemberData = {
-        // Kolom penting yang disalin dari pendaftaran ke tabel master anggota
-        member_id: registration.member_id, // Gunakan ID yang sama
+    if (isApproved) {
+      // 4A. FINAL STEP: Disetujui Penuh -> FINAL_STATUS = APPROVED
+      updateData.final_status = "APPROVED"; 
+      
+      // Update data anggota master (members)
+      const finalMemberData = {
         full_name: registration.full_name,
         email: registration.email,
         phone_number: registration.phone_number,
         nik_ktp: registration.nik_ktp,
-        address_ktp: registration.address_ktp,
+        address: registration.address_ktp, 
         member_type: registration.member_type,
-        registered_at: new Date(),
-        member_status_id: 1, // Asumsi 1 = Aktif, Sesuaikan dengan ID status_id Anda
-        // Kolom lainnya (misal: password_hash, dll. harus dikelola di proses login/registrasi awal)
+        join_date: new Date(), 
+        status_id: 1, // Asumsi 1 = Aktif
       };
 
-      // 💡 Hapus data registrasi dari data member jika sudah ada di tabel members
-      // members.destroy({ where: { member_id: registration.member_id }, transaction });
-
-      // Buat record di tabel members (ini adalah akun anggota final)
-      await members.create(newMemberData, { transaction });
+      await Member.update(finalMemberData, { 
+        where: { member_id: registration.member_id }, 
+        transaction 
+      });
 
       responseMessage =
-        "Pendaftaran disetujui penuh. Akun anggota berhasil dibuat.";
+        "Pendaftaran disetujui penuh. Akun anggota berhasil diaktifkan.";
       notificationMessage =
         "Selamat! Pendaftaran anggota Anda telah disetujui. Anda sekarang adalah Anggota Penuh.";
     } else {
-      // 3B. Rejected: Status akhir REJECTED
+      // 4B. Rejected: Status akhir REJECTED
+      updateData.final_status = "REJECTED";
       responseMessage = "Pendaftaran ditolak oleh Ketua. Proses selesai.";
       notificationMessage =
         "Maaf, pendaftaran Anda ditolak oleh Ketua. Proses selesai.";
     }
 
-    // 4. Update Status Pendaftaran
+    // 5. Update Status Pendaftaran
     await registration.update(updateData, { transaction });
 
-    // 5. Log Aktivitas
+    // 6. Log Aktivitas (FIXED: Menggunakan activity_type dan detail)
     await ActivityLog.create(
       {
         member_id: approverId,
-        action: action.toUpperCase(),
-        details: `Pendaftaran ID ${registrationId} di${action} oleh Ketua.`,
-        model_name: "MemberRegistration",
-        model_id: registrationId,
+        activity_type: `Pendaftaran Anggota ${action.toUpperCase()}`, // FIX Field
+        detail: `Pendaftaran ID ${registrationId} di${action} oleh Ketua.`, // FIX Field
+        activity_datetime: new Date(), // FIX Field
       },
       { transaction }
     );
 
-    // 6. Notifikasi ke Anggota pendaftar
+    // 7. Notifikasi ke Anggota pendaftar (FIXED: Menggunakan content dan sent_datetime)
     await Notification.create(
       {
-        member_id: registration.member_id, // ID Anggota yang mendaftar
+        member_id: registration.member_id, 
         title: `Pendaftaran Anggota Di${action.toUpperCase()}`,
-        message: notificationMessage,
+        content: notificationMessage, // FIX Field
         status: "SENT",
+        sent_datetime: new Date(), // FIX Field
       },
       { transaction }
     );
 
-    // 7. Commit Transaksi
+    // 8. Commit Transaksi
     await transaction.commit();
 
     return res.status(200).json({ status: true, message: responseMessage });

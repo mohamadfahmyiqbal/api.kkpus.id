@@ -1,4 +1,4 @@
-// src/models/index.js (FINAL & KOREKSI EagerLoadingError)
+// src/models/index.js (FINAL & KOREKSI EagerLoadingError + SequelizeAssociationError)
 
 // 🔥 PERUBAHAN UTAMA: Import instance Sequelize yang sudah terhubung
 import sequelizeInstance from "../config/pus.js";
@@ -18,7 +18,11 @@ import MemberEmergencyContact from "./core/member_emergency_contacts.js";
 import MemberBankAccount from "./core/member_bank_accounts.js";
 import MemberRegistration from "./core/member_registrations.js";
 import Account from "./core/accounts.js";
+
+// 🚨 BILLING MODELS (WAJIB DITAMBAH UNTUK FIX ERROR INI)
 import Bill from "./billing/bills.js";
+import BillItem from "./billing/bill_items.js"; // ✅ DITAMBAHKAN
+import BillType from "./billing/bill_type.js"; // ✅ DITAMBAHKAN
 
 // 2. CONTENT
 import Article from "./content/articles.js";
@@ -40,8 +44,16 @@ import SavingsProduct from "./savings/savings_products.js";
 import MemberSavingsAccount from "./savings/member_savings_accounts.js";
 
 // 6. APPROVALS
-import ApprovalFlow from "./approvals/approval_flows.js"; // Atau ./approvals/approval_flows.js
-import ApprovalStep from "./approvals/approval_steps.js"; // Atau ./approvals/approval_steps.js
+import ApprovalFlow from "./approvals/approval_flows.js";
+import ApprovalStep from "./approvals/approval_steps.js";
+import Approval from "./approvals/approvals.js";
+
+// 7. INVENTORY (Asumsi: Model ini menyebabkan konflik alias 'items')
+// Anda harus mengimpor model-model ini jika ada
+// import Product from "./inventory/products.js";
+// import ProductStock from "./inventory/product_stocks.js"; 
+
+
 // Inisialisasi objek ekspor
 const db = {};
 db.sequelize = sequelizeInstance;
@@ -61,7 +73,11 @@ db.MemberEmergencyContact = MemberEmergencyContact(sequelizeInstance);
 db.MemberBankAccount = MemberBankAccount(sequelizeInstance);
 db.MemberRegistration = MemberRegistration(sequelizeInstance);
 db.Account = Account(sequelizeInstance);
+
+// 🚨 BILLING MODELS DEFINITION (WAJIB DITAMBAHKAN UNTUK FIX ERROR INI)
 db.Bill = Bill(sequelizeInstance);
+db.BillItem = BillItem(sequelizeInstance); // ✅ DITAMBAHKAN
+db.BillType = BillType(sequelizeInstance); // ✅ DITAMBAHKAN
 
 // CONTENT
 db.Article = Article(sequelizeInstance);
@@ -83,9 +99,15 @@ db.SavingsProduct = SavingsProduct(sequelizeInstance);
 db.MemberSavingsAccount = MemberSavingsAccount(sequelizeInstance);
 
 // APPROVALS
-// ✅ YANG HARUS DITAMBAHKAN/DIPERIKSA
-db.ApprovalFlow = ApprovalFlow(sequelizeInstance, Sequelize); // Menggunakan kunci 'ApprovalFlow'
-db.ApprovalStep = ApprovalStep(sequelizeInstance, Sequelize); // Menggunakan kunci 'ApprovalStep'
+// Catatan: Menghapus argumen 'Sequelize' jika tidak digunakan di dalam definisi model.
+db.ApprovalFlow = ApprovalFlow(sequelizeInstance); 
+db.ApprovalStep = ApprovalStep(sequelizeInstance); 
+db.Approval = Approval(sequelizeInstance); 
+
+// 🚨 INVENTORY MODELS DEFINITION (Jika diperlukan)
+// db.Product = Product(sequelizeInstance); 
+// db.ProductStock = ProductStock(sequelizeInstance); 
+
 // ====================================================================
 // C. DEFINISIKAN ASOSIASI (Relasi antar Model)
 // ====================================================================
@@ -94,33 +116,20 @@ db.ApprovalStep = ApprovalStep(sequelizeInstance, Sequelize); // Menggunakan kun
 
 // Asosiasi MemberStatus dan Member
 db.MemberStatus.hasMany(db.Member, {
-  foreignKey: "status_id",
-  as: "members",
+  foreignKey: "status_id",
+  as: "members",
 });
 db.Member.belongsTo(db.MemberStatus, { foreignKey: "status_id", as: "status" });
 
 // ✅ KOREKSI: Tambahkan Asosiasi Member dan MemberRoleAssignment
-// Asumsi: Foreign Key di tabel member_role_assignments adalah member_id.
-// Catatan: Jika Anda menggunakan `member_id` sebagai kunci, pastikan tidak ada `targetKey` yang bertentangan.
+// Catatan: Ini adalah fix dari error sebelumnya.
 db.Member.hasMany(db.MemberRoleAssignment, {
-  foreignKey: "member_id", // Asumsi FK di MemberRoleAssignment
-  as: "roleAssignments", // Ganti dengan alias yang digunakan di controller getAnggotaProfile jika berbeda
+  foreignKey: "member_id",
+  as: "roleAssignments", 
 });
 db.MemberRoleAssignment.belongsTo(db.Member, {
-  foreignKey: "member_id",
-  as: "member", // Alias untuk relasi kembali ke Member
-});
-
-// Asosiasi Member dan Bill
-db.Member.hasMany(db.Bill, {
-  foreignKey: "member_no",
-  sourceKey: "member_no",
-  as: "bills",
-});
-db.Bill.belongsTo(db.Member, {
-  foreignKey: "member_no",
-  targetKey: "member_no",
-  as: "member",
+  foreignKey: "member_id",
+  as: "member",
 });
 
 // Asosiasi Member dan Account
@@ -129,84 +138,140 @@ db.Account.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 
 // Asosiasi UserRole dan MemberRoleAssignment
 db.UserRole.hasMany(db.MemberRoleAssignment, {
-  foreignKey: "role_id",
-  as: "assignments",
+  foreignKey: "role_id",
+  as: "assignments",
+});
+db.MemberRoleAssignment.belongsTo(db.UserRole, { 
+  foreignKey: "role_id", 
+  as: "role", 
 });
 
 // Asosiasi Member dan MemberRegistration
 db.Member.hasMany(db.MemberRegistration, {
-  foreignKey: "member_id",
-  as: "registration",
+  foreignKey: "member_id",
+  as: "registration",
 });
 db.MemberRegistration.belongsTo(db.Member, {
-  foreignKey: "member_id",
-  as: "member",
+  foreignKey: "member_id",
+  as: "member",
 });
 
-// 2. CONTENT RELATIONS (Jika ada relasi ke Member, tambahkan di sini)
+// 2. BILLING RELATIONS (DIPERTAHANKAN)
+// Bill milik satu Member
+db.Member.hasMany(db.Bill, {
+    foreignKey: "member_no",
+    sourceKey: "member_no",
+    as: "bills",
+});
+db.Bill.belongsTo(db.Member, {
+    foreignKey: "member_no",
+    targetKey: "member_no",
+    as: "member", // WAJIB ada di getInvoiceDetail
+});
 
-// 3. FINANCING RELATIONS
+// Bill memiliki banyak BillItem (Alias 'items' HARUS unik untuk Billing)
+db.Bill.hasMany(db.BillItem, {
+    foreignKey: "bill_id",
+    sourceKey: "bill_id", 
+    as: "items", // ✅ PERTAHANKAN: Digunakan oleh getInvoiceDetail.js
+});
+// BillItem milik satu Bill
+db.BillItem.belongsTo(db.Bill, {
+    foreignKey: "bill_id",
+    targetKey: "bill_id", 
+    as: "bill",
+});
+
+// Bill memiliki satu BillType
+db.Bill.belongsTo(db.BillType, {
+    foreignKey: "bill_type_id",
+    as: "billType",
+});
+
+// 3. CONTENT RELATIONS (Jika ada relasi ke Member, tambahkan di sini)
+
+// 4. FINANCING RELATIONS
 db.SukukOrder.belongsTo(db.SukukIssue, {
-  foreignKey: "sukuk_issue_id",
-  as: "issue",
+  foreignKey: "sukuk_issue_id",
+  as: "issue",
 });
 
-// 4. LOAN RELATIONS
+// 5. LOAN RELATIONS
 db.LoanProduct.hasMany(db.MemberLoan, {
-  foreignKey: "product_id",
-  as: "loans",
+  foreignKey: "product_id",
+  as: "loans",
 });
 db.MemberLoan.belongsTo(db.LoanProduct, {
-  foreignKey: "product_id",
-  as: "product",
+  foreignKey: "product_id",
+  as: "product",
 });
 db.Member.hasMany(db.MemberLoan, {
-  foreignKey: "member_id",
-  as: "member_loans",
+  foreignKey: "member_id",
+  as: "member_loans",
 });
 db.MemberLoan.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 
-// 5. SAVINGS RELATIONS
+// 6. SAVINGS RELATIONS
 db.Member.hasMany(db.MemberSavingsAccount, {
-  foreignKey: "member_id",
-  as: "savings_accounts",
+  foreignKey: "member_id",
+  as: "savings_accounts",
 });
 db.MemberSavingsAccount.belongsTo(db.Member, {
-  foreignKey: "member_id",
-  as: "member",
+  foreignKey: "member_id",
+  as: "member",
 });
 db.SavingsProduct.hasMany(db.MemberSavingsAccount, {
-  foreignKey: "product_id",
-  as: "accounts",
+  foreignKey: "product_id",
+  as: "accounts",
 });
 db.MemberSavingsAccount.belongsTo(db.SavingsProduct, {
-  foreignKey: "product_id",
-  as: "product",
+  foreignKey: "product_id",
+  as: "product",
 });
 
-// APPROVALS
+// 7. APPROVALS
 // Relasi MemberRegistration dan Approval
 db.MemberRegistration.belongsTo(db.ApprovalFlow, {
-  foreignKey: "approval_flow_id",
-  as: "flow",
+  foreignKey: "approval_flow_id",
+  as: "flow",
 });
 db.MemberRegistration.belongsTo(db.ApprovalStep, {
-  foreignKey: "current_step_id",
-  as: "currentStep",
+  foreignKey: "current_step_id",
+  as: "currentStep",
 });
 
 // Relasi Approval Flow dan Step
 db.ApprovalFlow.hasMany(db.ApprovalStep, {
-  foreignKey: "approval_flow_id",
-  as: "steps",
+  foreignKey: "approval_flow_id",
+  as: "steps",
 });
 db.ApprovalStep.belongsTo(db.ApprovalFlow, {
-  foreignKey: "approval_flow_id",
-  as: "flow",
+  foreignKey: "approval_flow_id",
+  as: "flow",
 });
 db.ApprovalStep.belongsTo(db.UserRole, {
-  foreignKey: "role_id",
-  as: "verifierRole",
+  foreignKey: "role_id",
+  as: "verifierRole",
 });
+
+// Relasi Approval
+db.Approval.belongsTo(db.ApprovalStep, {
+    foreignKey: "approval_step_id",
+    as: "step",
+});
+db.Approval.belongsTo(db.Member, {
+    foreignKey: "approver_member_id",
+    as: "approver",
+});
+
+
+// 8. 🚨 INVENTORY RELATIONS (Koreksi Alias untuk menghindari konflik dengan Bill.items)
+// Anda harus memastikan model Product dan ProductStock diinisialisasi di B.
+/*
+db.Product.hasMany(db.ProductStock, {
+  foreignKey: 'product_id',
+  as: 'productStocks', // ✅ KOREKSI: Menggunakan alias UNIK 'productStocks'
+});
+*/
 
 export default db;
