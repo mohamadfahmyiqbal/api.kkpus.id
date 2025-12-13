@@ -1,4 +1,4 @@
-// controllers/core/anggota/submitRegistration.js (FINAL DENGAN APPROVAL DAN NOTIFIKASI REVISI)
+// controllers/core/anggota/submitRegistration.js (FINAL DENGAN PENGAMBILAN ID APPROVAL DINAMIS)
 
 import fs from "fs";
 import path from "path";
@@ -16,7 +16,8 @@ const {
   UserRole, // Untuk logic notifikasi
   MemberRoleAssignment, // Untuk logic notifikasi
   Notification, // Untuk logic notifikasi
-  ApprovalStep, // <-- Model ini WAJIB diimpor untuk mendapatkan role_id dari step
+  ApprovalFlow, // ✅ Tambah: Untuk mendapatkan Flow ID
+  ApprovalStep, // ✅ Tambah: Untuk mendapatkan Step ID dan Role ID awal
 } = db;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +50,7 @@ const saveBase64Image = (base64Image, nik, fileType) => {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
+  // Menghindari konflik dengan menambahkan timestamp
   const publicPath = `/uploads/anggota/${nik}_${fileType}_${Date.now()}.${extension}`;
   const fullPath = path.join(rootDir, "public", publicPath);
 
@@ -72,14 +74,14 @@ export const submitRegistration = async (req, res) => {
     occupation,
     employer_name,
     employer_address,
-    // Data Kontak Darurat (menggunakan nama field dari Step6EmergencyContact.jsx)
+    // Data Kontak Darurat
     contact_name,
-    phone_number_emergency, // Akan disimpan di kolom 'phone_number' di tabel Emergency Contact
+    phone_number_emergency,
     relation,
-    // Data Bank (menggunakan nama field dari Step7BankData.jsx)
+    // Data Bank
     bank_name,
-    bank_account_no, // Akan disimpan di kolom 'bank_account_no' di tabel Bank Account
-    account_holder, // Akan disimpan di kolom 'account_holder' di tabel Bank Account
+    bank_account_no,
+    account_holder,
     // Foto
     foto_ktp,
     foto_swafoto,
@@ -91,7 +93,6 @@ export const submitRegistration = async (req, res) => {
   try {
     // 2. Validasi Dasar
     if (!member_id) {
-      // Baris ini sekarang seharusnya tidak pernah tercapai jika MidAnggota berjalan
       return res.status(400).json({
         success: false,
         message: "member_id tidak ditemukan (Middleware gagal).",
@@ -113,9 +114,34 @@ export const submitRegistration = async (req, res) => {
     const swafotoPublicPath = saveBase64Image(foto_swafoto, nik_ktp, "swafoto");
     tempPaths.push(swafotoPublicPath);
 
-    // 4. ** LOGIC APPROVAL BARU: Tentukan Flow ID dan Step ID Awal **
-    const REGISTRATION_APPROVAL_FLOW_ID = 2; // ID Flow Pendaftaran Anggota (sesuai data DB)
-    const INITIAL_APPROVAL_STEP_ID = 1; // ID Step awal (e.g., Verifikasi Dokumen)
+    // 4. ** LOGIC APPROVAL: Tentukan Flow ID dan Step ID Awal secara DINAMIS **
+    const FLOW_NAME = "Pendaftaran Anggota"; // Sesuai data approval_flows
+
+    const registrationFlow = await ApprovalFlow.findOne({
+      where: { flow_name: FLOW_NAME },
+    });
+
+    if (!registrationFlow) {
+      // Jika flow tidak ditemukan, proses harus dihentikan
+      throw new Error(
+        `Konfigurasi Flow Persetujuan '${FLOW_NAME}' tidak ditemukan di database.`
+      );
+    }
+
+    // Cari langkah pertama (step_order terendah) dari flow yang ditemukan
+    const initialStep = await ApprovalStep.findOne({
+      where: { approval_flow_id: registrationFlow.approval_flow_id },
+      order: [["step_order", "ASC"]], // Mengambil langkah dengan step_order terendah
+    });
+
+    if (!initialStep) {
+      throw new Error(
+        "Langkah awal persetujuan tidak ditemukan untuk flow ini. Pastikan step_order sudah disetel."
+      );
+    }
+
+    const REGISTRATION_APPROVAL_FLOW_ID = registrationFlow.approval_flow_id;
+    const INITIAL_APPROVAL_STEP_ID = initialStep.approval_step_id;
 
     // 5. Simpan semua data ke DB dalam satu transaksi (untuk atomisitas)
     const result = await db.sequelize.transaction(async (t) => {
@@ -131,10 +157,10 @@ export const submitRegistration = async (req, res) => {
           member_type: tipeAnggota,
           ktp_photo_path: ktpPublicPath,
           selfie_photo_path: swafotoPublicPath,
-          // 🚨 TAMBAHKAN FIELD APPROVAL
+          // ✅ TAMBAHKAN FIELD APPROVAL DINAMIS
           approval_flow_id: REGISTRATION_APPROVAL_FLOW_ID,
           current_step_id: INITIAL_APPROVAL_STEP_ID,
-          registration_status: "verifikasi_dokumen", // Pastikan status awal diisi
+          registration_status: "verifikasi_dokumen", // Status awal ENUM
           final_status: "PENDING",
         },
         { transaction: t }
@@ -191,7 +217,7 @@ export const submitRegistration = async (req, res) => {
     });
 
     // *******************************************************************
-    // 6. LOGIC NOTIFIKASI BARU (Untuk Pendaftar dan Petugas Sesuai Role Step Awal)
+    // 6. LOGIC NOTIFIKASI BARU (Setelah Transaksi Utama Sukses)
     try {
       if (Notification && ApprovalStep && UserRole && MemberRoleAssignment) {
         const finalNotifications = [];
@@ -200,7 +226,6 @@ export const submitRegistration = async (req, res) => {
         finalNotifications.push({
           member_id: member_id, // ID Anggota yang submit pendaftaran
           title: "Pendaftaran Berhasil Dikirim",
-          // Menggunakan 'content' sesuai skema database
           content:
             "Pendaftaran Anda telah berhasil dikirim dan akan segera diproses oleh tim kami.",
           sent_datetime: new Date(),
@@ -209,50 +234,40 @@ export const submitRegistration = async (req, res) => {
 
         // 6.2. NOTIFIKASI UNTUK PETUGAS YANG BERTANGGUNG JAWAB PADA LANGKAH AWAL
 
-        // Ambil Role ID dari Langkah Persetujuan Awal
-        const initialStep = await ApprovalStep.findOne({
-          where: { approval_step_id: INITIAL_APPROVAL_STEP_ID },
-          attributes: ["role_id"],
+        // ✅ MENGGUNAKAN ROLE_ID DARI LANGKAH AWAL YANG SUDAH DIAMBIL
+        const requiredRoleId = initialStep.role_id;
+
+        // Cari semua member yang memiliki Role ID tersebut
+        const targetApprovers = await MemberRoleAssignment.findAll({
+          where: { role_id: requiredRoleId },
         });
 
-        if (initialStep && initialStep.role_id) {
-          const requiredRoleId = initialStep.role_id;
+        if (targetApprovers.length > 0) {
+          const approverMemberIds = targetApprovers.map(
+            (assignment) => assignment.member_id
+          );
 
-          // Cari semua member yang memiliki Role ID tersebut
-          const targetApprovers = await MemberRoleAssignment.findAll({
+          // Cari nama role untuk dimasukkan ke notifikasi
+          const roleInfo = await UserRole.findOne({
             where: { role_id: requiredRoleId },
+            attributes: ["role_name"],
           });
 
-          if (targetApprovers.length > 0) {
-            const approverMemberIds = targetApprovers.map(
-              (assignment) => assignment.member_id
-            );
+          const roleName = roleInfo ? roleInfo.role_name : "Petugas Verifikasi";
 
-            // Cari nama role untuk dimasukkan ke notifikasi
-            const roleInfo = await UserRole.findOne({
-              where: { role_id: requiredRoleId },
-              attributes: ["role_name"],
-            });
+          const approverNotifications = approverMemberIds.map(
+            (targetMemberId) => {
+              return {
+                member_id: targetMemberId,
+                title: "TUGAS BARU: Verifikasi Pendaftaran",
+                content: `Pendaftaran anggota baru atas nama ${full_name} membutuhkan persetujuan/verifikasi Anda sebagai ${roleName}.`,
+                sent_datetime: new Date(),
+                status: "SENT",
+              };
+            }
+          );
 
-            const roleName = roleInfo
-              ? roleInfo.role_name
-              : "Petugas Verifikasi";
-
-            const approverNotifications = approverMemberIds.map(
-              (targetMemberId) => {
-                return {
-                  member_id: targetMemberId,
-                  title: "TUGAS BARU: Verifikasi Pendaftaran",
-                  // Menggunakan 'content' sesuai skema database
-                  content: `Pendaftaran anggota baru atas nama ${full_name} membutuhkan persetujuan/verifikasi Anda sebagai ${roleName}.`,
-                  sent_datetime: new Date(),
-                  status: "SENT",
-                };
-              }
-            );
-
-            finalNotifications.push(...approverNotifications);
-          }
+          finalNotifications.push(...approverNotifications);
         }
 
         // Kirim semua notifikasi

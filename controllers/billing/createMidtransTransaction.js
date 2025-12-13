@@ -3,71 +3,93 @@
 import db from "../../models/index.js";
 import { createSnapTransaction } from "../../controllers/utility/midtransApi.js";
 
+// ✅ Model Transaction sekarang sudah bisa diakses
 const { Bill, BillItem, Member, Transaction } = db;
 
-/**
- * Kontroler untuk membuat transaksi Midtrans Snap.
- * Endpoint: POST /midtrans/create-transaction
- * Body: { bill_id: string }
- */
 export const createMidtransTransaction = async (req, res) => {
- const { bill_id } = req.body;
- // req.userId diasumsikan disuntikkan oleh middleware otentikasi
- const memberId = req.userId;
+  // Variabel bill_id dari req.body, digunakan untuk mencari di DB.
+  const { bill_id, tx_category } = req.body;
 
- if (!bill_id) {
-  return res.status(400).json({ status: false, message: "Bill ID diperlukan." });
- }
-
- let transactionDb;
- try {
-  transactionDb = await db.sequelize.transaction();
-
-  // 1. Ambil data Bill, Item, dan Member
-  const bill = await Bill.findOne({
-   where: { id: bill_id, member_id: memberId, status: ['UNPAID', 'PENDING'] }, // Hanya yang belum lunas
-   include: [
-    { model: BillItem, as: 'items' },
-    { model: Member, as: 'member' }
-   ],
-   transaction: transactionDb
-  });
-
-  if (!bill) {
-   return res.status(404).json({ status: false, message: "Tagihan tidak valid, sudah dibayar, atau tidak ditemukan." });
+  const memberId = req.userId;
+  if (!bill_id) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Bill ID diperlukan." });
   }
 
-  // Cek kembali jika ada transaksi Midtrans yang masih PENDING untuk bill ini (opsional)
+  let transactionDb;
+  try {
+    transactionDb = await db.sequelize.transaction();
 
-  // 2. Buat Snap Transaction di Midtrans API
-  const snapToken = await createSnapTransaction(bill, bill.member);
+    // 1. Ambil data Bill, Item, dan Member (mendapatkan objek 'bill')
+    const bill = await Bill.findOne({
+      where: {
+        bill_id: bill_id, // Menggunakan bill_id dari req.body untuk mencari
+        member_id: memberId,
+        // 🛑 KOREKSI: Menggunakan nama kolom yang benar di DB: 'status'
+        status: ["UNPAID", "PENDING"],
+      },
+      include: [
+        { model: BillItem, as: "items" },
+        { model: Member, as: "member" },
+      ],
+      transaction: transactionDb,
+    });
 
-  // 3. Catat transaksi di database lokal (Opsional tapi disarankan)
-  const localTransaction = await Transaction.create({
-   member_id: memberId,
-   bill_id: bill_id,
-   amount: bill.total_amount,
-   tx_type: 'MIDTRANS_SNAP',
-   status: 'PENDING', // Status awal di backend lokal
-   midtrans_token: snapToken, // Simpan token untuk referensi
-   // ... field lain yang relevan
-  }, { transaction: transactionDb });
+    if (!bill) {
+      await transactionDb.rollback();
+      return res.status(404).json({
+        status: false,
+        message: "Tagihan tidak valid, sudah dibayar, atau tidak ditemukan.",
+      });
+    }
 
-  // 4. Update status Bill menjadi PENDING
-  await bill.update({ status: 'PENDING' }, { transaction: transactionDb });
+    // 2. Buat Snap Transaction di Midtrans API
+    const { snapToken, midtransOrderId } = await createSnapTransaction(
+      bill,
+      bill.member
+    );
 
-  await transactionDb.commit();
+    // 3. Catat transaksi di database lokal
+    const localTransaction = await Transaction.create(
+      {
+        member_id: memberId,
+        // 🛑 FIX KRITIS: Secara eksplisit menggunakan nilai BIGINT dari objek bill
+        bill_id: bill.bill_id,
+        midtrans_order_id: midtransOrderId,
+        amount: bill.amount,
+        tx_type: "MIDTRANS_SNAP",
+        tx_category: tx_category,
+        status: "PENDING",
+        midtrans_token: snapToken,
+      },
+      { transaction: transactionDb }
+    );
 
-  // 5. Kirim Snap Token ke frontend
-  return res.status(200).json({
-   status: true,
-   message: "Snap Token berhasil dibuat.",
-   snapToken: snapToken
-  });
+    // 4. Update status Bill menjadi PENDING
+    // 🛑 KOREKSI: Menggunakan nama kolom yang benar di DB: 'status'
+    await bill.update({ status: "PENDING" }, { transaction: transactionDb });
 
- } catch (error) {
-  if (transactionDb) await transactionDb.rollback();
-  console.error("[createMidtransTransaction] Error:", error);
-  return res.status(500).json({ status: false, message: error.message || "Gagal membuat transaksi Midtrans internal." });
- }
+    await transactionDb.commit();
+
+    // 5. Kirim Snap Token ke frontend
+    return res.status(200).json({
+      status: true,
+      message: "Snap Token berhasil dibuat.",
+      snapToken: snapToken,
+    });
+  } catch (error) {
+    if (transactionDb) await transactionDb.rollback();
+    console.error("[createMidtransTransaction] Error:", error);
+
+    // Memberikan pesan error yang lebih informatif
+    const errorMessage = error.message.includes("Midtrans")
+      ? error.message.replace("Gagal memproses Midtrans: ", "")
+      : "Terjadi kesalahan internal saat memproses pembayaran.";
+
+    return res.status(500).json({
+      status: false,
+      message: errorMessage,
+    });
+  }
 };
