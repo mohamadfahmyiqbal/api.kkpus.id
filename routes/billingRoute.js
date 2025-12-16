@@ -1,41 +1,39 @@
-// src/routes/billingRoute.js
+// 📁 src/routes/billingRoute.js (KOREKSI FINAL: Rute Notifikasi Harus Publik)
 
 import express from "express";
-import { MidAnggota } from "../midlleware/MidAnggota.js"; 
+import { MidAnggota } from "../midlleware/MidAnggota.js";
 import getPendingBills from "../controllers/content/billing/getPendingBills.js";
 // 🚨 NEW: Import controller untuk detail tagihan
-import { getInvoiceDetail } from '../controllers/billing/getInvoiceDetail.js';
+import { getInvoiceDetail } from "../controllers/billing/getInvoiceDetail.js";
 // 🚨 NEW: Import controller untuk Midtrans
-import { createMidtransTransaction } from '../controllers/billing/createMidtransTransaction.js';
+import { createMidtransTransaction } from "../controllers/billing/createMidtransTransaction.js";
 
 const router = express.Router();
 
-// Middleware: Terapkan MidAnggota ke SEMUA rute di router ini.
-// Asumsi: router ini dipasang di file utama Anda dengan prefix /api/tagihan.
-// Contoh: app.use('/api/tagihan', router);
-router.use(MidAnggota); 
+/**
+ * ✅ KOREKSI: Rute Midtrans Notification Harus Diletakkan DI SINI
+ * Rute ini bersifat publik (tidak memerlukan MidAnggota) agar Midtrans dapat mengirim webhook.
+ */
+// router.post("/midtrans/notification", midtransNotification);
+
+// Middleware: Terapkan MidAnggota ke SEMUA rute DI BAWAH baris ini.
+// Semua rute di bawah ini memerlukan otentikasi anggota.
+router.use(MidAnggota);
 
 /**
- * Endpoint: GET /list/pending (Jalur lengkap: /api/tagihan/list/pending)
- * Digunakan oleh: UBilling.getPendingBills()
- * Fungsi: Mengambil daftar tagihan anggota yang belum dibayar.
+ * Endpoint: GET /list/pending (Dilindungi MidAnggota)
  */
 router.get("/list/pending", getPendingBills);
 
 /**
- * 🚨 NEW Endpoint: GET /:billId (Jalur lengkap: /api/tagihan/:billId)
- * Digunakan oleh: UBilling.getInvoiceDetail(billId)
- * Fungsi: Mengambil detail satu tagihan berdasarkan ID.
+ * 🚨 NEW Endpoint: GET /:billId (Dilindungi MidAnggota)
  */
 router.get("/:billId", getInvoiceDetail);
 
 /**
- * 🚨 NEW Endpoint: POST /midtrans/create-transaction 
- * (Jalur lengkap: /api/tagihan/midtrans/create-transaction)
- * Digunakan oleh: UBilling.createMidtransTransaction(billId)
- * Fungsi: Membuat Snap Token Midtrans untuk pembayaran.
+ * 🚨 NEW Endpoint: POST /midtrans/create-transaction (Dilindungi MidAnggota)
+ * Rute ini WAJIB dilindungi MidAnggota karena menggunakan req.userId untuk membuat transaksi.
  */
 router.post("/midtrans/create-transaction", createMidtransTransaction);
-
 
 export default router;

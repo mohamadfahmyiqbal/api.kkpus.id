@@ -22,7 +22,7 @@ const EntityModels = {
 export const processApproval =
   (entityRef, currentStepId) => async (req, res) => {
     const { entityId } = req.params;
-    const { action, notes } = req.body;
+    const { action, notes, registrationStatus } = req.body;
     const approverId = req.userId;
 
     if (action !== "approve" && action !== "reject") {
@@ -104,7 +104,7 @@ export const processApproval =
           // A. APPROVED, BUKAN LANGKAH TERAKHIR
           updateData.current_step_id = nextStep.approval_step_id;
           // 🛑 KOREKSI: Gunakan status pendek 'wawancara' (9 chars) untuk transisi.
-          updateData.registration_status = "wawancara";
+          updateData.registration_status = registrationStatus;
 
           responseMessage = `${entityRef} disetujui oleh ${currentStep.step_name}. Dilanjutkan ke langkah berikutnya: ${nextStep.step_name}.`;
           notificationMessage = `Permintaan ${entityRef} Anda telah **disetujui** di tahap ini dan dilanjutkan ke **${nextStep.step_name}**.`;

@@ -1,6 +1,6 @@
 // 📁 services/registrationService.js (KODE FINAL)
 
-import db from "../models/index.js";
+import db from "../../models/index.js";
 
 const { MemberRegistration, Member } = db;
 

@@ -6,7 +6,7 @@ import https from "https";
 import http from "http";
 import fs from "fs";
 import path from "path";
-import router from "./routes/routes.js"; // Pastikan ini mengimpor router utama
+import router from "./routes/routes.js";
 
 dotenv.config();
 
@@ -18,7 +18,6 @@ const app = express();
 
 // CORS setup
 const allowedOrigins = [
-  "https://pik1com074.local.ikoito.co.id:5000",
   "https://localhost:5000",
   "https://localhost:5001",
   "https://kkpus.id",
@@ -28,62 +27,67 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Izinkan request tanpa origin (seperti dari postman atau file lokal)
       if (!origin || allowedOrigins.includes(origin)) callback(null, true);
       else callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
+app.set("trust proxy", true);
 
 app.use(cookieParser());
 
-// ✅ PENTING: TINGKATKAN BATAS UKURAN BODY UNTUK MENGAKOMODASI BASE64 GAMBAR (KTP/SWAFOTO)
-app.use(
-  express.json({
-    limit: "5mb", // Meningkatkan batas payload JSON menjadi 5MB
-  })
-);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "5mb", // Meningkatkan batas payload URL-encoded menjadi 5MB
-  })
-);
+// =========================================================================
+// ✅ KOREKSI: ATASI PayloadTooLargeError dengan menaikkan batas ukuran payload
+// =========================================================================
+// Batas default 100kb terlalu kecil untuk data Base64 gambar.
+// Menaikkan batas menjadi 50MB
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Pasang router
 app.use(router);
-
-// Serve static files dari folder 'uploads'
-// Ini diperlukan agar path gambar yang disimpan di database bisa diakses oleh frontend
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // SSL config (pastikan file ada)
 const sslOptions = {
   key: fs.readFileSync(path.join(__dirname, "config/cert/localhost-key.pem")),
   cert: fs.readFileSync(path.join(__dirname, "config/cert/localhost.pem")),
 };
-// const sslOptions = {
-//   key: fs.readFileSync(path.join(__dirname, "config/pik1com074/private.key")),
-//   cert: fs.readFileSync(path.join(__dirname, "config/pik1com074/certificate.cer")),
-// };
 
-// ... (Kode untuk menangani HTTP dan HTTPS server)
-
+// Simpan referensi server sehingga bisa kita close saat shutdown
 let httpServer = null;
 let httpsServer = null;
 
-const closeOtherResources = async () => {
-  // Tambahkan logika untuk menutup koneksi database, dll.
-  console.log("Closing other resources...");
-  // await db.close(); // Contoh
-};
+// Pilihan: jalankan HTTPS + HTTP, atau hanya HTTP (sesuaikan kebutuhan)
+try {
+  // Uncomment jika ingin HTTPS juga
+  // httpsServer = https.createServer(sslOptions, app).listen(port, () => {
+  //   console.log(`✅ HTTPS server running at port ${port}`);
+  // });
 
+  httpServer = http.createServer(app).listen(httpPort, () => {
+    console.log(`✅ HTTP server running at port ${httpPort}`);
+  });
+} catch (err) {
+  console.error("Failed to start server", err);
+  process.exit(1);
+}
+
+// Jika ada resource lain (DB, queue, dsb), tutup di sini
+async function closeOtherResources() {
+  // Contoh:
+  // if (db && db.close) await db.close();
+  // if (redisClient) await redisClient.quit();
+  return Promise.resolve();
+}
+
+// Graceful shutdown helper
 function gracefulShutdown(signal) {
-  return () => {
-    console.log(`Received ${signal}. Starting graceful shutdown...`);
+  return async () => {
+    console.log(`\nReceived ${signal}. Closing servers...`);
     try {
-      // Tutup server untuk menghentikan penerimaan koneksi baru
+      // stop accepting new connections
       if (httpServer) {
         httpServer.close((err) => {
           if (err) console.error("Error closing HTTP server:", err);
@@ -98,7 +102,7 @@ function gracefulShutdown(signal) {
       }
 
       // tutup resource lain (DB, redis, dll)
-      closeOtherResources();
+      await closeOtherResources();
 
       // beri waktu singkat agar semua koneksi selesai, lalu exit
       setTimeout(() => {
@@ -128,26 +132,3 @@ process.on("unhandledRejection", (reason, promise) => {
   // lakukan graceful shutdown lalu exit
   gracefulShutdown("unhandledRejection")();
 });
-
-// Mulai server (gunakan http atau https berdasarkan kebutuhan)
-try {
-  // HTTPS Server
-  httpsServer = https.createServer(sslOptions, app).listen(port, () => {
-    console.log(`Server running securely at https://localhost:${port}`);
-  });
-
-  // HTTP Server (optional, untuk redirect atau development)
-  httpServer = http
-    .createServer((req, res) => {
-      // Redirect HTTP ke HTTPS
-      res.writeHead(301, {
-        Location: `https://${req.headers.host.split(":")[0]}:${port}${req.url}`,
-      });
-      res.end();
-    })
-    .listen(httpPort, () => {
-      console.log(`HTTP server running at http://localhost:${httpPort}`);
-    });
-} catch (error) {
-  console.error("Failed to start server:", error.message);
-}

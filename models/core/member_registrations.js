@@ -53,12 +53,11 @@ const MemberRegistration = (sequelize) => {
       },
       registration_status: {
         type: DataTypes.ENUM(
-          "verifikasi_dokumen",
-          "wawancara",
-          "verifikasi_final",
+          "approval_pengawas",
+          "approval_ketua",
+          "menunggu_pembayaran",
           "pembayaran",
-          "selesai",
-          "menunggu_pembayaran"
+          "selesai"
         ),
         allowNull: false,
         defaultValue: "verifikasi_dokumen",

@@ -1,10 +1,10 @@
-// controllers/core/anggota/submitRegistration.js (FINAL DENGAN PENGAMBILAN ID APPROVAL DINAMIS)
+// controllers/core/anggota/submitRegistration.js (FINAL DENGAN PENGAMBILAN ID APPROVAL DINAMIS DAN CLEANUP)
 
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from "../../../models/index.js";
-import util from "util";
+import util from "util"; // Digunakan untuk promisify
 
 // 💡 PASTIKAN SEMUA MODEL TERSEDIA DI db object
 const {
@@ -16,14 +16,16 @@ const {
   UserRole, // Untuk logic notifikasi
   MemberRoleAssignment, // Untuk logic notifikasi
   Notification, // Untuk logic notifikasi
-  ApprovalFlow, // ✅ Tambah: Untuk mendapatkan Flow ID
-  ApprovalStep, // ✅ Tambah: Untuk mendapatkan Step ID dan Role ID awal
+  ApprovalFlow, // Untuk mendapatkan Flow ID
+  ApprovalStep, // Untuk mendapatkan Step ID dan Role ID awal
 } = db;
 
 const __filename = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(__filename);
-const rootDir = path.join(currentDir, "..", "..", ".."); // Asumsi root path Anda
+// Asumsi root path Anda
+const rootDir = path.join(currentDir, "..", "..", "..");
 
+// Promisify fs.unlink untuk digunakan dengan await
 const unlinkAsync = util.promisify(fs.unlink);
 
 /**
@@ -34,6 +36,7 @@ const saveBase64Image = (base64Image, nik, fileType) => {
     throw new Error(`Invalid or empty Base64 string for ${fileType}.`);
   }
 
+  // Regex untuk memisahkan MIME type dan data Base64
   const parts = base64Image.match(/^data:(image\/[a-zA-Z]+);base64,(.*)$/);
 
   if (!parts || parts.length !== 3) {
@@ -62,6 +65,7 @@ const saveBase64Image = (base64Image, nik, fileType) => {
 // ** Kontroler Utama **
 export const submitRegistration = async (req, res) => {
   const member_id = req.userId;
+
   // 1. Destructuring semua data yang dikirim dari frontend
   const {
     nik_ktp,
@@ -70,19 +74,15 @@ export const submitRegistration = async (req, res) => {
     tipeAnggota, // member_type
     phone_number,
     email,
-    // Data Pekerjaan
     occupation,
     employer_name,
     employer_address,
-    // Data Kontak Darurat
     contact_name,
     phone_number_emergency,
     relation,
-    // Data Bank
     bank_name,
     bank_account_no,
     account_holder,
-    // Foto
     foto_ktp,
     foto_swafoto,
   } = req.body;
@@ -122,16 +122,15 @@ export const submitRegistration = async (req, res) => {
     });
 
     if (!registrationFlow) {
-      // Jika flow tidak ditemukan, proses harus dihentikan
       throw new Error(
         `Konfigurasi Flow Persetujuan '${FLOW_NAME}' tidak ditemukan di database.`
       );
     }
 
-    // Cari langkah pertama (step_order terendah) dari flow yang ditemukan
+    // Cari langkah pertama (step_order terendah)
     const initialStep = await ApprovalStep.findOne({
       where: { approval_flow_id: registrationFlow.approval_flow_id },
-      order: [["step_order", "ASC"]], // Mengambil langkah dengan step_order terendah
+      order: [["step_order", "ASC"]],
     });
 
     if (!initialStep) {
@@ -157,10 +156,10 @@ export const submitRegistration = async (req, res) => {
           member_type: tipeAnggota,
           ktp_photo_path: ktpPublicPath,
           selfie_photo_path: swafotoPublicPath,
-          // ✅ TAMBAHKAN FIELD APPROVAL DINAMIS
+          // TAMBAHKAN FIELD APPROVAL DINAMIS
           approval_flow_id: REGISTRATION_APPROVAL_FLOW_ID,
           current_step_id: INITIAL_APPROVAL_STEP_ID,
-          registration_status: "verifikasi_dokumen", // Status awal ENUM
+          registration_status: "approval_pengawas", // Status awal ENUM
           final_status: "PENDING",
         },
         { transaction: t }
@@ -224,7 +223,7 @@ export const submitRegistration = async (req, res) => {
 
         // 6.1. NOTIFIKASI UNTUK MEMBER SENDIRI (Pendaftar)
         finalNotifications.push({
-          member_id: member_id, // ID Anggota yang submit pendaftaran
+          member_id: member_id,
           title: "Pendaftaran Berhasil Dikirim",
           content:
             "Pendaftaran Anda telah berhasil dikirim dan akan segera diproses oleh tim kami.",
@@ -234,7 +233,7 @@ export const submitRegistration = async (req, res) => {
 
         // 6.2. NOTIFIKASI UNTUK PETUGAS YANG BERTANGGUNG JAWAB PADA LANGKAH AWAL
 
-        // ✅ MENGGUNAKAN ROLE_ID DARI LANGKAH AWAL YANG SUDAH DIAMBIL
+        // MENGGUNAKAN ROLE_ID DARI LANGKAH AWAL YANG SUDAH DIAMBIL
         const requiredRoleId = initialStep.role_id;
 
         // Cari semua member yang memiliki Role ID tersebut
@@ -318,4 +317,5 @@ export const submitRegistration = async (req, res) => {
     });
   }
 };
+
 export default submitRegistration;

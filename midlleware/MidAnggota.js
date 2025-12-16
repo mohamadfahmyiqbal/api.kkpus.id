@@ -15,6 +15,7 @@ export const MidAnggota = (req, res, next) => {
   // 1. Ambil token dari header
   // Frontend mengirimkan token di header Authorization (tanpa prefix 'Bearer ')
   const token = req.headers.authorization;
+
   // console.log("Secret Key yang digunakan:", JWT_SECRET); // Hapus log ini setelah yakin
   // console.log("Token diterima:", token);
 

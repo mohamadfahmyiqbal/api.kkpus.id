@@ -42,7 +42,7 @@ import MemberLoan from "./loan/member_loans.js";
 // 5. SAVINGS
 import SavingsProduct from "./savings/savings_products.js";
 import MemberSavingsAccount from "./savings/member_savings_accounts.js";
-
+import SavingsTransaction from "./savings/savings_transactions.js"; // ✅ TAMBAHKAN INI
 // 6. APPROVALS
 import ApprovalFlow from "./approvals/approval_flows.js";
 import ApprovalStep from "./approvals/approval_steps.js";
@@ -97,7 +97,7 @@ db.MemberLoan = MemberLoan(sequelizeInstance);
 // SAVINGS
 db.SavingsProduct = SavingsProduct(sequelizeInstance);
 db.MemberSavingsAccount = MemberSavingsAccount(sequelizeInstance);
-
+db.SavingsTransaction = SavingsTransaction(sequelizeInstance); // ✅ INISIALISASI
 // APPROVALS
 // Catatan: Menghapus argumen 'Sequelize' jika tidak digunakan di dalam definisi model.
 db.ApprovalFlow = ApprovalFlow(sequelizeInstance);
@@ -152,6 +152,37 @@ db.Member.hasMany(db.MemberRegistration, {
   as: "registration",
 });
 db.MemberRegistration.belongsTo(db.Member, {
+  foreignKey: "member_id",
+  as: "member",
+});
+
+db.Member.hasMany(db.MemberBankAccount, {
+  foreignKey: "member_id",
+  as: "bankAccounts",
+});
+
+db.MemberBankAccount.belongsTo(db.Member, {
+  foreignKey: "member_id",
+  as: "member",
+});
+
+db.Member.hasMany(db.MemberEmployment, {
+  foreignKey: "member_id",
+  as: "employments",
+});
+
+db.MemberEmployment.belongsTo(db.Member, {
+  foreignKey: "member_id",
+  as: "member",
+});
+
+// 1. Relasi Member ke Account (1-to-1)
+// Pastikan alias 'account' digunakan agar bisa dipanggil di API Profile/Dashboard
+db.Member.hasOne(db.Account, {
+  foreignKey: "member_id",
+  as: "account",
+});
+db.Account.belongsTo(db.Member, {
   foreignKey: "member_id",
   as: "member",
 });
@@ -216,6 +247,23 @@ db.Member.hasMany(db.Transaction, {
 db.SukukOrder.belongsTo(db.SukukIssue, {
   foreignKey: "sukuk_issue_id",
   as: "issue",
+});
+
+// --- 🆕 SAVINGS & MUTATION RELATIONS (PENTING UNTUK SALDO DINAMIS) ---
+// Relasi Account ke SavingsTransaction (Satu Akun punya banyak Mutasi)
+db.Account.hasMany(db.SavingsTransaction, {
+  foreignKey: "savings_account_id",
+  as: "mutations",
+});
+db.SavingsTransaction.belongsTo(db.Account, {
+  foreignKey: "savings_account_id",
+  as: "account",
+});
+
+// Relasi Mutasi ke Bill (Opsional: melacak pembayaran tagihan mana yang menghasilkan mutasi)
+db.SavingsTransaction.belongsTo(db.Bill, {
+  foreignKey: "invoice_id",
+  as: "bill",
 });
 
 // 5. LOAN RELATIONS

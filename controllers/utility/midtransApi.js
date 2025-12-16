@@ -1,11 +1,16 @@
-// 📁 controllers/utility/midtransApi.js (KOREKSI FINAL: Gross Amount Calculation & Return Order ID)
+// 📁 controllers/utility/midtransApi.js (KODE FINAL DENGAN JWT REDIRECT)
 
 import "dotenv/config";
-// ... (Pastikan semua import dan konfigurasi Midtrans Anda sudah benar) ...
+import crypto from "crypto";
+
+// 🚨 PENTING: GANTI BARIS INI!
+// Pastikan path ini menunjuk ke file helper JWT versi Node.js Anda (Bukan helpers.jsx).
+// Contoh: import { jwtEncode } from "../../utility/jwtHelpers.js";
+import { jwtEncode } from "../utility/jwtHelpers.js";
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
 const MIDTRANS_IS_PRODUCTION = process.env.NODE_ENV === "production";
-const FRONTEND_URL = process.env.FRONTEND_URL; // Pastikan ini ada di .env Anda
+const FRONTEND_URL = process.env.FRONTEND_URL; // Harus disetel ke https://kkpus.id
 const MIDTRANS_API_BASE_URL = MIDTRANS_IS_PRODUCTION
   ? "https://app.midtrans.com/snap/v1"
   : "https://app.sandbox.midtrans.com/snap/v1";
@@ -17,14 +22,11 @@ const MIDTRANS_API_BASE_URL = MIDTRANS_IS_PRODUCTION
  * @returns {Promise<{snapToken: string, midtransOrderId: string}>} Snap Token dan Order ID.
  */
 export const createSnapTransaction = async (bill, customer) => {
-  // ✅ Menggunakan bill_id (BIGINT) yang benar dari model bills
   const billIdKey = bill.bill_id;
   const orderId = `BILL-${billIdKey}-${Date.now()}`;
 
   // 1. Siapkan Item Details dan Hitung Gross Amount
-  // Asumsi: bill.items sudah ter-eager-load
   const items = bill.items.map((item) => {
-    // ✅ Pastikan harga diubah ke integer (Rupiah penuh)
     const price = Math.round(parseFloat(item.amount) || 0);
 
     return {
@@ -35,7 +37,6 @@ export const createSnapTransaction = async (bill, customer) => {
     };
   });
 
-  // ✅ Hitung Gross Amount dari hasil penjumlahan items
   const grossAmount = items.reduce((sum, item) => sum + item.price, 0);
 
   if (grossAmount <= 0) {
@@ -54,6 +55,27 @@ export const createSnapTransaction = async (bill, customer) => {
     phone: customer.phone_number || "08123456789",
   };
 
+  // ---------------------------------------------
+  // ✅ PENGGUNAAN JWT UNTUK REDIRECT CALLBACK
+  // ---------------------------------------------
+
+  // pageName sesuai dengan key di globalRoutes.jsx
+  const pageName = "invoicePage";
+  // returnPage disetel ke 'registrationPage' sesuai contoh token yang Anda berikan.
+  const returnPage = "registrationPage";
+
+  const basePayload = {
+    page: pageName,
+    billId: billIdKey,
+    return: returnPage,
+  };
+
+  // Encode Token untuk Success dan Error
+  // Halaman InvoicePage akan membaca status, billId, dan returnPage dari token ini.
+  const successToken = jwtEncode({ ...basePayload, status: "success" });
+  const errorToken = jwtEncode({ ...basePayload, status: "error" });
+
+  // 🛑 PAYLOAD AKHIR MIDTRANS
   const payload = {
     transaction_details: transactionDetails,
     credit_card: {
@@ -62,11 +84,11 @@ export const createSnapTransaction = async (bill, customer) => {
     customer_details: customerDetails,
     item_details: items,
     callbacks: {
-      // ✅ Menggunakan FRONTEND_URL dan memisahkan finish/error
-      finish: `${FRONTEND_URL}/payment-status/finish/${billIdKey}`,
-      error: `${FRONTEND_URL}/payment-status/error/${billIdKey}`,
+      // ✅ KOREKSI FINAL: URL diubah menjadi [FRONTEND_URL]/[TOKEN]
+      finish: `${FRONTEND_URL}/${successToken}`,
+      error: `${FRONTEND_URL}/${errorToken}`,
     },
-    // ... parameter Midtrans lainnya
+    // Hapus field finish_url, unfinish_url, error_url agar tidak konflik
   };
 
   // 3. Panggil Midtrans API
@@ -93,7 +115,6 @@ export const createSnapTransaction = async (bill, customer) => {
       );
     }
 
-    // ✅ Mengembalikan Snap Token DAN Order ID
     return {
       snapToken: data.token,
       midtransOrderId: orderId,
@@ -102,4 +123,24 @@ export const createSnapTransaction = async (bill, customer) => {
     console.error("[MidtransAPI] Failed to create Snap transaction:", error);
     throw new Error(`Gagal memproses Midtrans: ${error.message}`);
   }
+};
+
+/**
+ * Memverifikasi signature key yang dikirim oleh Midtrans.
+ * FUNGSI KEAMANAN KRITIS!
+ */
+export const verifySignatureKey = (notificationBody, signatureKey) => {
+  const order_id = notificationBody.order_id;
+  const status_code = notificationBody.status_code;
+  const gross_amount = notificationBody.gross_amount;
+
+  const stringToHash =
+    order_id + status_code + gross_amount + MIDTRANS_SERVER_KEY;
+
+  const generatedSignature = crypto
+    .createHash("sha512")
+    .update(stringToHash)
+    .digest("hex");
+
+  return generatedSignature === signatureKey;
 };
