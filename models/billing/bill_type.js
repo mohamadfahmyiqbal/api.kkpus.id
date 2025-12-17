@@ -1,5 +1,3 @@
-// 📁 models/billing/bill_type.js (Model Baru)
-
 import { Sequelize } from "sequelize";
 
 const BillType = (sequelize) => {
@@ -17,24 +15,36 @@ const BillType = (sequelize) => {
       type_code: {
         type: DataTypes.STRING(50),
         allowNull: false,
-        unique: true, // Kode harus unik
+        unique: true,
+      },
+      // 🟢 TAMBAHKAN KOLOM INI
+      tx_type: {
+        type: DataTypes.ENUM("SETORAN", "PENARIKAN"),
+        defaultValue: "SETORAN",
+        allowNull: false,
+      },
+      // 🟢 TAMBAHKAN KOLOM INI
+      category_map: {
+        type: DataTypes.STRING(50),
+        allowNull: true, // Boleh null jika tidak semua tipe tagihan punya kategori khusus
       },
       type_name: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
       default_amount: {
-        type: DataTypes.DECIMAL(18, 2), // Precision yang cukup
+        type: DataTypes.DECIMAL(18, 2),
         allowNull: false,
       },
       period_type: {
-        type: DataTypes.STRING(50), // ONE_TIME, MONTHLY, ANNUAL
+        type: DataTypes.STRING(50),
         allowNull: false,
       },
     },
     {
       freezeTableName: true,
       timestamps: true,
+      underscored: true, // 👈 PENTING: Agar Sequelize mencari 'category_map' (snake_case) bukan 'categoryMap'
     }
   );
 

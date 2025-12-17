@@ -2,16 +2,7 @@
 
 import db from "../../models/index.js";
 
-const {
-  Bill,
-  Transaction,
-  Member,
-  MemberRegistration,
-  MemberStatus,
-  BillType,
-  Account, // Model untuk tabel accounts
-  SavingsTransaction, // Model untuk tabel savings_transactions
-} = db;
+const { Bill, Transaction, Member, MemberRegistration, BillType, Account } = db;
 
 const CODE_SIMPANAN_WAJIB = "SW_WAJIB";
 
@@ -22,180 +13,172 @@ export const midtransNotification = async (req, res) => {
   const fraudStatus = notification.fraud_status;
   const grossAmount = parseFloat(notification.gross_amount);
 
-  let transactionDb;
-  try {
-    transactionDb = await db.sequelize.transaction();
+  // 1. Ekstraksi detail pembayaran dari payload Midtrans
+  const paymentType = notification.payment_type;
+  let vaNumber = null;
+  let bankName = null;
 
-    // 1. Cari Transaksi Lokal di tabel transactions
-    const localTransaction = await Transaction.findOne({
+  if (notification.va_numbers && notification.va_numbers.length > 0) {
+    vaNumber = notification.va_numbers[0].va_number;
+    bankName = notification.va_numbers[0].bank;
+  } else if (notification.permata_va_number) {
+    vaNumber = notification.permata_va_number;
+    bankName = "permata";
+  } else if (paymentType === "echannel") {
+    vaNumber = notification.bill_key;
+    bankName = "mandiri";
+  }
+
+  let dbTransaction;
+  try {
+    dbTransaction = await db.sequelize.transaction();
+
+    // 2. Cari Transaksi Lokal
+    const localTx = await Transaction.findOne({
       where: { midtrans_order_id: orderId },
-      transaction: transactionDb,
+      transaction: dbTransaction,
     });
 
-    if (!localTransaction) {
-      await transactionDb.rollback();
+    if (!localTx) {
+      await dbTransaction.rollback();
       return res.status(404).json({ message: "Order ID Not Found" });
     }
 
-    // 2. Tentukan Status Transaksi Baru
+    // 3. Tentukan Status Transaksi
     let newStatus = "PENDING";
     if (
       transactionStatus === "settlement" ||
       (transactionStatus === "capture" && fraudStatus === "accept")
     ) {
       newStatus = "PAID";
-    } else if (
-      transactionStatus === "cancel" ||
-      transactionStatus === "deny" ||
-      transactionStatus === "expire"
-    ) {
+    } else if (["cancel", "deny", "expire"].includes(transactionStatus)) {
       newStatus = "EXPIRED";
-    } else if (transactionStatus === "pending") {
-      newStatus = "PENDING";
     }
 
-    // 3. Update Tabel Transaction & Tabel Bill Utama
-    await localTransaction.update(
+    // 4. Update Header Transaksi (Selalu update detail Midtrans untuk audit)
+    await localTx.update(
       {
         status: newStatus,
+        midtrans_transaction_id: notification.transaction_id,
+        payment_type: paymentType,
+        payment_method: bankName || paymentType,
+        va_number: vaNumber,
+        bank_name: bankName,
+        fraud_status: fraudStatus,
+        status_message: notification.status_message,
         settlement_time: newStatus === "PAID" ? new Date() : null,
       },
-      { transaction: transactionDb }
+      { transaction: dbTransaction }
     );
 
-    const currentBill = await Bill.findByPk(localTransaction.bill_id, {
-      transaction: transactionDb,
-    });
-
-    if (currentBill) {
-      await currentBill.update(
+    // 5. Update Status Tagihan (Bill) jika ada
+    if (localTx.bill_id) {
+      await Bill.update(
         { status: newStatus === "PAID" ? "PAID" : "UNPAID" },
-        { transaction: transactionDb }
+        { where: { bill_id: localTx.bill_id }, transaction: dbTransaction }
       );
     }
 
-    // =========================================================================
-    // 🆕 LOGIKA UPDATE SALDO DINAMIS (JIKA STATUS PAID)
-    // =========================================================================
-    if (newStatus === "PAID") {
-      // A. Cari Akun Simpanan Member
-      const userAccount = await Account.findOne({
-        where: { member_id: localTransaction.member_id },
-        transaction: transactionDb,
+    // 6. LOGIKA MUTASI SALDO (Hanya jika status PAID dan belum tercatat di Ledger)
+    if (newStatus === "PAID" && !localTx.is_ledger_recorded) {
+      // A. Pastikan Account (Rekening) Member Tersedia
+      let [userAccount] = await Account.findOrCreate({
+        where: { member_id: localTx.member_id, account_type: "SAVINGS" },
+        defaults: {
+          account_no: `ACC-${localTx.member_id}-${Date.now()
+            .toString()
+            .slice(-4)}`,
+          current_balance: 0,
+          open_date: new Date(),
+          akad_type: "WADI'AH",
+        },
+        transaction: dbTransaction,
       });
 
-      if (userAccount) {
-        // B. Buat Record Mutasi di savings_transactions
-        await SavingsTransaction.create(
-          {
-            savings_account_id: userAccount.account_id,
-            tx_type: "SETORAN",
-            amount: grossAmount,
-            tx_datetime: new Date(),
-            method: localTransaction.payment_method || "MIDTRANS",
-            bank_name: notification.va_numbers
-              ? notification.va_numbers[0].bank
-              : null,
-            bank_account_no: notification.va_numbers
-              ? notification.va_numbers[0].va_number
-              : null,
-            approved_status: "APPROVED",
-            invoice_id: localTransaction.bill_id,
-          },
-          { transaction: transactionDb }
-        );
-
-        // C. Update current_balance di tabel accounts (Saldo Utama)
+      // B. Update Saldo Berdasarkan tx_type (SETORAN bertambah, PENARIKAN berkurang)
+      if (localTx.tx_type === "SETORAN") {
         await userAccount.increment("current_balance", {
           by: grossAmount,
-          transaction: transactionDb,
+          transaction: dbTransaction,
+        });
+      } else if (localTx.tx_type === "PENARIKAN") {
+        await userAccount.decrement("current_balance", {
+          by: grossAmount,
+          transaction: dbTransaction,
+        });
+      }
+
+      // C. Tandai bahwa transaksi ini sudah masuk ke perhitungan saldo (Ledger)
+      await localTx.update(
+        { is_ledger_recorded: true },
+        { transaction: dbTransaction }
+      );
+
+      // 7. LOGIKA KHUSUS BERDASARKAN KATEGORI
+      const category = localTx.tx_category;
+
+      if (category === "MEMBER_REGISTRATION") {
+        const reg = await MemberRegistration.findOne({
+          where: { member_id: localTx.member_id },
+          transaction: dbTransaction,
         });
 
-        console.log(
-          `[Balance Update] Saldo Member ID ${localTransaction.member_id} bertambah: ${grossAmount}`
-        );
-      }
-    }
-    // =========================================================================
+        if (reg) {
+          // Update Status Registrasi
+          await reg.update(
+            { registration_status: "selesai" },
+            { transaction: dbTransaction }
+          );
 
-    // 4. Logika Lanjutan Berdasarkan Kategori Transaksi
-    if (newStatus === "PAID") {
-      const transactionCategory = localTransaction.tx_category;
+          // Update Status Member (Aktifkan berdasarkan member_type hasil registrasi)
+          await Member.update(
+            { status_id: reg.member_type },
+            {
+              where: { member_id: localTx.member_id },
+              transaction: dbTransaction,
+            }
+          );
 
-      switch (transactionCategory) {
-        case "MEMBER_REGISTRATION":
-          // Update Status Pendaftaran & Aktivasi Member
-          const registration = await MemberRegistration.findOne({
-            where: { member_id: localTransaction.member_id },
-            transaction: transactionDb,
+          // Generate Tagihan Simpanan Wajib Bulanan (Bulan depan s/d akhir tahun)
+          const swType = await BillType.findOne({
+            where: { type_code: CODE_SIMPANAN_WAJIB },
+            transaction: dbTransaction,
           });
 
-          if (registration) {
-            await registration.update(
-              { registration_status: "PAID" },
-              { transaction: transactionDb }
-            );
-
-            // Aktifkan Member
-            const member = await Member.findByPk(localTransaction.member_id, {
-              transaction: transactionDb,
+          if (swType) {
+            const memberData = await Member.findByPk(localTx.member_id, {
+              transaction: dbTransaction,
             });
-            if (member) {
-              const activeStatus = await MemberStatus.findOne({
-                where: { status_name: "Aktif" },
-                transaction: transactionDb,
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            let futureBills = [];
+
+            for (let m = currentMonth + 1; m <= 12; m++) {
+              futureBills.push({
+                bill_type_id: swType.bill_type_id,
+                member_id: memberData.member_id,
+                member_no: memberData.member_no,
+                description: `Simpanan Wajib Bulan ${m}/${currentYear}`,
+                amount: swType.default_amount,
+                due_date: new Date(currentYear, m - 1, 10),
+                status: "UNPAID",
               });
-              await member.update(
-                { status_id: activeStatus.status_id },
-                { transaction: transactionDb }
-              );
             }
-
-            // --- LOGIKA GENERATE TAGIHAN BERULANG (Simpanan Wajib) ---
-            const swWajibType = await BillType.findOne({
-              where: { type_code: CODE_SIMPANAN_WAJIB },
-              transaction: transactionDb,
-            });
-            if (swWajibType) {
-              const currentYear = new Date().getFullYear();
-              const currentMonth = new Date().getMonth() + 1;
-              let newBills = [];
-
-              for (let month = currentMonth + 1; month <= 12; month++) {
-                newBills.push({
-                  bill_type_id: swWajibType.bill_type_id,
-                  member_id: localTransaction.member_id,
-                  member_no: member.member_no,
-                  description: `Simpanan Wajib Bulan ${month}/${currentYear}`,
-                  amount: swWajibType.default_amount,
-                  due_date: new Date(currentYear, month - 1, 10), // Jatuh tempo tgl 10
-                  status: "UNPAID",
-                });
-              }
-              if (newBills.length > 0) {
-                await Bill.bulkCreate(newBills, { transaction: transactionDb });
-              }
+            if (futureBills.length > 0) {
+              await Bill.bulkCreate(futureBills, {
+                transaction: dbTransaction,
+              });
             }
           }
-          break;
-
-        default:
-          console.log(
-            `[Midtrans] Pembayaran kategori ${transactionCategory} berhasil diproses.`
-          );
+        }
       }
     }
 
-    await transactionDb.commit();
-    return res
-      .status(200)
-      .json({
-        status: "OK",
-        message: "Transaction processed and Balance updated",
-      });
+    await dbTransaction.commit();
+    return res.status(200).json({ status: "OK", message: "Processed" });
   } catch (error) {
-    if (transactionDb) await transactionDb.rollback();
+    if (dbTransaction) await dbTransaction.rollback();
     console.error("[Midtrans Webhook Error]:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ status: "Error", message: error.message });
   }
 };

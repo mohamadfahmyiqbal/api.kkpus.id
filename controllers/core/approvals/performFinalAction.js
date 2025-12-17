@@ -1,12 +1,10 @@
-// 📁 controllers/core/approvals/performFinalAction.js (FINAL)
+// 📁 controllers/core/approvals/performFinalAction.js
 
 import db from "../../../models/index.js";
-// 🚨 Pastikan path ini benar
 import { createInitialBills } from "../../billing/createInitialBills.js";
 
 /**
- * Melakukan tindakan spesifik entitas jika persetujuan mencapai langkah akhir (APPROVED).
- * @returns {object} Object: { message: string, billId: number | null }
+ * Melakukan tindakan final setelah approval disetujui sepenuhnya.
  */
 export const performFinalAction = async ({
   entityRef,
@@ -15,7 +13,7 @@ export const performFinalAction = async ({
 }) => {
   switch (entityRef) {
     case "member_registration":
-      // 1. Pindahkan/Update data ke tabel members
+      // 1. Update data Member menjadi status 'Pending Pembayaran'
       await db.Member.update(
         {
           full_name: entity.full_name,
@@ -25,53 +23,71 @@ export const performFinalAction = async ({
           address: entity.address_ktp,
           member_type: entity.member_type,
           join_date: new Date(),
-          status_id: 2, // ✅ Status 2: Pending Pembayaran/Terdaftar di tabel Members
+          status_id: 2, // Terdaftar, menunggu pembayaran
         },
         { where: { member_id: entity.member_id }, transaction: t }
       );
 
-      // 2. Buat Tagihan
+      // 2. Generate Tagihan Awal melalui createInitialBills
       const newBillId = await createInitialBills(entity.member_id, t);
 
-      const message = `Pendaftaran disetujui penuh. Akun anggota berhasil didaftarkan dengan status Menunggu Pembayaran. Tagihan awal telah dibuat.`;
-
-      // Mengembalikan objek yang berisi message dan billId
-      return { message, billId: newBillId };
+      return {
+        message: "Pendaftaran disetujui. Tagihan awal telah dibuat.",
+        billId: newBillId,
+      };
 
     case "financing_application":
-      await db.FinancingDisbursement.create(
+      // Mencatat pencairan pembiayaan ke tabel transactions (PENARIKAN/KELUAR)
+      await db.Transaction.create(
         {
-          financing_id: entity.financing_id,
-          disbursement_datetime: new Date(),
+          member_id: entity.member_id,
           amount: entity.required_amount,
-          status: "COMPLETED",
+          tx_type: "PENARIKAN",
+          tx_category: "LOAN_DISBURSEMENT",
+          status: "PAID",
+          is_ledger_recorded: true,
+          settlement_time: new Date(),
+          status_message: "Pencairan Pembiayaan Disetujui",
         },
         { transaction: t }
       );
+
       return {
-        message: `Aplikasi Pembiayaan disetujui dan Dana Disbursement berhasil dicatat.`,
+        message: "Pembiayaan disetujui dan dana dicatat sebagai pengeluaran.",
         billId: null,
       };
 
     case "savings_withdrawal":
-      await db.SavingsTransaction.create(
+      // Mencatat penarikan simpanan ke tabel transactions
+      await db.Transaction.create(
         {
-          savings_account_id: entity.savings_account_id,
-          tx_type: "WITHDRAWAL",
+          member_id: entity.member_id,
           amount: entity.amount,
-          tx_datetime: new Date(),
-          approved_status: "APPROVED",
+          tx_type: "PENARIKAN",
+          tx_category: "SAVINGS_WITHDRAWAL",
+          status: "PAID",
+          is_ledger_recorded: true,
+          settlement_time: new Date(),
+          status_message: "Penarikan Simpanan Disetujui",
         },
         { transaction: t }
       );
+
+      // Kurangi saldo di tabel accounts secara sinkron
+      await db.Account.decrement("current_balance", {
+        by: entity.amount,
+        where: { member_id: entity.member_id, account_type: "SAVINGS" },
+        transaction: t,
+      });
+
       return {
-        message: `Penarikan Simpanan disetujui. Dana berhasil dicatat di Savings Transaction.`,
+        message: "Penarikan disetujui. Saldo akun telah didebit.",
         billId: null,
       };
 
     default:
       return {
-        message: `Entitas ${entityRef} disetujui penuh. Tidak ada tindakan final tambahan yang terdefinisikan.`,
+        message: `Entitas ${entityRef} disetujui tanpa aksi finansial.`,
         billId: null,
       };
   }

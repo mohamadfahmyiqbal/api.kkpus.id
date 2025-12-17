@@ -9,45 +9,68 @@ const Transaction = (sequelize) => {
     "transactions",
     {
       transaction_id: {
-        type: DataTypes.BIGINT, // PK (Otomatis BIGINT)
+        type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.BIGINT, // ✅ BIGINT (Mencocokkan members.member_id)
+        type: DataTypes.BIGINT,
         allowNull: false,
       },
       bill_id: {
-        type: DataTypes.BIGINT, // ✅ BIGINT (Mencocokkan bills.bill_id)
-        allowNull: false,
+        type: DataTypes.BIGINT,
+        allowNull: true,
       },
       midtrans_order_id: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: true, // Harus unik
+        unique: true,
       },
       midtrans_transaction_id: {
         type: DataTypes.STRING(100),
-        allowNull: true, // Diisi saat Midtrans callback
+        allowNull: true,
+      },
+      midtrans_token: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
       },
       tx_type: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.ENUM("SETORAN", "PENARIKAN"),
         allowNull: false,
-        defaultValue: "MIDTRANS_SNAP",
+        defaultValue: "SETORAN",
+      },
+      is_ledger_recorded: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false, // Digunakan untuk menandai apakah sudah masuk ke saldo accounts
       },
       tx_category: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        defaultValue: "MIDTRANS_SNAP",
+      },
+      payment_type: {
+        // Kolom baru
+        type: DataTypes.STRING(50),
+        allowNull: true,
       },
       payment_method: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      va_number: {
+        // Kolom baru
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      bank_name: {
+        // Kolom baru
         type: DataTypes.STRING(50),
         allowNull: true,
       },
       amount: {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
+        defaultValue: 0.0,
       },
       settlement_time: {
         type: DataTypes.DATE,
@@ -61,21 +84,29 @@ const Transaction = (sequelize) => {
           "CANCELED",
           "FAILED"
         ),
-        allowNull: false,
         defaultValue: "PENDING",
+      },
+      fraud_status: {
+        // Kolom baru
+        type: DataTypes.STRING(50),
+        allowNull: true,
       },
       status_message: {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
-      midtrans_token: {
-        type: DataTypes.STRING(255),
+      pdf_url: {
+        // Kolom baru
+        type: DataTypes.TEXT,
         allowNull: true,
       },
     },
     {
+      tableName: "transactions",
       freezeTableName: true,
       timestamps: true,
+      createdAt: "created_at", // Penyesuaian ke snake_case
+      updatedAt: "updated_at", // Penyesuaian ke snake_case
     }
   );
 
