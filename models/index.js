@@ -122,6 +122,7 @@ db.MemberEmployment.belongsTo(db.Member, {
 });
 
 // --- BILLING ---
+// Relasi Member dan Bill
 db.Member.hasMany(db.Bill, {
   foreignKey: "member_no",
   sourceKey: "member_no",
@@ -132,12 +133,19 @@ db.Bill.belongsTo(db.Member, {
   targetKey: "member_no",
   as: "member",
 });
+
+// Relasi Bill dan BillItem
 db.Bill.hasMany(db.BillItem, { foreignKey: "bill_id", as: "items" });
 db.BillItem.belongsTo(db.Bill, { foreignKey: "bill_id", as: "bill" });
-db.Bill.belongsTo(db.BillType, { foreignKey: "bill_type_id", as: "billType" });
 
+// Relasi Bill dan BillType
+db.Bill.belongsTo(db.BillType, { foreignKey: "bill_type_id", as: "billType" });
+db.BillType.hasMany(db.Bill, { foreignKey: "bill_type_id", as: "bills" });
+
+// Relasi Transaction dengan Bill dan Member
 db.Transaction.belongsTo(db.Bill, { foreignKey: "bill_id", as: "bill" });
 db.Bill.hasMany(db.Transaction, { foreignKey: "bill_id", as: "transactions" });
+
 db.Transaction.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 db.Member.hasMany(db.Transaction, {
   foreignKey: "member_id",

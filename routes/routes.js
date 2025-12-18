@@ -6,6 +6,7 @@ import notificationRoute from "./notificationRoute.js";
 import billingRoute from "./billingRoute.js";
 import approvalsRoute from "./approvalsRoute.js";
 import financialRoute from "./financialRoute.js";
+import simpananRoute from "./simpananRoute.js";
 import webhookRoute from "./webhookRoute.js";
 const router = express.Router();
 // ==========================================================
@@ -19,6 +20,7 @@ router.use(notificationRoute);
 router.use(billingRoute);
 router.use(approvalsRoute);
 router.use(financialRoute);
+router.use(simpananRoute);
 // router.use(importRoutes);
 
 export default router;
