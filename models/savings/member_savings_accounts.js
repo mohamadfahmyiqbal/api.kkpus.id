@@ -1,49 +1,26 @@
-import { Sequelize } from "sequelize";
+// src/models/savings/member_savings_accounts.js
+export default (sequelize) => {
+  const { DataTypes } = sequelize.Sequelize;
 
-const MemberSavingsAccount = (sequelize) => {
-  const { DataTypes } = Sequelize;
-
-  const MemberSavingsAccountModel = sequelize.define("member_savings_accounts", {
-    account_id: {
+  return sequelize.define("member_savings_accounts", {
+    savings_account_id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
       allowNull: false,
     },
-    member_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
-    },
-    product_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
-    },
-    account_number: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-    },
-    current_balance: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      defaultValue: 0.00,
-    },
-    open_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-    },
-    status: {
-      type: DataTypes.ENUM('ACTIVE', 'CLOSED', 'FROZEN'),
-      allowNull: false,
-      defaultValue: 'ACTIVE',
-    },
+    member_id: { type: DataTypes.BIGINT, allowNull: false },
+    savings_product_id: { type: DataTypes.BIGINT },
+    account_no: { type: DataTypes.STRING }, // Sesuai kolom database Anda
+    account_type: { type: DataTypes.STRING }, // Sesuai kolom database Anda
+    open_date: { type: DataTypes.DATEONLY },
+    nominal: { type: DataTypes.DECIMAL(18, 2) },
+    current_balance: { type: DataTypes.DECIMAL(18, 2) },
   }, { 
     freezeTableName: true, 
     timestamps: true,
+    // Mapping agar Sequelize mencari 'created_at' bukan 'createdAt'
+    createdAt: 'created_at', 
+    updatedAt: 'updated_at'
   });
-
-  return MemberSavingsAccountModel;
 };
-
-export default MemberSavingsAccount;

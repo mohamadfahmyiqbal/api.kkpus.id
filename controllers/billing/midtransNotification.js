@@ -1,6 +1,5 @@
-// 📁 controllers/billing/midtransNotification.js
-
 import db from "../../models/index.js";
+import crypto from "crypto";
 
 const { Bill, Transaction, Member, MemberRegistration, BillType, Account } = db;
 
@@ -8,12 +7,30 @@ const CODE_SIMPANAN_WAJIB = "SW_WAJIB";
 
 export const midtransNotification = async (req, res) => {
   const notification = req.body;
+
+  // 1. Verifikasi Signature Key (Keamanan agar tidak bisa ditembak sembarangan)
+  const serverKey = process.env.MIDTRANS_SERVER_KEY; // Pastikan ini ada di .env
+  const combinedStr =
+    notification.order_id +
+    notification.status_code +
+    notification.gross_amount +
+    serverKey;
+  const signatureKey = crypto
+    .createHash("sha512")
+    .update(combinedStr)
+    .digest("hex");
+
+  if (signatureKey !== notification.signature_key) {
+    console.error("[Midtrans Webhook] Unauthorized Access: Invalid Signature");
+    return res.status(403).json({ message: "Invalid Signature Key" });
+  }
+
   const orderId = notification.order_id;
   const transactionStatus = notification.transaction_status;
   const fraudStatus = notification.fraud_status;
   const grossAmount = parseFloat(notification.gross_amount);
 
-  // 1. Ekstraksi detail pembayaran dari payload Midtrans
+  // Ekstraksi VA Number untuk informasi metode pembayaran
   const paymentType = notification.payment_type;
   let vaNumber = null;
   let bankName = null;
@@ -33,7 +50,7 @@ export const midtransNotification = async (req, res) => {
   try {
     dbTransaction = await db.sequelize.transaction();
 
-    // 2. Cari Transaksi Lokal
+    // 2. Cari Transaksi Lokal berdasarkan Order ID Midtrans
     const localTx = await Transaction.findOne({
       where: { midtrans_order_id: orderId },
       transaction: dbTransaction,
@@ -44,7 +61,7 @@ export const midtransNotification = async (req, res) => {
       return res.status(404).json({ message: "Order ID Not Found" });
     }
 
-    // 3. Tentukan Status Transaksi
+    // 3. Tentukan Status Transaksi Baru
     let newStatus = "PENDING";
     if (
       transactionStatus === "settlement" ||
@@ -55,7 +72,7 @@ export const midtransNotification = async (req, res) => {
       newStatus = "EXPIRED";
     }
 
-    // 4. Update Header Transaksi (Selalu update detail Midtrans untuk audit)
+    // 4. Update Data Transaksi (Audit Midtrans)
     await localTx.update(
       {
         status: newStatus,
@@ -71,7 +88,7 @@ export const midtransNotification = async (req, res) => {
       { transaction: dbTransaction }
     );
 
-    // 5. Update Status Tagihan (Bill) jika ada
+    // 5. Update Status Tagihan (Bills) - Gunakan huruf kecil sesuai model Anda
     if (localTx.bill_id) {
       await Bill.update(
         { status: newStatus === "PAID" ? "PAID" : "UNPAID" },
@@ -81,7 +98,7 @@ export const midtransNotification = async (req, res) => {
 
     // 6. LOGIKA MUTASI SALDO (Hanya jika status PAID dan belum tercatat di Ledger)
     if (newStatus === "PAID" && !localTx.is_ledger_recorded) {
-      // A. Pastikan Account (Rekening) Member Tersedia
+      // Ambil atau buat akun simpanan anggota
       let [userAccount] = await Account.findOrCreate({
         where: { member_id: localTx.member_id, account_type: "SAVINGS" },
         defaults: {
@@ -95,20 +112,15 @@ export const midtransNotification = async (req, res) => {
         transaction: dbTransaction,
       });
 
-      // B. Update Saldo Berdasarkan tx_type (SETORAN bertambah, PENARIKAN berkurang)
+      // Update Saldo jika jenisnya SETORAN (Termasuk Simpanan Sukarela)
       if (localTx.tx_type === "SETORAN") {
         await userAccount.increment("current_balance", {
           by: grossAmount,
           transaction: dbTransaction,
         });
-      } else if (localTx.tx_type === "PENARIKAN") {
-        await userAccount.decrement("current_balance", {
-          by: grossAmount,
-          transaction: dbTransaction,
-        });
       }
 
-      // C. Tandai bahwa transaksi ini sudah masuk ke perhitungan saldo (Ledger)
+      // Tandai agar tidak terjadi double increment jika webhook terkirim ulang
       await localTx.update(
         { is_ledger_recorded: true },
         { transaction: dbTransaction }
@@ -117,6 +129,7 @@ export const midtransNotification = async (req, res) => {
       // 7. LOGIKA KHUSUS BERDASARKAN KATEGORI
       const category = localTx.tx_category;
 
+      // Kasus: Pendaftaran Member Baru
       if (category === "MEMBER_REGISTRATION") {
         const reg = await MemberRegistration.findOne({
           where: { member_id: localTx.member_id },
@@ -124,13 +137,10 @@ export const midtransNotification = async (req, res) => {
         });
 
         if (reg) {
-          // Update Status Registrasi
           await reg.update(
             { registration_status: "selesai" },
             { transaction: dbTransaction }
           );
-
-          // Update Status Member (Aktifkan berdasarkan member_type hasil registrasi)
           await Member.update(
             { status_id: reg.member_type },
             {
@@ -139,16 +149,13 @@ export const midtransNotification = async (req, res) => {
             }
           );
 
-          // Generate Tagihan Simpanan Wajib Bulanan (Bulan depan s/d akhir tahun)
+          // Generate Tagihan Simpanan Wajib otomatis untuk sisa bulan dalam setahun
           const swType = await BillType.findOne({
             where: { type_code: CODE_SIMPANAN_WAJIB },
             transaction: dbTransaction,
           });
 
           if (swType) {
-            const memberData = await Member.findByPk(localTx.member_id, {
-              transaction: dbTransaction,
-            });
             const currentYear = new Date().getFullYear();
             const currentMonth = new Date().getMonth() + 1;
             let futureBills = [];
@@ -156,8 +163,8 @@ export const midtransNotification = async (req, res) => {
             for (let m = currentMonth + 1; m <= 12; m++) {
               futureBills.push({
                 bill_type_id: swType.bill_type_id,
-                member_id: memberData.member_id,
-                member_no: memberData.member_no,
+                member_id: localTx.member_id,
+                member_no: localTx.member_no,
                 description: `Simpanan Wajib Bulan ${m}/${currentYear}`,
                 amount: swType.default_amount,
                 due_date: new Date(currentYear, m - 1, 10),
@@ -172,10 +179,18 @@ export const midtransNotification = async (req, res) => {
           }
         }
       }
+      // Kasus: Simpanan Sukarela (Hanya log/notifikasi tambahan jika perlu)
+      else if (category === "DEPOSIT_SUKARELA") {
+        console.log(
+          `[Webhook] Sukses Topup Sukarela: ${localTx.member_no} sebesar ${grossAmount}`
+        );
+      }
     }
 
     await dbTransaction.commit();
-    return res.status(200).json({ status: "OK", message: "Processed" });
+    return res
+      .status(200)
+      .json({ status: "OK", message: "Notification Processed Successfully" });
   } catch (error) {
     if (dbTransaction) await dbTransaction.rollback();
     console.error("[Midtrans Webhook Error]:", error);

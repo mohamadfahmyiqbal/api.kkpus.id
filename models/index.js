@@ -192,11 +192,12 @@ db.MemberSavingsAccount.belongsTo(db.Member, {
   as: "member",
 });
 db.SavingsProduct.hasMany(db.MemberSavingsAccount, {
-  foreignKey: "product_id",
+  foreignKey: "savings_product_id", // Ubah dari product_id ke savings_product_id
   as: "accounts",
 });
+
 db.MemberSavingsAccount.belongsTo(db.SavingsProduct, {
-  foreignKey: "product_id",
+  foreignKey: "savings_product_id", // Ubah dari product_id ke savings_product_id
   as: "product",
 });
 

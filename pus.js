@@ -20,13 +20,14 @@ const app = express();
 const allowedOrigins = [
   "https://localhost:5000",
   "https://localhost:5001",
+  "https://pik1com074.local.ikoito.co.id:5000",
   "https://kkpus.id",
   "https://admin.kkpus.id",
 ];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin, callback) => { 
       // Izinkan request tanpa origin (seperti dari postman atau file lokal)
       if (!origin || allowedOrigins.includes(origin)) callback(null, true);
       else callback(new Error("Not allowed by CORS"));

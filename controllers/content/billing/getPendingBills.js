@@ -1,16 +1,15 @@
 import db from "../../../models/index.js";
 
-// Ambil model dari db object
 const { Bill, BillType } = db;
 
 /**
- * Mengambil daftar tagihan UNPAID/PENDING berdasarkan userId dari Token (MidAnggota)
+ * Mengambil daftar tagihan UNPAID/PENDING dengan filter kategori dinamis
  */
 const getPendingBills = async (req, res) => {
   try {
-    // 1. Ambil memberId dari MidAnggota (req.userId)
     const memberId = req.userId;
-    const { limit } = req.query;
+    // Menangkap category dari query params (misal: ?category=Simpanan Wajib)
+    const { limit, category } = req.query;
 
     if (!memberId) {
       return res.status(401).json({
@@ -21,31 +20,42 @@ const getPendingBills = async (req, res) => {
 
     const billLimit = limit ? parseInt(limit, 10) : 10;
 
-    // 2. Query data menggunakan member_id (ID Fisik), bukan member_no (String)
-    // agar relasi database lebih cepat dan akurat.
+    // Menyiapkan filter untuk BillType (Tabel Relasi)
+    let billTypeCondition = {};
+    if (category) {
+      // Filter berdasarkan category_map sesuai permintaan di frontend
+      billTypeCondition.category_map = category;
+    }
+
     const { count, rows } = await Bill.findAndCountAll({
       where: {
         member_id: memberId,
-        status: "UNPAID", // Sesuaikan dengan status di database Anda
+        status: "UNPAID",
       },
       include: [
         {
           model: BillType,
-          as: "billType", // Pastikan alias ini sama dengan di models/index.js
+          as: "billType",
           attributes: ["type_name", "tx_type", "category_map"],
+          // Menerapkan filter kategori di sini
+          where:
+            Object.keys(billTypeCondition).length > 0
+              ? billTypeCondition
+              : null,
+          required: category ? true : false, // Jika ada kategori, gunakan INNER JOIN agar data terfilter
         },
       ],
       limit: billLimit,
-      order: [["createdAt", "DESC"]], // Urutkan dari yang terbaru
+      order: [["createdAt", "DESC"]],
     });
 
-    // 3. Format respons agar konsisten dengan kebutuhan UI
-    // Menghilangkan formatting mata uang di backend agar frontend bisa mengolah angkanya
     return res.status(200).json({
       status: true,
-      message: "Daftar tagihan berhasil diambil.",
+      message: category
+        ? `Daftar tagihan kategori ${category} berhasil diambil.`
+        : "Semua daftar tagihan berhasil diambil.",
       total_count: count,
-      data: rows, // Mengirim objek asli agar frontend bisa akses billType
+      data: rows,
     });
   } catch (error) {
     console.error("Kesalahan getPendingBills:", error);

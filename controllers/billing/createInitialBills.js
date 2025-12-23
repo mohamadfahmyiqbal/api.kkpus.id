@@ -1,94 +1,70 @@
 // 📁 controllers/billing/createInitialBills.js
-
 import db from "../../models/index.js";
 import moment from "moment";
 
+// Ambil model sesuai dengan nama yang didefinisikan di db (index.js)
 const { Member, Bill, BillType, BillItem } = db;
+
 moment.locale("id");
 
-const CODE_WAJIB_AWAL = "SW_AWAL";
-const CODE_WAJIB_BULANAN = "SW_BULANAN";
-const BILL_STATUS_PENDING = "UNPAID";
-const DUE_DATE_OFFSET_DAYS = 7;
-
-/**
- * Membuat SATU tagihan awal (Invoice) yang terdiri dari beberapa BillItem.
- */
-export const createInitialBills = async (memberId, t) => {
+export const createInitialBills = async (memberId, typeCodes, customAmount = null, t) => {
   try {
-    // 1. Ambil Data Member dan Tipe Tagihan secara paralel
+    // 1. Ambil Data Member dan Tipe Tagihan
+    // Note: Member menggunakan member_id untuk pencarian awal
     const [memberData, requiredBillTypes] = await Promise.all([
       Member.findOne({
         where: { member_id: memberId },
-        attributes: ["member_no"],
+        attributes: ["member_no", "member_id"], // Ambil member_no karena Bill butuh ini
         transaction: t,
       }),
       BillType.findAll({
-        where: { type_code: [CODE_WAJIB_AWAL, CODE_WAJIB_BULANAN] },
+        where: { type_code: typeCodes },
         transaction: t,
       }),
     ]);
 
-    const memberNo = memberData?.member_no;
-    if (!memberNo || requiredBillTypes.length === 0) {
-      throw new Error(
-        "Gagal membuat tagihan: MemberNo atau BillType tidak ditemukan."
-      );
+    if (!memberData || requiredBillTypes.length === 0) {
+      throw new Error("Gagal: Member atau Tipe Tagihan tidak ditemukan.");
     }
 
-    // 2. Kalkulasi Total dan Persiapan Item
     let totalAmount = 0;
-    const billItemsData = [];
-    let initialBillTypeId = null;
-
-    for (const type of requiredBillTypes) {
-      const amount = parseFloat(type.default_amount) || 0;
+    const billItemsData = requiredBillTypes.map((type) => {
+      const amount = customAmount ? parseFloat(customAmount) : (parseFloat(type.default_amount) || 0);
       totalAmount += amount;
-
-      billItemsData.push({
+      return {
         description: type.type_name,
         amount: amount,
-      });
+      };
+    });
 
-      if (type.type_code === CODE_WAJIB_AWAL) {
-        initialBillTypeId = type.bill_type_id;
-      }
-    }
-
-    if (!initialBillTypeId) {
-      throw new Error("Tipe tagihan SW_AWAL tidak ditemukan.");
-    }
-
-    const dueDate = moment().add(DUE_DATE_OFFSET_DAYS, "days").toDate();
-    const BILL_DESCRIPTION =
-      "Tagihan Awal Anggota Baru (Kewajiban Pokok dan Wajib)";
-
-    // 3. Buat Parent Bill
+    // 2. Buat Parent Bill
+    // Berdasarkan models/index.js, Bill butuh member_id dan member_no
     const newBill = await Bill.create(
       {
         member_id: memberId,
-        member_no: memberNo,
-        bill_type_id: initialBillTypeId,
-        description: BILL_DESCRIPTION,
+        member_no: memberData.member_no, // Penting karena ada relasi foreignKey: "member_no"
+        bill_type_id: requiredBillTypes[0].bill_type_id,
+        description: customAmount ? `Setoran ${requiredBillTypes[0].type_name}` : "Tagihan Awal Anggota",
         amount: totalAmount,
-        due_date: dueDate,
-        status: BILL_STATUS_PENDING,
+        due_date: moment().add(1, "days").toDate(),
+        status: "UNPAID",
       },
       { transaction: t }
     );
 
-    // 4. Buat Detail Bill Items
-    const billItemsToCreate = billItemsData.map((item) => ({
-      bill_id: newBill.bill_id,
-      description: item.description,
-      amount: item.amount,
-    }));
-
-    await BillItem.bulkCreate(billItemsToCreate, { transaction: t });
+    // 3. Buat Detail Items
+    await BillItem.bulkCreate(
+      billItemsData.map((item) => ({
+        bill_id: newBill.bill_id,
+        description: item.description,
+        amount: item.amount,
+      })),
+      { transaction: t }
+    );
 
     return newBill.bill_id;
   } catch (error) {
-    console.error("Error creating initial bills:", error);
+    console.error("Error in createInitialBills:", error);
     throw error;
   }
 };
