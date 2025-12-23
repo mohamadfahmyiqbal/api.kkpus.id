@@ -1,56 +1,36 @@
 import db from "../../models/index.js";
 import crypto from "crypto";
 
-const { Bill, Transaction, Member, MemberRegistration, BillType, Account } = db;
-
-const CODE_SIMPANAN_WAJIB = "SW_WAJIB";
+const { 
+  Bill, 
+  BillItem,
+  Transaction, 
+  Member, 
+  Account, 
+  MemberSavingsAccount,
+  SavingsProduct,
+  MemberRegistration 
+} = db;
 
 export const midtransNotification = async (req, res) => {
   const notification = req.body;
 
-  // 1. Verifikasi Signature Key (Keamanan agar tidak bisa ditembak sembarangan)
-  const serverKey = process.env.MIDTRANS_SERVER_KEY; // Pastikan ini ada di .env
-  const combinedStr =
-    notification.order_id +
-    notification.status_code +
-    notification.gross_amount +
-    serverKey;
-  const signatureKey = crypto
-    .createHash("sha512")
-    .update(combinedStr)
-    .digest("hex");
+  const serverKey = process.env.MIDTRANS_SERVER_KEY;
+  const combinedStr = notification.order_id + notification.status_code + notification.gross_amount + serverKey;
+  const signatureKey = crypto.createHash("sha512").update(combinedStr).digest("hex");
 
   if (signatureKey !== notification.signature_key) {
-    console.error("[Midtrans Webhook] Unauthorized Access: Invalid Signature");
     return res.status(403).json({ message: "Invalid Signature Key" });
   }
 
   const orderId = notification.order_id;
   const transactionStatus = notification.transaction_status;
-  const fraudStatus = notification.fraud_status;
   const grossAmount = parseFloat(notification.gross_amount);
-
-  // Ekstraksi VA Number untuk informasi metode pembayaran
-  const paymentType = notification.payment_type;
-  let vaNumber = null;
-  let bankName = null;
-
-  if (notification.va_numbers && notification.va_numbers.length > 0) {
-    vaNumber = notification.va_numbers[0].va_number;
-    bankName = notification.va_numbers[0].bank;
-  } else if (notification.permata_va_number) {
-    vaNumber = notification.permata_va_number;
-    bankName = "permata";
-  } else if (paymentType === "echannel") {
-    vaNumber = notification.bill_key;
-    bankName = "mandiri";
-  }
 
   let dbTransaction;
   try {
     dbTransaction = await db.sequelize.transaction();
 
-    // 2. Cari Transaksi Lokal berdasarkan Order ID Midtrans
     const localTx = await Transaction.findOne({
       where: { midtrans_order_id: orderId },
       transaction: dbTransaction,
@@ -61,34 +41,15 @@ export const midtransNotification = async (req, res) => {
       return res.status(404).json({ message: "Order ID Not Found" });
     }
 
-    // 3. Tentukan Status Transaksi Baru
-    let newStatus = "PENDING";
-    if (
-      transactionStatus === "settlement" ||
-      (transactionStatus === "capture" && fraudStatus === "accept")
-    ) {
-      newStatus = "PAID";
-    } else if (["cancel", "deny", "expire"].includes(transactionStatus)) {
-      newStatus = "EXPIRED";
-    }
+    let newStatus = (transactionStatus === "settlement" || transactionStatus === "capture") ? "PAID" : "EXPIRED";
 
-    // 4. Update Data Transaksi (Audit Midtrans)
-    await localTx.update(
-      {
-        status: newStatus,
-        midtrans_transaction_id: notification.transaction_id,
-        payment_type: paymentType,
-        payment_method: bankName || paymentType,
-        va_number: vaNumber,
-        bank_name: bankName,
-        fraud_status: fraudStatus,
-        status_message: notification.status_message,
-        settlement_time: newStatus === "PAID" ? new Date() : null,
-      },
-      { transaction: dbTransaction }
-    );
+    // 1. Update Status Transaksi
+    await localTx.update({
+      status: newStatus,
+      settlement_time: newStatus === "PAID" ? new Date() : null,
+    }, { transaction: dbTransaction });
 
-    // 5. Update Status Tagihan (Bills) - Gunakan huruf kecil sesuai model Anda
+    // 2. Update Status Tagihan
     if (localTx.bill_id) {
       await Bill.update(
         { status: newStatus === "PAID" ? "PAID" : "UNPAID" },
@@ -96,104 +57,128 @@ export const midtransNotification = async (req, res) => {
       );
     }
 
-    // 6. LOGIKA MUTASI SALDO (Hanya jika status PAID dan belum tercatat di Ledger)
+    // 3. LOGIKA MUTASI SALDO (Hanya jika PAID)
     if (newStatus === "PAID" && !localTx.is_ledger_recorded) {
-      // Ambil atau buat akun simpanan anggota
+      
+      // A. Update Saldo Induk (Total Semua Simpanan)
       let [userAccount] = await Account.findOrCreate({
         where: { member_id: localTx.member_id, account_type: "SAVINGS" },
         defaults: {
-          account_no: `ACC-${localTx.member_id}-${Date.now()
-            .toString()
-            .slice(-4)}`,
+          account_no: `ACC-${localTx.member_id}-${Date.now().toString().slice(-4)}`,
           current_balance: 0,
           open_date: new Date(),
-          akad_type: "WADI'AH",
         },
         transaction: dbTransaction,
       });
+      await userAccount.increment("current_balance", { by: grossAmount, transaction: dbTransaction });
 
-      // Update Saldo jika jenisnya SETORAN (Termasuk Simpanan Sukarela)
-      if (localTx.tx_type === "SETORAN") {
-        await userAccount.increment("current_balance", {
-          by: grossAmount,
-          transaction: dbTransaction,
-        });
-      }
-
-      // Tandai agar tidak terjadi double increment jika webhook terkirim ulang
-      await localTx.update(
-        { is_ledger_recorded: true },
-        { transaction: dbTransaction }
-      );
-
-      // 7. LOGIKA KHUSUS BERDASARKAN KATEGORI
-      const category = localTx.tx_category;
-
-      // Kasus: Pendaftaran Member Baru
-      if (category === "MEMBER_REGISTRATION") {
-        const reg = await MemberRegistration.findOne({
-          where: { member_id: localTx.member_id },
-          transaction: dbTransaction,
+      // B. LOGIKA PECAH SALDO & PEMBUATAN AKUN
+      if (localTx.tx_category === "MEMBER_REGISTRATION" && localTx.bill_id) {
+        const items = await BillItem.findAll({
+          where: { bill_id: localTx.bill_id },
+          transaction: dbTransaction
         });
 
-        if (reg) {
-          await reg.update(
-            { registration_status: "selesai" },
-            { transaction: dbTransaction }
-          );
-          await Member.update(
-            { status_id: reg.member_type },
-            {
-              where: { member_id: localTx.member_id },
-              transaction: dbTransaction,
-            }
-          );
+        // Loop item tagihan (Pokok/Wajib)
+        for (const item of items) {
+          let productName = item.description.includes("Pokok") ? "Simpanan Pokok" : 
+                            item.description.includes("Wajib") ? "Simpanan Wajib" : "Simpanan Sukarela";
 
-          // Generate Tagihan Simpanan Wajib otomatis untuk sisa bulan dalam setahun
-          const swType = await BillType.findOne({
-            where: { type_code: CODE_SIMPANAN_WAJIB },
-            transaction: dbTransaction,
+          const product = await SavingsProduct.findOne({
+            where: { name: productName },
+            transaction: dbTransaction
           });
 
-          if (swType) {
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-            let futureBills = [];
-
-            for (let m = currentMonth + 1; m <= 12; m++) {
-              futureBills.push({
-                bill_type_id: swType.bill_type_id,
-                member_id: localTx.member_id,
-                member_no: localTx.member_no,
-                description: `Simpanan Wajib Bulan ${m}/${currentYear}`,
-                amount: swType.default_amount,
-                due_date: new Date(currentYear, m - 1, 10),
-                status: "UNPAID",
-              });
-            }
-            if (futureBills.length > 0) {
-              await Bill.bulkCreate(futureBills, {
-                transaction: dbTransaction,
-              });
-            }
+          if (product) {
+            let [savAcc, created] = await MemberSavingsAccount.findOrCreate({
+              where: { member_id: localTx.member_id, savings_product_id: product.savings_product_id },
+              defaults: {
+                account_no: `SAV-${product.product_code || 'PRD'}-${localTx.member_id}`,
+                account_type: productName,
+                open_date: new Date(),
+                current_balance: 0,
+                status: 'ACTIVE'
+              },
+              transaction: dbTransaction,
+            });
+            await savAcc.increment("current_balance", { by: item.amount, transaction: dbTransaction });
           }
         }
+
+        // --- 🆕 LOGIKA KHUSUS: Pastikan Akun Sukarela Selalu Ada (Saldo 0 jika tidak ada di tagihan) ---
+        const sukarelaProduct = await SavingsProduct.findOne({
+          where: { name: "Simpanan Sukarela" },
+          transaction: dbTransaction
+        });
+
+        if (sukarelaProduct) {
+          await MemberSavingsAccount.findOrCreate({
+            where: { member_id: localTx.member_id, savings_product_id: sukarelaProduct.savings_product_id },
+            defaults: {
+              account_no: `SAV-SR-${localTx.member_id}`,
+              account_type: "Simpanan Sukarela",
+              open_date: new Date(),
+              current_balance: 0,
+              status: 'ACTIVE'
+            },
+            transaction: dbTransaction,
+          });
+        }
+
+        // C. UPDATE STATUS MEMBER & REGISTRASI
+        const registration = await MemberRegistration.findOne({
+          where: { member_id: localTx.member_id },
+          transaction: dbTransaction
+        });
+
+        if (registration) {
+          await registration.update({ registration_status: "SELESAI" }, { transaction: dbTransaction });
+          
+          // Cari ID Status berdasarkan Nama Tipe Member (FULL/ASSOCIATE)
+          const targetStatus = await db.MemberStatus.findOne({
+            where: { status_name: registration.member_type },
+            transaction: dbTransaction
+          });
+
+          if (targetStatus) {
+            await Member.update(
+              { status_id: targetStatus.status_id }, 
+              { where: { member_id: localTx.member_id }, transaction: dbTransaction }
+            );
+          }
+        }
+
+      } else {
+        // Logika untuk Topup Sukarela biasa
+        const product = await SavingsProduct.findOne({
+          where: { name: "Simpanan Sukarela" },
+          transaction: dbTransaction
+        });
+
+        if (product) {
+          let [savAcc, created] = await MemberSavingsAccount.findOrCreate({
+            where: { member_id: localTx.member_id, savings_product_id: product.savings_product_id },
+            defaults: {
+              account_no: `SAV-SR-${localTx.member_id}`,
+              account_type: "Simpanan Sukarela",
+              open_date: new Date(),
+              current_balance: 0,
+              status: 'ACTIVE'
+            },
+            transaction: dbTransaction,
+          });
+          await savAcc.increment("current_balance", { by: grossAmount, transaction: dbTransaction });
+        }
       }
-      // Kasus: Simpanan Sukarela (Hanya log/notifikasi tambahan jika perlu)
-      else if (category === "DEPOSIT_SUKARELA") {
-        console.log(
-          `[Webhook] Sukses Topup Sukarela: ${localTx.member_no} sebesar ${grossAmount}`
-        );
-      }
+
+      await localTx.update({ is_ledger_recorded: true }, { transaction: dbTransaction });
     }
 
     await dbTransaction.commit();
-    return res
-      .status(200)
-      .json({ status: "OK", message: "Notification Processed Successfully" });
+    return res.status(200).json({ status: "OK" });
   } catch (error) {
+    console.error("WEBHOOK_ERROR:", error);
     if (dbTransaction) await dbTransaction.rollback();
-    console.error("[Midtrans Webhook Error]:", error);
-    return res.status(500).json({ status: "Error", message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };

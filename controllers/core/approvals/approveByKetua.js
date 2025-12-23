@@ -85,7 +85,6 @@ export const approveByKetua = async (req, res) => {
         phone_number: registration.phone_number,
         nik_ktp: registration.nik_ktp,
         address: registration.address_ktp, 
-        member_type: registration.member_type,
         join_date: new Date(), 
         status_id: 1, // Asumsi 1 = Aktif
       };

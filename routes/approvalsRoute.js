@@ -1,57 +1,61 @@
-// 📁 routes/approvalsRoute.js (KODE REVISI UNTUK REUSABILITY)
-
 import express from "express";
-// Import Controller Generik
 import { processApproval } from "../controllers/core/approvals/processApproval.js";
+import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js"; // Controller baru untuk Bendahara
 
-// Import Middlewares
 import { MidAnggota } from "../midlleware/MidAnggota.js";
 import MidRole from "../midlleware/MidRole.js";
 
 const router = express.Router();
 
-// --- KONSTANTA FLOW SPESIFIK ---
-// MEMBER REGISTRATION FLOW
-const FLOW_MEMBER_REG = 'member_registration'; 
-const STEP_PENGWAS = 1;
-const STEP_KETUA = 2;
+// --- KONSTANTA FLOW ---
+const FLOW_MEMBER_REG = 'member_registration';
+const FLOW_SAVINGS_WD = 'savings_withdrawal';
 
-// FINANCING APPLICATION FLOW (Contoh skenario lain)
-const FLOW_FINANCING_APP = 'FINANCING_APPLICATION';
-const STEP_SPV_KREDIT = 3;
-const STEP_DIREKTUR = 4;
+// ID STEP BERDASARKAN TABEL ANDA
+const STEP_REG_PENGWAS = 1;
+const STEP_REG_KETUA = 2;
+const STEP_WD_PENGWAS = 13; // Sesuai data tabel approval_steps Anda
+const STEP_WD_KETUA = 14;    // Sesuai data tabel approval_steps Anda
 
-// 1. ROUTE: Approval Pendaftaran oleh Pengawas (Step 1)
+// ==========================================
+// 1. ALUR PENDAFTARAN ANGGOTA
+// ==========================================
 router.put(
- "/anggota/approval/pengawas/:entityId", // entityId = registration_id
- MidAnggota,
- MidRole(["Pengawas"]),
- processApproval(FLOW_MEMBER_REG, STEP_PENGWAS) // <-- Call Generik Handler
+  "/pendaftaran/approval/pengawas/:entityId",
+  MidAnggota, MidRole(["Pengawas"]),
+  processApproval(FLOW_MEMBER_REG, STEP_REG_PENGWAS)
 );
 
-// 2. ROUTE: Approval Pendaftaran oleh Ketua (Step 2 - Final)
 router.put(
- "/anggota/approval/ketua/:entityId", // entityId = registration_id
- MidAnggota,
- MidRole(["Ketua"]),
- processApproval(FLOW_MEMBER_REG, STEP_KETUA) // <-- Call Generik Handler
+  "/pendaftaran/approval/ketua/:entityId",
+  MidAnggota, MidRole(["Ketua"]),
+  processApproval(FLOW_MEMBER_REG, STEP_REG_KETUA)
 );
 
-// 3. ROUTE: Approval Pembiayaan oleh SPV Kredit (Contoh 1)
+// ==========================================
+// 2. ALUR PENARIKAN SIMPANAN (Savings Withdrawal)
+// ==========================================
+
+// STEP 1: Pengawas (Update status ke Ketua)
 router.put(
- "/pembiayaan/approval/spv_kredit/:entityId", // entityId = financing_id
- MidAnggota,
- MidRole(["SupervisorKredit"]),
- processApproval(FLOW_FINANCING_APP, STEP_SPV_KREDIT)
+  "/penarikan/approval/pengawas/:entityId",
+  MidAnggota, MidRole(["Pengawas"]),
+  processApproval(FLOW_SAVINGS_WD, STEP_WD_PENGWAS)
 );
 
-// 4. ROUTE: Approval Pembiayaan oleh Direktur (Contoh 2 - Final)
+// STEP 2: Ketua (Update status ke APPROVED/Siap Bayar)
 router.put(
- "/pembiayaan/approval/direktur/:entityId", // entityId = financing_id
- MidAnggota,
- MidRole(["Direktur"]),
- processApproval(FLOW_FINANCING_APP, STEP_DIREKTUR)
+  "/penarikan/approval/ketua/:entityId",
+  MidAnggota, MidRole(["Ketua"]),
+  processApproval(FLOW_SAVINGS_WD, STEP_WD_KETUA)
 );
 
+// STEP 3: Bendahara (Eksekusi Bayar & Potong Saldo)
+// Gunakan POST atau PUT sesuai selera, di sini menggunakan withdrawal_id
+router.post(
+  "/penarikan/pembayaran/:withdrawal_id",
+  MidAnggota, MidRole(["Bendahara"]),
+  disburseWithdrawal 
+);
 
 export default router;

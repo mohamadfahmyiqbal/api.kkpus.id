@@ -29,6 +29,7 @@ import MemberLoan from "./loan/member_loans.js";
 import SavingsProduct from "./savings/savings_products.js";
 import MemberSavingsAccount from "./savings/member_savings_accounts.js";
 import SavingsTransaction from "./savings/savings_transactions.js"; // ✅
+import SavingsWithdrawal from "./savings/savings_withdrawals.js"; // 👈 TAMBAHKAN INI
 import ApprovalFlow from "./approvals/approval_flows.js";
 import ApprovalStep from "./approvals/approval_steps.js";
 import Approval from "./approvals/approvals.js";
@@ -63,6 +64,7 @@ db.MemberLoan = MemberLoan(sequelizeInstance);
 db.SavingsProduct = SavingsProduct(sequelizeInstance);
 db.MemberSavingsAccount = MemberSavingsAccount(sequelizeInstance);
 db.SavingsTransaction = SavingsTransaction(sequelizeInstance);
+db.SavingsWithdrawal = SavingsWithdrawal(sequelizeInstance); // 👈 TAMBAHKAN INI
 db.ApprovalFlow = ApprovalFlow(sequelizeInstance);
 db.ApprovalStep = ApprovalStep(sequelizeInstance);
 db.Approval = Approval(sequelizeInstance);
@@ -192,13 +194,44 @@ db.MemberSavingsAccount.belongsTo(db.Member, {
   as: "member",
 });
 db.SavingsProduct.hasMany(db.MemberSavingsAccount, {
-  foreignKey: "savings_product_id", // Ubah dari product_id ke savings_product_id
-  as: "accounts",
+  foreignKey: "savings_product_id", // Pastikan ini sesuai dengan model terbaru
+  as: "memberAccounts", // Ubah alias agar lebih deskriptif
 });
 
 db.MemberSavingsAccount.belongsTo(db.SavingsProduct, {
-  foreignKey: "savings_product_id", // Ubah dari product_id ke savings_product_id
-  as: "product",
+  foreignKey: "savings_product_id",
+  as: "savingsProduct", // Ubah alias agar tidak tertukar dengan 'product' lain
+});
+
+// Tambahkan relasi untuk Withdrawal agar bisa di-include saat Approval
+db.SavingsWithdrawal.belongsTo(db.MemberSavingsAccount, {
+  foreignKey: "savings_account_id",
+  as: "savingsAccount"
+});
+
+db.MemberSavingsAccount.hasMany(db.SavingsWithdrawal, {
+  foreignKey: "savings_account_id",
+  as: "withdrawals"
+});
+
+db.SavingsWithdrawal.belongsTo(db.Member, { 
+  foreignKey: "member_id", 
+  as: "member" 
+});
+
+db.Member.hasMany(db.SavingsWithdrawal, {
+  foreignKey: "member_id",
+  as: "withdrawals"
+});
+
+// Relasi Approval untuk Withdrawal (Penting untuk performFinalAction)
+db.SavingsWithdrawal.belongsTo(db.ApprovalFlow, {
+  foreignKey: "approval_flow_id",
+  as: "flow",
+});
+db.SavingsWithdrawal.belongsTo(db.ApprovalStep, {
+  foreignKey: "current_step_id",
+  as: "currentStep",
 });
 
 // --- APPROVALS ---

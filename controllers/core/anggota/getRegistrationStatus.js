@@ -8,7 +8,7 @@ const { MemberRegistration, ApprovalStep, Bill, Member, Approval, BillType } =
   db;
 
 const ENTITY_REFERENCE = "member_registration";
-const CODE_WAJIB_AWAL = "SW_AWAL"; // Konstanta yang dibutuhkan (misal: Simpanan Wajib Awal)
+const CODE_WAJIB_AWAL = "SW_POKOK"; // Konstanta yang dibutuhkan (misal: Simpanan Wajib Awal)
 
 export const getRegistrationStatus = async (req, res) => {
   const member_id = req.userId;

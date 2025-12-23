@@ -4,28 +4,32 @@ const SavingsProduct = (sequelize) => {
   const { DataTypes } = Sequelize;
 
   const SavingsProductModel = sequelize.define("savings_products", {
-    product_id: {
+    // Sesuai dengan savings_product_id (Primary Key)
+    savings_product_id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
       allowNull: false,
     },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+    // Sesuai dengan product_code varchar(50)
+    product_code: {
+      type: DataTypes.STRING(50),
+      allowNull: true, // Karena di deskripsi database YES
     },
-    description: {
-      type: DataTypes.TEXT,
+    // Sesuai dengan name varchar(255)
+    name: {
+      type: DataTypes.STRING(255),
       allowNull: true,
     },
-    min_initial_deposit: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      defaultValue: 0.00,
+    // Sesuai dengan akad_type varchar(50)
+    akad_type: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
   }, { 
     freezeTableName: true, 
-    timestamps: true,
+    timestamps: true, // Ini akan menangani created_at dan updated_at secara otomatis
+    underscored: true, // Agar Sequelize mencari created_at bukan createdAt
   });
 
   return SavingsProductModel;

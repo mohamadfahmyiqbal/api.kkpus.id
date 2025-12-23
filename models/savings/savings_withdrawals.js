@@ -3,7 +3,7 @@ import { Sequelize } from "sequelize";
 const SavingsWithdrawal = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const SavingsWithdrawalModel = sequelize.define("savings_withdrawals", {
+  return sequelize.define("savings_withdrawals", {
     withdrawal_id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
@@ -12,28 +12,47 @@ const SavingsWithdrawal = (sequelize) => {
     },
     savings_account_id: {
       type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
+      allowNull: false,
+    },
+    member_id: { // Tambahkan ini sesuai tabel
+      type: DataTypes.BIGINT,
+      allowNull: false,
     },
     amount: {
       type: DataTypes.DECIMAL(18, 2),
       allowNull: false,
     },
-    withdrawal_date: {
+    method: { // Tambahkan ini
+      type: DataTypes.STRING(50),
+    },
+    bank_name: { // Tambahkan ini
+      type: DataTypes.STRING(100),
+    },
+    bank_account_no: { // Tambahkan ini
+      type: DataTypes.STRING(50),
+    },
+    request_datetime: { // Sesuaikan nama dengan tabel
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
     status: {
-      type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED"),
-      allowNull: false,
+      type: DataTypes.STRING(20), // Gunakan STRING agar fleksibel
       defaultValue: "PENDING",
     },
+    approval_flow_id: { // Penting untuk sistem approval
+      type: DataTypes.BIGINT,
+    },
+    current_step_id: { // Tambahkan ini jika menggunakan multi-step approval
+      type: DataTypes.BIGINT,
+    },
+    invoice_id: {
+      type: DataTypes.BIGINT,
+    }
   }, { 
     freezeTableName: true, 
     timestamps: true,
+    underscored: true // Pastikan ini true jika tabel menggunakan created_at
   });
-
-  return SavingsWithdrawalModel;
 };
 
 export default SavingsWithdrawal;
