@@ -1,29 +1,25 @@
-// src/routes/notificationRoute.js
+// 📁 src/routes/notificationRoute.js
 
 import express from "express";
-import { MidAnggota } from "../midlleware/MidAnggota.js"; // Middleware Otorisasi
+import { MidAnggota } from "../middleware/MidAnggota.js"; // Pastikan ejaan folder 'midlleware' sesuai
 import { updateNotificationStatus } from "../controllers/content/notifications/updateNotificationStatus.js";
 import getNotificationList from "../controllers/notification/getNotificationList.js";
 
 const router = express.Router();
 
-// Semua rute notifikasi memerlukan otorisasi anggota
-router.use("/notifikasi", MidAnggota);
+// Semua rute di file ini memerlukan login (Token JWT)
+router.use(MidAnggota);
 
 /**
- * Endpoint: GET /api/notifikasi/list
- * Digunakan oleh: UNotification.getNotificationByNik()
- * Fungsi: Mengambil daftar notifikasi anggota.
+ * GET /api/notifikasi/list
+ * Mengambil riwayat notifikasi dari Database
  */
-router.get("/notifikasi/list", getNotificationList);
+router.get("/list", getNotificationList);
 
 /**
- * Endpoint: POST /api/notifikasi/update-status
- * Digunakan oleh: UNotification.markAsRead()
- * Fungsi: Menandai satu atau beberapa notifikasi sudah dibaca.
+ * POST /api/notifikasi/update-status
+ * Menandai notifikasi sebagai "Read"
  */
-router.post("/notifikasi/update-status", updateNotificationStatus);
-
-// Tambahkan rute untuk detail notifikasi jika diperlukan (misalnya: /notifikasi/detail/:id)
+router.post("/update-status", updateNotificationStatus);
 
 export default router;

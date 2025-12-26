@@ -1,28 +1,12 @@
 import express from "express";
-// Import middleware untuk otorisasi anggota
-
-// Import controller untuk mengambil data profil
-// Asumsi: Logic Get Profile berada di controllers/core/anggota
-import { getAnggotaProfile } from "../controllers/core/anggota/getAnggotaProfile.js"; // Asumsi path controller
-import { MidAnggota } from "../midlleware/MidAnggota.js";
+import { getAnggotaProfile } from "../controllers/core/anggota/getAnggotaProfile.js";
+import { MidAnggota } from "../middleware/MidAnggota.js"; // Perbaiki: middleware
 import submitRegistration from "../controllers/core/anggota/submitRegistration.js";
 import getRegistrationStatus from "../controllers/core/anggota/getRegistrationStatus.js";
 
 const router = express.Router();
 
-// --- Rute Anggota Terotentikasi ---
-
-/**
- * Endpoint: GET /profil
- * Digunakan oleh Frontend: UAuth.getProfile() -> GET /api/anggota/profil
- * Fungsi: Mengambil data profil anggota yang sedang login.
- * Memerlukan otorisasi (MidAnggota)
- */
-router.get("/anggota/profil", MidAnggota, getAnggotaProfile);
-router.post("/anggota/pendaftaran", MidAnggota, submitRegistration);
-router.get("/anggota/getRegistrationStatus", MidAnggota, getRegistrationStatus);
-
-// Tambahkan rute anggota lainnya di sini (misalnya: update profil)
-// router.put('/profil/update', MidAnggota, updateAnggotaProfile);
-
+router.get("/profil", MidAnggota, getAnggotaProfile);
+router.post("/pendaftaran", MidAnggota, submitRegistration);
+router.get("/getRegistrationStatus", MidAnggota, getRegistrationStatus);
 export default router;

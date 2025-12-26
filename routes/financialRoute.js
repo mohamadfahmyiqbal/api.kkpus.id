@@ -1,6 +1,6 @@
 // src/routes/financialRoute.js
 import express from "express";
-import { MidAnggota } from "../midlleware/MidAnggota.js";
+import { MidAnggota } from "../middleware/MidAnggota.js";
 // Pastikan path controller ini sesuai dengan struktur folder Anda
 import { getFinancialSummary } from "../controllers/content/financial/getFinancialSummary.js";
 

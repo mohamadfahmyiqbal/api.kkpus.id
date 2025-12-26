@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-import iris from "../../utils/midtransIris.js";
+import iris from "../utility/midtransIris.js";
 
 export const disburseWithdrawal = async (req, res) => {
     const { withdrawal_id } = req.params;

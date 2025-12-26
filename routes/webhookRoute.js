@@ -1,19 +1,29 @@
-// 📁 src/routes/webhookRoute.js
-
+// 📁 routes/webhookRoute.js
 import express from "express";
-import { midtransNotification } from "../controllers/billing/midtransNotification.js";
+// Path disesuaikan dengan folder baru: controllers/webhooks/
+import { midtransNotification } from "../controllers/webhooks/midtransNotification.js";
+import { irisNotification } from "../controllers/webhooks/irisWebhook.js";
 
 const router = express.Router();
 
-// Rute ini 100% publik
+/**
+ * Endpoint: POST /api/webhooks/midtrans
+ * Digunakan oleh Midtrans untuk update status pembayaran (Billing)
+ */
 router.post("/midtrans/notification", midtransNotification);
-// 🛑 TAMBAH RUTE GET INI (OPSIONAL, HANYA UNTUK KEBERSIHAN)
-router.get("/midtrans/notification", (req, res) => {
-  // Mengembalikan 405 Method Not Allowed
+
+/**
+ * Endpoint: POST /api/webhooks/iris
+ * Digunakan oleh Midtrans Iris untuk update status pencairan dana (Disbursement)
+ */
+router.post("/iris", irisNotification);
+
+// Fallback untuk Method Not Allowed
+router.get(["/midtrans/notification", "/iris"], (req, res) => {
   return res.status(405).json({
     success: false,
-    message:
-      "Method Not Allowed. This endpoint only accepts POST requests for Midtrans notifications.",
+    message: "Method Not Allowed. Use POST for webhooks.",
   });
 });
+
 export default router;

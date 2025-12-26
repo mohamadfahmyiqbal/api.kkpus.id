@@ -1,16 +1,11 @@
-// src/routes/financialRoute.js
 import express from "express";
-import { MidAnggota } from "../midlleware/MidAnggota.js";
-import { getSavingsHistory } from "../controllers/savings/getSavingsHistory.js"; // Pastikan .js bukan .jsx
+import { MidAnggota } from "../middleware/MidAnggota.js"; // Perbaikan path: middleware
+import { getSavingsHistory } from "../controllers/savings/getSavingsHistory.js";
 import requestWithdrawal from "../controllers/savings/requestWithdrawal.js";
 
 const router = express.Router();
 
-/**
- * Frontend memanggil: simpanan/riwayat
- * Jika app.use("/", router), maka path di sini harus "/simpanan/riwayat"
- */
-router.get("/simpanan/riwayat", MidAnggota, getSavingsHistory);
-router.post("/simpanan/penarikan/request", MidAnggota, requestWithdrawal);
+router.get("/riwayat", MidAnggota, getSavingsHistory);
+router.post("/penarikan/request", MidAnggota, requestWithdrawal);
 
 export default router;
