@@ -1,50 +1,65 @@
 import db from "../../models/index.js";
 
 const requestWithdrawal = async (req, res) => {
-    const memberId = req.userId; // Menggunakan userId dari MidAnggota
-    const { amount, category, method, bank_name, bank_account_no } = req.body; 
+    const memberId = req.userId;
+    const { amount, category, method, bank_name, bank_account_no } = req.body;
+
+    // Mulai Transaksi Database
+    const t = await db.sequelize.transaction();
 
     try {
-        // 1. Cari akun berdasarkan member_id dan account_type (kategori)
+        // 1. Validasi Input Dasar
+        if (!amount || parseFloat(amount) <= 0) {
+            return res.status(400).json({
+                status: false,
+                message: "Jumlah penarikan harus lebih besar dari 0."
+            });
+        }
+
+        // 2. Cari akun dan kunci untuk pengecekan saldo
         const account = await db.MemberSavingsAccount.findOne({
             where: {
                 member_id: memberId,
                 account_type: category
-            }
+            },
+            transaction: t
         });
 
         if (!account) {
+            await t.rollback();
             return res.status(404).json({
                 status: false,
                 message: `Akun simpanan untuk kategori '${category}' tidak ditemukan.`
             });
         }
 
-        // 2. Validasi Saldo menggunakan current_balance
+        // 3. Validasi Saldo
         if (parseFloat(account.current_balance) < parseFloat(amount)) {
+            await t.rollback();
             return res.status(400).json({
                 status: false,
-                message: "Maaf, saldo Anda tidak mencukupi untuk melakukan penarikan ini."
+                message: "Maaf, saldo Anda tidak mencukupi."
             });
         }
 
-        // 3. Cari Step Pertama untuk Approval Flow Penarikan (Flow ID 3)
-        // Berdasarkan data Anda, ini akan mencari Step Order 1 yang menghasilkan ID 13
+        // 4. Cari Step Pertama Approval (Flow ID 3)
         const firstStep = await db.ApprovalStep.findOne({
             where: {
                 approval_flow_id: 3,
                 step_order: 1
-            }
+            },
+            transaction: t
         });
 
         if (!firstStep) {
+            await t.rollback();
             return res.status(500).json({
                 status: false,
-                message: "Konfigurasi alur persetujuan (Approval Flow) belum tersedia."
+                message: "Konfigurasi alur persetujuan tidak ditemukan. Silahkan hubungi admin."
             });
         }
 
-        // 4. Simpan Pengajuan ke tabel savings_withdrawals
+        // 5. Simpan Pengajuan
         const newRequest = await db.SavingsWithdrawal.create({
             member_id: memberId,
             savings_account_id: account.savings_account_id,
@@ -52,28 +67,34 @@ const requestWithdrawal = async (req, res) => {
             request_datetime: new Date(),
             status: 'PENDING',
             method: method || 'TRANSFER',
-            bank_name: bank_name || null,
-            bank_account_no: bank_account_no || null,
-            approval_flow_id: 3, 
-            current_step_id: firstStep.approval_step_id // Otomatis mengisi ID 13 (Pengawas)
-        });
+            bank_name: method === 'TRANSFER' ? bank_name : null,
+            bank_account_no: method === 'TRANSFER' ? bank_account_no : null,
+            approval_flow_id: 3,
+            current_step_id: firstStep.approval_step_id
+        }, { transaction: t });
+
+        // Komit Transaksi
+        await t.commit();
 
         return res.status(200).json({
             status: true,
-            message: "Pengajuan pencairan berhasil dikirim. Menunggu persetujuan Pengawas.",
+            message: "Pengajuan berhasil dikirim. Menunggu persetujuan Pengawas.",
             data: {
                 withdrawal_id: newRequest.withdrawal_id,
                 amount: newRequest.amount,
                 status: newRequest.status,
-                next_approver: "Pengawas"
+                next_approver: "Pengawas" // Anda bisa mengambil role_name dari firstStep jika ada join
             }
         });
 
     } catch (error) {
+        // Batalkan semua perubahan jika terjadi error
+        if (t) await t.rollback();
+
         console.error("Request Withdrawal Error:", error);
         return res.status(500).json({
             status: false,
-            message: "Terjadi kesalahan pada server saat memproses data: " + error.message
+            message: "Terjadi kesalahan: " + error.message
         });
     }
 };

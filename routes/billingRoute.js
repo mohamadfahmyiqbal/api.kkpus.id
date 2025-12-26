@@ -1,43 +1,47 @@
-// 📁 src/routes/billingRoute.js (KOREKSI FINAL: Rute Notifikasi Harus Publik)
-
 import express from "express";
 import { MidAnggota } from "../midlleware/MidAnggota.js";
+import MidRole from "../midlleware/MidRole.js"; // Import MidRole untuk proteksi Bendahara
+
+// Import Controllers (Existing)
 import getPendingBills from "../controllers/content/billing/getPendingBills.js";
-// 🚨 NEW: Import controller untuk detail tagihan
 import { getInvoiceDetail } from "../controllers/billing/getInvoiceDetail.js";
-// 🚨 NEW: Import controller untuk Midtrans
 import { createMidtransTransaction } from "../controllers/billing/createMidtransTransaction.js";
 import getBillingHistory from "../controllers/content/billing/getBillingHistory.js";
 import { createDepositSukarela } from "../controllers/billing/createDepositSukarela.js";
 import { processSavingsPayment } from "../controllers/savings/processSavingsPayment.js";
 
+// 🚨 NEW: Import Controller Disbursement Bendahara
+import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js";
+
 const router = express.Router();
 
 /**
- * ✅ KOREKSI: Rute Midtrans Notification Harus Diletakkan DI SINI
- * Rute ini bersifat publik (tidak memerlukan MidAnggota) agar Midtrans dapat mengirim webhook.
+ * 1. PUBLIC ROUTES (Tanpa Middleware)
+ * Endpoint untuk Webhook Midtrans agar status otomatis update (PAID/FAILED)
  */
-// router.post("/midtrans/notification", midtransNotification);
+// router.post("/midtrans/notification", handleMidtransNotification);
 
-// Middleware: Terapkan MidAnggota ke SEMUA rute DI BAWAH baris ini.
-// Semua rute di bawah ini memerlukan otentikasi anggota.
+// --- PROTECTED ROUTES (Hanya Anggota & Staff) ---
 router.use(MidAnggota);
 
 /**
- * Endpoint: GET /list/pending (Dilindungi MidAnggota)
+ * 2. ALUR PEMBAYARAN ANGGOTA (Anggota Bayar Tagihan)
  */
 router.get("/list/pending", getPendingBills);
 router.get("/list/history", getBillingHistory);
-/**
- * 🚨 NEW Endpoint: GET /:billId (Dilindungi MidAnggota)
- */
 router.get("/:billId", getInvoiceDetail);
 router.post("/create-deposit", createDepositSukarela);
-/**
- * 🚨 NEW Endpoint: POST /midtrans/create-transaction (Dilindungi MidAnggota)
- * Rute ini WAJIB dilindungi MidAnggota karena menggunakan req.userId untuk membuat transaksi.
- */
 router.post("/midtrans/create-transaction", createMidtransTransaction);
 router.post("/midtrans/process-savings", processSavingsPayment);
+
+/**
+ * 3. 🚨 ALUR BENDAHARA (Pencairan Dana via Midtrans Iris)
+ * Menggunakan MidRole agar hanya user dengan role 'Bendahara' yang bisa akses.
+ */
+router.post(
+  "/penarikan/bayar/:withdrawal_id", 
+  MidRole(["Bendahara"]), 
+  disburseWithdrawal
+);
 
 export default router;

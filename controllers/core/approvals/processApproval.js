@@ -62,15 +62,15 @@ export const processApproval = (entityRef, currentStepId) => async (req, res) =>
         if (entityRef === "member_registration") updateData.registration_status = registrationStatus;
         responseMessage = `Disetujui oleh ${currentStep.step_name}. Menunggu ${nextStep.step_name}.`;
       } else {
-        // FINAL APPROVAL (KETUA)
+        // FINAL APPROVAL (Langkah Terakhir - Misal: Ketua)
         if (entityRef === "member_registration") {
           await performFinalAction({ entity, transaction, entityRef, approverId });
           updateData.registration_status = "menunggu_pembayaran";
           responseMessage = "Pendaftaran disetujui penuh.";
-        } else {
-          // KHUSUS PENARIKAN: Jangan potong saldo dulu, set status ke APPROVED (Siap Bayar)
-          updateData.status = "APPROVED"; 
-          responseMessage = "Persetujuan Ketua selesai. Menunggu pembayaran oleh Bendahara.";
+        } else if (entityRef === "savings_withdrawal") {
+          // HANYA UPDATE STATUS, BELUM POTONG SALDO
+          updateData.status = "APPROVED";
+          responseMessage = "Disetujui Ketua. Menunggu Bendahara mengeksekusi pembayaran via Midtrans.";
         }
       }
     } else {

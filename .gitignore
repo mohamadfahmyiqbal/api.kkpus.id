@@ -1,23 +1,53 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependency folders
+node_modules/
+jspm_packages/
+typings/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
+# Environment variables (SANGAT PENTING)
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# API Keys & Sensitive Config
+config/config.json
+qwerty123!!
+qwerty123!!.pub
+api.kkpus.id
+api.kkpus.id.pub
+
+# SSL Certificates (Sertifikat Keamanan)
+config/cert/*.key
+config/cert/*.pem
+config/cert/*.pfx
+config/cert/*.csr
+config/pik1com074/**/*.key
+config/pik1com074/**/*.pfx
+
+# Database Dumps & Logs
+*.sql
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Static & Private Uploads (Data Sensitif Anggota)
+uploads/foto/*
+uploads/ktp/*
+uploads/swafoto/*
+public/uploads/*
+!uploads/foto/.gitkeep
+!uploads/ktp/.gitkeep
+!uploads/swafoto/.gitkeep
+
+# Temporary files & OS files
+tmp/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing & IDE
+.vscode/
+.idea/
+*.http
