@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 
+// Menggunakan konfigurasi sesuai request Anda
 const pus = new Sequelize("koperasi", "admin", "qwerty123!!", {
   host: "202.52.147.193",
   dialect: "mysql",
@@ -11,15 +12,13 @@ const pus = new Sequelize("koperasi", "admin", "qwerty123!!", {
     idle: 10000,
   },
 
-  // Opsi koneksi MySQL
   dialectOptions: {
-    dateStrings: true, // Pastikan tanggal dibaca sebagai string, bukan objek Date
-    typeCast: true, // Izinkan parsing manual
-    timezone: "+07:00", // Pastikan koneksi MySQL ikut WIB
+    dateStrings: true, 
+    typeCast: true, 
+    timezone: "+07:00", 
   },
 
-  timezone: "+07:00", // Agar Sequelize otomatis offset ke WIB
-
+  timezone: "+07:00", 
   logging: false,
 });
 
