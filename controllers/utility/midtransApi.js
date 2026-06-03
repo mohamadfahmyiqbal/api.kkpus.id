@@ -67,6 +67,7 @@ export const createSnapTransaction = async (bill, customer) => {
   const basePayload = {
     page: pageName,
     billId: billIdKey,
+    billItemIds: bill.items ? bill.items.map(item => item.bill_item_id) : [],
     return: returnPage,
   };
 

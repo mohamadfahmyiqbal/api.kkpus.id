@@ -1,162 +1,218 @@
+// app.js
+
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import cors from "cors";
 import http from "http";
 import https from "https";
 import fs from "fs";
-import path from "path";
+import cors from "cors";
 import helmet from "helmet";
-import morgan from "morgan";
-
+import path from "path";
+import { fileURLToPath } from "url";
 import router from "./routes/routes.js";
-import { initSocket } from "./controllers/utility/socket.js";
+import { initSocket, users } from "./controllers/utility/socket.js";
+import ErrorHandler from "./middleware/ErrorHandler.js";
+// Trigger restart for CORS config
+console.log("✅ App starting...");
+console.log("✅ Router imported:", typeof router);
 
-dotenv.config();
-
-/* =======================
-   BASIC CONFIG
-======================= */
-const __dirname = path.resolve();
-const isProd = process.env.NODE_ENV === "production";
-
-const HTTP_PORT = process.env.HTTP_PORT || 3000;
-const HTTPS_PORT = process.env.PORT || 3001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-/* =======================
-   TRUST PROXY
-======================= */
-app.set("trust proxy", true);
-
-/* =======================
-   SECURITY & LOGGING
-======================= */
+// Security middleware
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false,
-  })
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }),
 );
 
-app.use(morgan(isProd ? "combined" : "dev"));
-
-/* =======================
-   CORS CONFIG (FINAL FIX)
-======================= */
-const allowedOrigins = [
-  "https://pik1com074.local.ikoito.co.id:5000",
-  "https://localhost:5000",
-  "https://localhost:5001",
-  "https://kkpus.id",
-  "https://admin.kkpus.id",
-  "https://api.kkpus.id",
-];
-
-const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-  ],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-
-/**
- * 🔴 PENTING:
- * Jangan pakai "*", jangan pakai "/*"
- * WAJIB pakai REGEX
- */
-app.options(/.*/, cors(corsOptions));
-
-/* =======================
-   BODY & COOKIE
-======================= */
-app.use(cookieParser());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-
-/* =======================
-   STATIC FILES
-======================= */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-/* =======================
-   ROUTES
-======================= */
-app.use(router);
-
-/* =======================
-   404 HANDLER
-======================= */
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Endpoint ${req.originalUrl} tidak ditemukan.`,
-  });
-});
-
-/* =======================
-   SSL CONFIG
-======================= */
 let sslOptions = null;
-
 try {
-  const certDir = isProd
-    ? "config/certs/production"
-    : "config/certs/localhost";
-
-  const keyPath = path.join(
-    __dirname,
-    certDir,
-    isProd ? "kkpusid.key" : "localhost.key"
-  );
-  const certPath = path.join(
-    __dirname,
-    certDir,
-    isProd ? "kkpus_id.crt" : "localhost.crt"
-  );
-
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
     sslOptions = {
-      key: fs.readFileSync(keyPath),
-      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(process.env.SSL_KEY_PATH),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH),
     };
-    console.log("🔐 SSL certificate loaded");
+  } else {
+    console.warn("⚠️ SSL paths not configured in environment variables");
   }
 } catch (err) {
   console.warn("⚠️ SSL load failed:", err.message);
 }
 
-/* =======================
-   SERVER START
-======================= */
-// if (sslOptions) {
-  // const httpsServer = https.createServer(sslOptions, app);
-  // httpsServer.listen(HTTPS_PORT, () => {
-  //   console.log(`✅ HTTPS Server running on port ${HTTPS_PORT}`);
-  // });
+let serverInstance, io;
+const PORT = process.env.HTTP_PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
+const portToUse = sslOptions ? HTTPS_PORT : PORT;
 
-  // initSocket(httpsServer);
-// } else {
-  const httpServer = http.createServer(app);
-  httpServer.listen(HTTP_PORT, () => {
-    console.log(`⚠️ HTTP Server running on port ${HTTP_PORT}`);
+if (sslOptions) {
+  serverInstance = https.createServer(sslOptions, app);
+  io = initSocket(serverInstance);
+  console.log("✅ HTTPS Server configured on port", HTTPS_PORT);
+} else {
+  serverInstance = http.createServer(app);
+  io = initSocket(serverInstance);
+  console.log("✅ HTTP Server configured on port", PORT);
+}
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim())
+      : true,
+    credentials: true,
+  }),
+);
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
+
+app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+
+app.use((req, res, next) => {
+  if (io) req.io = io;
+  next();
+});
+
+console.log("🔄 Mounting router...");
+app.use(router);
+console.log("✅ Router mounted");
+
+app.use(ErrorHandler);
+
+let server = null;
+let shuttingDown = false;
+
+const startServer = () => {
+  server = serverInstance.listen(portToUse, () => {
+    console.log(`✅ Server & Socket Running on Port ${portToUse}`);
   });
 
-  initSocket(httpServer);
-// }
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      // Optimasi: Kurangi delay retry menjadi 1 detik
+      console.error(
+        `⚠️ Port ${portToUse} sedang digunakan. Mencoba ulang dalam 1 detik...`,
+      );
+      setTimeout(async () => {
+        if (server) server.close();
+        if (io) {
+          await new Promise((resolve) => io.close(() => resolve()));
+          io = null;
+        }
+        startServer();
+      }, 1000);
+    } else {
+      console.error(err);
+    }
+  });
 
-export default app;
+  const connections = new Map();
+
+  server.on("connection", (conn) => {
+    conn.setMaxListeners(50);
+    const key = `${conn.remoteAddress}:${conn.remotePort}`;
+    connections.set(key, conn);
+    conn.on("close", () => {
+      connections.delete(key);
+    });
+  });
+
+  server.forceShutdown = () => {
+    console.log("🔄 Force closing active connections...");
+    for (const [key, conn] of connections) {
+      conn.destroy();
+      connections.delete(key);
+    }
+  };
+};
+
+const shutdown = async (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  console.log(`\n🛑 Shutdown Sequence Started (${signal})`);
+
+  try {
+    console.log("1️⃣  Blocking new connections...");
+    if (typeof serverInstance.closeAllConnections === "function") {
+      serverInstance.closeAllConnections();
+    }
+
+    console.log("2️⃣  Force closing HTTP connections...");
+    if (server && server.forceShutdown) {
+      server.forceShutdown();
+    }
+
+    console.log("3️⃣  Closing Services Concurrently...");
+    const cleanupTasks = [];
+
+    // Optimasi: Menjalankan penutupan HTTP dan Socket secara paralel
+    if (server) {
+      cleanupTasks.push(
+        new Promise((resolve) => {
+          server.close(() => {
+            console.log("   ✅ HTTP server closed");
+            resolve();
+          });
+        }),
+      );
+    }
+
+    if (io) {
+      cleanupTasks.push(
+        new Promise((resolve) => {
+          io.close(() => {
+            console.log("   ✅ Socket.IO closed");
+            resolve();
+          });
+        }),
+      );
+    }
+
+    await Promise.all(cleanupTasks);
+
+    console.log("4️⃣  Cleaning up socket users...");
+    if (users && typeof users.clear === "function") {
+      users.clear();
+      console.log("   ✅ Socket users cleared");
+    }
+
+    console.log("🚪 Process exiting cleanly");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Critical shutdown error:", err);
+    process.exit(1);
+  }
+};
+
+process.removeAllListeners("SIGTERM");
+process.removeAllListeners("SIGINT");
+
+process.once("SIGTERM", shutdown);
+process.once("SIGINT", shutdown);
+
+startServer();
+
+// Monitoring memori setiap 60 detik
+setInterval(() => {
+  const memUsage = process.memoryUsage();
+  console.log(
+    `📊 Memory Usage: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap Used=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB, Heap Total=${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+  );
+
+  // Auto restart jika heap used > 512MB
+  if (memUsage.heapUsed > 512 * 1024 * 1024) {
+    console.warn("🚨 Memory usage too high, restarting process...");
+    process.exit(1);
+  }
+}, 60000);

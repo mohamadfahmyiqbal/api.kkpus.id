@@ -3,37 +3,45 @@ import { Sequelize } from "sequelize";
 const LoanProduct = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const LoanProductModel = sequelize.define("loan_products", {
-    product_id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
-      allowNull: false,
+  const LoanProductModel = sequelize.define(
+    "loan_products",
+    {
+      loan_product_id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
+      },
+      product_id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+          return this.getDataValue("loan_product_id");
+        },
+      },
+      product_name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      loan_type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      akad_type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      default_term: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
     },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+    {
+      freezeTableName: true,
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     },
-    max_amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    min_amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    max_tenor_months: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    margin_rate: {
-      type: DataTypes.DECIMAL(5, 2),
-      allowNull: false, // Margin rate per tahun
-    },
-  }, { 
-    freezeTableName: true, 
-    timestamps: true,
-  });
+  );
 
   return LoanProductModel;
 };

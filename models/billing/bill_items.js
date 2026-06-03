@@ -1,57 +1,57 @@
-// 📁 models/billing/bill_items.js
-
+// 📁 src/models/billing/bill_items.js
 import { Sequelize } from "sequelize";
 
 const BillItem = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const BillItemModel = sequelize.define(
+  return sequelize.define(
     "bill_items",
     {
       bill_item_id: {
         type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
-        allowNull: false,
       },
-      // Kunci asing ke tabel 'bills'
       bill_id: {
+        type: DataTypes.STRING(36),
+        allowNull: true,
+      },
+      member_id: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      bill_type_id: {
         type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      category_code: {
+        type: DataTypes.STRING,
         allowNull: false,
-        // Ini tidak wajib, tapi direkomendasikan untuk integritas referensial
-        // references: {
-        //   model: 'bills', 
-        //   key: 'bill_id',
-        // },
-        // onUpdate: 'CASCADE',
-        // onDelete: 'CASCADE',
       },
       description: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
       amount: {
-        type: DataTypes.DECIMAL(15, 2), // Jumlah per item
+        type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
       },
-      // Kolom 'qty' dan 'unit_price' mungkin juga diperlukan
-      // qty: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: false,
-      //   defaultValue: 1,
-      // },
-      // unit_price: {
-      //   type: DataTypes.DECIMAL(15, 2),
-      //   allowNull: false,
-      // },
+      due_date: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
+      status: {
+        type: DataTypes.ENUM('UNPAID', 'PAID', 'CANCELLED', 'OVERDUE'),
+        defaultValue: 'UNPAID',
+        allowNull: false,
+      },
     },
     {
       freezeTableName: true,
       timestamps: true,
+      underscored: true, // WAJIB: Mengubah createdAt -> created_at & updatedAt -> updated_at
     }
   );
-
-  return BillItemModel;
 };
 
 export default BillItem;

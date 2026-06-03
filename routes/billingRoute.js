@@ -7,15 +7,17 @@ import { createMidtransTransaction } from "../controllers/billing/createMidtrans
 import getBillingHistory from "../controllers/content/billing/getBillingHistory.js";
 import { createDepositSukarela } from "../controllers/billing/createDepositSukarela.js";
 import { processSavingsPayment } from "../controllers/savings/processSavingsPayment.js";
+import { createVoluntaryBill } from "../controllers/billing/createVoluntaryBill.js";
 
 const router = express.Router();
 
 router.use(MidAnggota);
 router.get("/list/pending", getPendingBills);
 router.get("/list/history", getBillingHistory);
-router.get("/invoice/:billId", getInvoiceDetail);
+router.post("/invoice/details", getInvoiceDetail);
+router.post("/create-voluntary-bill", createVoluntaryBill);
 router.post("/create-deposit", createDepositSukarela);
-router.post("/process-payment", createMidtransTransaction);
+router.post("/process-payment", MidAnggota, createMidtransTransaction);
 router.post("/process-savings", processSavingsPayment);
 
 export default router;

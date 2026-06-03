@@ -1,7 +1,30 @@
 {
-  "watch": ["."],
-  "ext": "js,json",
-  "delay": "3000ms",
-  "ignore": ["node_modules"],
-  "signal": "SIGTERM"
+  "watch": [
+    "app.js",
+    "controllers",
+    "routes",
+    "middleware",
+    "models"
+  ],
+  "ext": "js,mjs,cjs,json",
+  "delay": "500",
+  "restartable": "rs",
+  "ignore": [
+    "node_modules",
+    "public",
+    "logs",
+    "*.log",
+    ".git",
+    "package-lock.json",
+    "sync_config.jsonc",
+    "prompt",
+    "build",
+    "dist"
+  ],
+  "signal": "SIGKILL",
+  "exec": "node app.js",
+  "spawn": false,
+  "stdin": false,
+  "stdout": true,
+  "stderr": true
 }

@@ -1,58 +1,84 @@
-import { Sequelize } from "sequelize";
+// 📁 src/models/savings/savings_withdrawals.js
+import { DataTypes } from "sequelize";
 
 const SavingsWithdrawal = (sequelize) => {
-  const { DataTypes } = Sequelize;
-
-  return sequelize.define("savings_withdrawals", {
-    withdrawal_id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
-      allowNull: false,
+  return sequelize.define(
+    "SavingsWithdrawal",
+    {
+      withdrawal_id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      savings_account_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: "member_savings_accounts",
+          key: "savings_account_id",
+        },
+      },
+      member_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: "members",
+          key: "member_id",
+        },
+      },
+      amount: {
+        type: DataTypes.DECIMAL(18, 2),
+      },
+      method: {
+        type: DataTypes.STRING(50),
+      },
+      bank_name: {
+        type: DataTypes.STRING(100),
+      },
+      bank_account_no: {
+        type: DataTypes.STRING(50),
+      },
+      request_datetime: {
+        type: DataTypes.DATE,
+      },
+      status: {
+        type: DataTypes.STRING(50),
+      },
+      approval_flow_id: {
+        type: DataTypes.BIGINT,
+        references: {
+          model: "approval_flows",
+          key: "approval_flow_id",
+        },
+      },
+      current_step_id: {
+        type: DataTypes.BIGINT,
+        references: {
+          model: "approval_steps",
+          key: "approval_step_id",
+        },
+      },
+      invoice_id: {
+        type: DataTypes.BIGINT,
+      },
+      midtrans_transaction_id: {
+        type: DataTypes.STRING(100),
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
     },
-    savings_account_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-    },
-    member_id: { // Tambahkan ini sesuai tabel
-      type: DataTypes.BIGINT,
-      allowNull: false,
-    },
-    amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    method: { // Tambahkan ini
-      type: DataTypes.STRING(50),
-    },
-    bank_name: { // Tambahkan ini
-      type: DataTypes.STRING(100),
-    },
-    bank_account_no: { // Tambahkan ini
-      type: DataTypes.STRING(50),
-    },
-    request_datetime: { // Sesuaikan nama dengan tabel
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    status: {
-      type: DataTypes.STRING(20), // Gunakan STRING agar fleksibel
-      defaultValue: "PENDING",
-    },
-    approval_flow_id: { // Penting untuk sistem approval
-      type: DataTypes.BIGINT,
-    },
-    current_step_id: { // Tambahkan ini jika menggunakan multi-step approval
-      type: DataTypes.BIGINT,
-    },
-    invoice_id: {
-      type: DataTypes.BIGINT,
+    {
+      tableName: "savings_withdrawals",
+      timestamps: false,
+      underscored: true,
     }
-  }, { 
-    freezeTableName: true, 
-    timestamps: true,
-    underscored: true // Pastikan ini true jika tabel menggunakan created_at
-  });
+  );
 };
 
 export default SavingsWithdrawal;

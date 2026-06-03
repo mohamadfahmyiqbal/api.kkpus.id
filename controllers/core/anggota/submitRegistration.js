@@ -1,321 +1,182 @@
-// controllers/core/anggota/submitRegistration.js (FINAL DENGAN PENGAMBILAN ID APPROVAL DINAMIS DAN CLEANUP)
+// path: controllers/core/anggota/submitRegistration.js
 
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from "../../../models/index.js";
-import util from "util"; // Digunakan untuk promisify
+import { sendGlobalNotification } from "../../../controllers/utility/notificationHelper.js";
 
-// 💡 PASTIKAN SEMUA MODEL TERSEDIA DI db object
 const {
   MemberRegistration,
   MemberBankAccount,
   MemberEmployment,
   MemberEmergencyContact,
-  Member, // Model Master Anggota
-  UserRole, // Untuk logic notifikasi
-  MemberRoleAssignment, // Untuk logic notifikasi
-  Notification, // Untuk logic notifikasi
-  ApprovalFlow, // Untuk mendapatkan Flow ID
-  ApprovalStep, // Untuk mendapatkan Step ID dan Role ID awal
+  Member,
+  MemberRoleAssignment,
+  ApprovalFlow,
+  ApprovalStep,
+  ApprovalStatus,
+  sequelize,
 } = db;
 
 const __filename = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(__filename);
-// Asumsi root path Anda
-const rootDir = path.join(currentDir, "..", "..", "..");
+const rootDir = path.join(path.dirname(__filename), "..", "..", "..");
 
-// Promisify fs.unlink untuk digunakan dengan await
-const unlinkAsync = util.promisify(fs.unlink);
-
-/**
- * Fungsi pembantu untuk menyimpan Base64 image ke disk.
- */
 const saveBase64Image = (base64Image, nik, fileType) => {
-  if (typeof base64Image !== "string" || base64Image.length === 0) {
-    throw new Error(`Invalid or empty Base64 string for ${fileType}.`);
-  }
-
-  // Regex untuk memisahkan MIME type dan data Base64
-  const parts = base64Image.match(/^data:(image\/[a-zA-Z]+);base64,(.*)$/);
-
-  if (!parts || parts.length !== 3) {
-    throw new Error("Format Base64 foto tidak valid.");
-  }
+  if (!base64Image?.includes("base64,")) throw new Error(`Data foto ${fileType} tidak valid.`);
+  const parts = base64Image.match(/^data:(image\/(jpeg|png|jpg));base64,(.*)$/);
+  if (!parts) throw new Error(`Format file ${fileType} harus JPG/PNG.`);
 
   const mimeType = parts[1];
-  const imageBuffer = Buffer.from(parts[2], "base64");
-  const extension = mimeType.split("/")[1];
-
-  // Atur path penyimpanan: /public/uploads/anggota/NIK_fileType.ext
+  const imageBuffer = Buffer.from(parts[3], "base64");
+  const extension = mimeType.split("/")[1] === 'jpeg' ? 'jpg' : mimeType.split("/")[1];
   const uploadDir = path.join(rootDir, "public", "uploads", "anggota");
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
 
-  // Menghindari konflik dengan menambahkan timestamp
-  const publicPath = `/uploads/anggota/${nik}_${fileType}_${Date.now()}.${extension}`;
-  const fullPath = path.join(rootDir, "public", publicPath);
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-  fs.writeFileSync(fullPath, imageBuffer);
-
+  const publicPath = `uploads/anggota/${nik}_${fileType}_${Date.now()}.${extension}`;
+  fs.writeFileSync(path.join(rootDir, "public", publicPath), imageBuffer);
+  console.log(`File saved: ${path.join(rootDir, "public", publicPath)}`);
   return publicPath;
 };
 
-// ** Kontroler Utama **
 export const submitRegistration = async (req, res) => {
   const member_id = req.userId;
-
-  // 1. Destructuring semua data yang dikirim dari frontend
-  const {
-    nik_ktp,
-    full_name,
-    alamat_ktp,
-    tipeAnggota, // member_type
-    phone_number,
-    email,
-    occupation,
-    employer_name,
-    employer_address,
-    contact_name,
-    phone_number_emergency,
-    relation,
-    bank_name,
-    bank_account_no,
-    account_holder,
-    foto_ktp,
-    foto_swafoto,
-  } = req.body;
-
+  let transaction;
   let tempPaths = [];
-  let newRegistration = null;
 
   try {
-    // 2. Validasi Dasar
-    if (!member_id) {
-      return res.status(400).json({
-        success: false,
-        message: "member_id tidak ditemukan (Middleware gagal).",
-      });
-    }
+    const [checkMember, existingReg] = await Promise.all([
+      Member.findByPk(member_id),
+      MemberRegistration.findOne({ where: { member_id, final_status: 'WAITING_APPROVAL' } })
+    ]);
 
-    const checkMember = await Member.findOne({ where: { member_id } });
-    if (!checkMember) {
-      return res.status(404).json({
-        success: false,
-        message: "Member tidak ditemukan. Silakan login ulang.",
-      });
-    }
+    if (!checkMember) return res.status(404).json({ status: false, message: "Member tidak ditemukan." });
+    if (existingReg) return res.status(400).json({ status: false, message: "Pendaftaran sedang diproses." });
 
-    // 3. Simpan Gambar ke Disk
-    const ktpPublicPath = saveBase64Image(foto_ktp, nik_ktp, "ktp");
-    tempPaths.push(ktpPublicPath);
+    if (!req.body.account_number && !req.body.bank_account_no) throw new Error("Nomor rekening wajib diisi.");
+    if (!req.body.job_title && !req.body.occupation) throw new Error("Pekerjaan wajib diisi.");
 
-    const swafotoPublicPath = saveBase64Image(foto_swafoto, nik_ktp, "swafoto");
-    tempPaths.push(swafotoPublicPath);
+    const ktpPath = saveBase64Image(req.body.foto_ktp, req.body.nik_ktp, "ktp");
+    tempPaths.push(ktpPath);
+    const swafotoPath = saveBase64Image(req.body.foto_swafoto, req.body.nik_ktp, "swafoto");
+    tempPaths.push(swafotoPath);
 
-    // 4. ** LOGIC APPROVAL: Tentukan Flow ID dan Step ID Awal secara DINAMIS **
-    const FLOW_NAME = "Pendaftaran Anggota"; // Sesuai data approval_flows
-
-    const registrationFlow = await ApprovalFlow.findOne({
-      where: { flow_name: FLOW_NAME },
+    const flow = await ApprovalFlow.findOne({ 
+      where: { flow_name: "FLOW_PENDAFTARAN" },
+      attributes: ["approval_flow_id", "flow_name", "entity_ref", "created_at", "updated_at"]
     });
+    
+    if (!flow) throw new Error("Konfigurasi Flow Approval tidak ditemukan.");
 
-    if (!registrationFlow) {
-      throw new Error(
-        `Konfigurasi Flow Persetujuan '${FLOW_NAME}' tidak ditemukan di database.`
-      );
-    }
-
-    // Cari langkah pertama (step_order terendah)
-    const initialStep = await ApprovalStep.findOne({
-      where: { approval_flow_id: registrationFlow.approval_flow_id },
-      order: [["step_order", "ASC"]],
-    });
-
-    if (!initialStep) {
-      throw new Error(
-        "Langkah awal persetujuan tidak ditemukan untuk flow ini. Pastikan step_order sudah disetel."
-      );
-    }
-
-    const REGISTRATION_APPROVAL_FLOW_ID = registrationFlow.approval_flow_id;
-    const INITIAL_APPROVAL_STEP_ID = initialStep.approval_step_id;
-
-    // 5. Simpan semua data ke DB dalam satu transaksi (untuk atomisitas)
-    const result = await db.sequelize.transaction(async (t) => {
-      // 5.1. SIMPAN DATA REGISTRASI (member_registrations)
-      newRegistration = await MemberRegistration.create(
-        {
-          member_id: checkMember.member_id,
-          full_name: full_name,
-          email: email,
-          phone_number: phone_number,
-          nik_ktp: nik_ktp,
-          address_ktp: alamat_ktp,
-          member_type: tipeAnggota,
-          ktp_photo_path: ktpPublicPath,
-          selfie_photo_path: swafotoPublicPath,
-          // TAMBAHKAN FIELD APPROVAL DINAMIS
-          approval_flow_id: REGISTRATION_APPROVAL_FLOW_ID,
-          current_step_id: INITIAL_APPROVAL_STEP_ID,
-          registration_status: "approval_pengawas", // Status awal ENUM
-          final_status: "PENDING",
-        },
-        { transaction: t }
-      );
-
-      // 5.2. SIMPAN DATA BANK (member_bank_accounts)
-      await MemberBankAccount.create(
-        {
-          member_id: checkMember.member_id,
-          bank_name: bank_name,
-          bank_account_no: bank_account_no,
-          account_holder: account_holder,
-        },
-        { transaction: t }
-      );
-
-      // 5.3. SIMPAN DATA PEKERJAAN (member_employments)
-      await MemberEmployment.create(
-        {
-          member_id: checkMember.member_id,
-          occupation: occupation,
-          employer_name: employer_name,
-          employer_address: employer_address,
-        },
-        { transaction: t }
-      );
-
-      // 5.4. SIMPAN EMERGENCY CONTACT (member_emergency_contacts)
-      await MemberEmergencyContact.create(
-        {
-          member_id: checkMember.member_id,
-          contact_name: contact_name,
-          phone_number: phone_number_emergency,
-          relation: relation,
-        },
-        { transaction: t }
-      );
-
-      // 5.5. Update field is_registration_done dan data inti di tabel 'members'
-      await Member.update(
-        {
-          is_registration_done: 1, // Tandai pendaftaran selesai
-          nik_ktp: nik_ktp,
-          full_name: full_name,
-          member_type: tipeAnggota,
-          phone_number: phone_number,
-          email: email,
-          address: alamat_ktp,
-        },
-        { where: { member_id: checkMember.member_id }, transaction: t }
-      );
-
-      return newRegistration;
-    });
-
-    // *******************************************************************
-    // 6. LOGIC NOTIFIKASI BARU (Setelah Transaksi Utama Sukses)
-    try {
-      if (Notification && ApprovalStep && UserRole && MemberRoleAssignment) {
-        const finalNotifications = [];
-
-        // 6.1. NOTIFIKASI UNTUK MEMBER SENDIRI (Pendaftar)
-        finalNotifications.push({
-          member_id: member_id,
-          title: "Pendaftaran Berhasil Dikirim",
-          content:
-            "Pendaftaran Anda telah berhasil dikirim dan akan segera diproses oleh tim kami.",
-          sent_datetime: new Date(),
-          status: "SENT",
-        });
-
-        // 6.2. NOTIFIKASI UNTUK PETUGAS YANG BERTANGGUNG JAWAB PADA LANGKAH AWAL
-
-        // MENGGUNAKAN ROLE_ID DARI LANGKAH AWAL YANG SUDAH DIAMBIL
-        const requiredRoleId = initialStep.role_id;
-
-        // Cari semua member yang memiliki Role ID tersebut
-        const targetApprovers = await MemberRoleAssignment.findAll({
-          where: { role_id: requiredRoleId },
-        });
-
-        if (targetApprovers.length > 0) {
-          const approverMemberIds = targetApprovers.map(
-            (assignment) => assignment.member_id
-          );
-
-          // Cari nama role untuk dimasukkan ke notifikasi
-          const roleInfo = await UserRole.findOne({
-            where: { role_id: requiredRoleId },
-            attributes: ["role_name"],
-          });
-
-          const roleName = roleInfo ? roleInfo.role_name : "Petugas Verifikasi";
-
-          const approverNotifications = approverMemberIds.map(
-            (targetMemberId) => {
-              return {
-                member_id: targetMemberId,
-                title: "TUGAS BARU: Verifikasi Pendaftaran",
-                content: `Pendaftaran anggota baru atas nama ${full_name} membutuhkan persetujuan/verifikasi Anda sebagai ${roleName}.`,
-                sent_datetime: new Date(),
-                status: "SENT",
-              };
-            }
-          );
-
-          finalNotifications.push(...approverNotifications);
-        }
-
-        // Kirim semua notifikasi
-        if (finalNotifications.length > 0) {
-          await Notification.bulkCreate(finalNotifications);
-        }
-      }
-    } catch (notificationError) {
-      console.error("Gagal mengirim notifikasi:", notificationError.message);
-    }
-    // *******************************************************************
-
-    // 7. Respon Sukses
-    return res.status(201).json({
-      status: true,
-      message:
-        "Pendaftaran anggota berhasil dikirim. Silakan tunggu proses verifikasi dokumen dan persetujuan.",
-      data: {
-        registration_id: result.registration_id,
-        status: result.final_status,
-      },
-    });
-  } catch (error) {
-    console.error("Error saat submit pendaftaran:", error);
-
-    // 8. Cleanup file jika terjadi error transaksi/validasi
-    await Promise.all(
-      tempPaths.map(async (publicPath) => {
-        const fullPath = path.join(rootDir, "public", publicPath);
-        if (fs.existsSync(fullPath)) {
-          try {
-            await unlinkAsync(fullPath);
-          } catch (err) {
-            console.error(
-              `Gagal menghapus file sementara ${fullPath} setelah error DB:`,
-              err
-            );
-          }
+    const [initialStep, statusInitial] = await Promise.all([
+      ApprovalStep.findOne({
+        where: { approval_flow_id: flow.approval_flow_id },
+        order: [["step_order", "ASC"]],
+      }),
+      ApprovalStatus.findOne({
+        where: { 
+          approval_flow_id: flow.approval_flow_id, 
+          status_code: "WAITING_APPROVAL" 
         }
       })
-    );
+    ]);
 
-    // 9. Kirim respons error
-    return res.status(500).json({
-      success: false,
-      message: "Gagal memproses pendaftaran. Terjadi kesalahan pada server.",
-      error: error.message,
+    if (!initialStep) throw new Error("Langkah persetujuan awal belum dikonfigurasi.");
+    if (!statusInitial) throw new Error("Status pendaftaran (WAITING_APPROVAL) tidak ditemukan.");
+
+    transaction = await sequelize.transaction();
+
+    const registration = await MemberRegistration.create({
+      member_id,
+      full_name: req.body.full_name,
+      email: req.body.email,
+      phone_number: req.body.phone_number,
+      nik_ktp: req.body.nik_ktp,
+      address_ktp: req.body.alamat_ktp,
+      province_id: req.body.province_id,
+      province_name: req.body.provinsi,
+      city_id: req.body.city_id,
+      city_name: req.body.kota_kab,
+      district_id: req.body.district_id,
+      district_name: req.body.kecamatan,
+      subdistrict_id: req.body.subdistrict_id,
+      subdistrict_name: req.body.kelurahan,
+      rt: req.body.rt,
+      rw: req.body.rw,
+      member_type: req.body.tipeAnggota,
+      ktp_photo_path: ktpPath,
+      selfie_photo_path: swafotoPath,
+      approval_flow_id: flow.approval_flow_id,
+      current_step_id: initialStep.approval_step_id,
+      status_id: statusInitial.approval_status_id,
+      final_status: "WAITING_APPROVAL",
+      registered_at: new Date()
+    }, { transaction });
+
+    await Promise.all([
+      MemberBankAccount.create({ 
+        member_id, 
+        bank_name: req.body.bank_name, 
+        bank_account_no: req.body.account_number || req.body.bank_account_no, 
+        account_holder: req.body.account_holder 
+      }, { transaction }),
+      MemberEmployment.create({ 
+        member_id, 
+        occupation: req.body.job_title || req.body.occupation, 
+        employer_name: req.body.employer_name, 
+        employer_address: req.body.employer_address 
+      }, { transaction }),
+      MemberEmergencyContact.create({ 
+        member_id, 
+        contact_name: req.body.contact_name, 
+        phone_number: req.body.phone_number_emergency, 
+        relation: req.body.relation 
+      }, { transaction }),
+      Member.update({ is_registration_done: 1 }, { where: { member_id }, transaction })
+    ]);
+
+    await transaction.commit();
+
+    setImmediate(async () => {
+      try {
+        await sendGlobalNotification({
+          memberId: member_id,
+          title: "Pendaftaran Berhasil",
+          content: "Data Anda sedang diverifikasi.",
+          type: "REGISTRATION_SUBMITTED"
+        });
+        const approvers = await MemberRoleAssignment.findAll({ where: { role_id: initialStep.role_id } });
+        for (const admin of approvers) {
+          await sendGlobalNotification({ 
+            memberId: admin.member_id, 
+            title: "Tugas Baru", 
+            content: `Verifikasi pendaftaran: ${req.body.full_name}`, 
+            type: "APPROVAL_TASK" 
+          });
+        }
+      } catch (err) { console.error("Notification Error:", err); }
     });
+
+    return res.status(201).json({ status: true, message: "Pendaftaran berhasil dikirim." });
+
+  } catch (error) {
+    console.log(error)
+    // console.error("CRITICAL_ERROR: submitRegistration failed", {
+    //   timestamp: new Date().toISOString(),
+    //   userId: req.userId,
+    //   errorName: error.name,
+    //   errorMessage: error.message,
+    //   payload: req.body
+    // });
+
+    if (transaction) await transaction.rollback();
+    
+    tempPaths.forEach(p => {
+      const full = path.join(rootDir, "public", p);
+      if (fs.existsSync(full)) fs.unlinkSync(full);
+    });
+
+    return res.status(500).json({ status: false, message: error.message });
   }
 };
-
-export default submitRegistration;

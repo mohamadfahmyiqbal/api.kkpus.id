@@ -1,10 +1,9 @@
-// models/member_registrations.js
 import { Sequelize } from "sequelize";
 
 const MemberRegistration = (sequelize) => {
   const { DataTypes } = Sequelize;
 
-  const MemberRegistrationModel = sequelize.define(
+  return sequelize.define(
     "member_registrations",
     {
       registration_id: {
@@ -14,33 +13,71 @@ const MemberRegistration = (sequelize) => {
         allowNull: false,
       },
       member_id: {
-        // FK ke tabel members
         type: DataTypes.BIGINT,
-        allowNull: true, // Disesuaikan dengan kebutuhan Anda
+        allowNull: false,
       },
       full_name: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
+        type: DataTypes.STRING(100),
+        allowNull: true,
       },
       email: {
         type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: true,
+        allowNull: true,
       },
       phone_number: {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
       nik_ktp: {
-        type: DataTypes.STRING(30),
+        type: DataTypes.STRING(255),
         allowNull: true,
       },
       address_ktp: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      province_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      province_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      city_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      city_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      district_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      district_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      subdistrict_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      subdistrict_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      rt: {
+        type: DataTypes.STRING(10),
+        allowNull: true,
+      },
+      rw: {
+        type: DataTypes.STRING(10),
+        allowNull: true,
+      },
       member_type: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.STRING(100),
         allowNull: true,
       },
       ktp_photo_path: {
@@ -51,67 +88,33 @@ const MemberRegistration = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      registration_status: {
-        type: DataTypes.ENUM(
-          "approval_pengawas",
-          "approval_ketua",
-          "menunggu_pembayaran",
-          "pembayaran",
-          "selesai"
-        ),
+      status_id: {
+        type: DataTypes.BIGINT,
         allowNull: false,
-        defaultValue: "verifikasi_dokumen",
-        comment: "Status proses pendaftaran",
-      },
-      // 🔥 DITAMBAHKAN: Kolom 'registered_at'
-      registered_at: {
-        type: DataTypes.DATE, // Menggunakan DataTypes.DATE untuk tipe datetime
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-        comment: "Tanggal/waktu pendaftaran pertama kali dikirim",
       },
       approval_flow_id: {
         type: DataTypes.BIGINT,
         allowNull: true,
-        comment: "Foreign Key ke approval_flows.approval_flow_id",
       },
       current_step_id: {
         type: DataTypes.BIGINT,
         allowNull: true,
-        comment: "Foreign Key ke approval_steps.approval_step_id saat ini",
       },
       final_status: {
         type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED"),
         allowNull: false,
         defaultValue: "PENDING",
-        comment: "Status akhir pendaftaran",
       },
-      // Kolom 'createdAt' dan 'updatedAt' akan ditangani oleh 'timestamps: true' di opsi model.
+      registered_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
     },
     {
       freezeTableName: true,
       timestamps: true,
-      indexes: [
-        {
-          unique: true,
-          fields: ["member_id", "final_status"],
-          where: { final_status: { [Sequelize.Op.ne]: "REJECTED" } }, // Hanya satu PENDING/APPROVED per member
-          name: "unique_active_registration_per_member",
-        },
-      ],
     }
   );
-
-  // Asosiasi (jika ada)
-  MemberRegistrationModel.associate = (models) => {
-    MemberRegistrationModel.belongsTo(models.Member, {
-      foreignKey: "member_id",
-      as: "member",
-    });
-    // Tambahkan asosiasi lain ke ApprovalFlow, ApprovalStep, dll.
-  };
-
-  return MemberRegistrationModel;
 };
 
 export default MemberRegistration;

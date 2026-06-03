@@ -1,16 +1,8 @@
-// 📁 midlleware/MidRole.js (WAJIB DIBUAT)
-
 import db from "../models/index.js";
-// Asumsi model tersedia dari index.js
-const { MemberRoleAssignment, UserRole } = db;
 
-/**
- * Middleware untuk memverifikasi apakah pengguna memiliki salah satu peran yang diizinkan.
- * @param {string[]} allowedRoleNames - Array nama peran yang diizinkan (e.g., ["Pengawas", "Ketua"]).
- */
 const MidRole = (allowedRoleNames = []) => {
   return async (req, res, next) => {
-    const memberId = req.userId; // Diambil dari MidAnggota.js
+    const memberId = req.userId;
 
     if (!memberId) {
       return res.status(403).json({
@@ -20,48 +12,47 @@ const MidRole = (allowedRoleNames = []) => {
     }
 
     try {
-      // 1. Ambil semua peran pengguna dari database
-      const assignments = await MemberRoleAssignment.findAll({
+      const assignments = await db.MemberRoleAssignment.findAll({
         where: { member_id: memberId },
-        include: [
-          {
-            model: UserRole,
-            as: "role", // 💡 CATATAN: Pastikan ini adalah alias yang benar di index.js
-            attributes: ["role_name"],
-          },
-        ],
-        attributes: ["role_id"],
+        include: [{
+          model: db.UserRole,
+          as: "role",
+          attributes: ["role_id", "role_name"],
+          required: true
+        }],
       });
 
-      if (assignments.length === 0) {
+      const now = new Date();
+      const activeAssignments = assignments.filter(assignment => {
+        const endDate = assignment.end_date ? new Date(assignment.end_date) : null;
+        return !endDate || endDate > now;
+      });
+
+      if (activeAssignments.length === 0) {
         return res.status(403).json({
           success: false,
-          message: "Akses Ditolak. Anda tidak memiliki peran aktif.",
+          message: "Akses Ditolak. Tidak ada peran aktif.",
         });
       }
 
-      // 2. Kumpulkan nama peran yang dimiliki pengguna
-      const userRoles = assignments.map((a) => a.role.role_name);
+      const userRoles = activeAssignments.map((a) => a.role.role_name);
+      const userRoleIds = activeAssignments.map((a) => a.role.role_id);
+      
+      req.roles = userRoles;
+      req.userRoleIds = userRoleIds;
 
-      // 3. Cek apakah ada peran pengguna yang diizinkan
-      const hasRequiredRole = userRoles.some((role) =>
-        allowedRoleNames.includes(role)
-      );
-
-      if (hasRequiredRole) {
-        // Lanjutkan ke controller
-        req.roles = userRoles; // Simpan peran untuk potensi kegunaan lain
-        next();
-      } else {
-        return res.status(403).json({
-          success: false,
-          message: `Akses Ditolak. Anda harus memiliki peran: ${allowedRoleNames.join(
-            " atau "
-          )}.`,
-        });
+      if (allowedRoleNames.length > 0) {
+        const hasRequiredRole = userRoles.some((role) => allowedRoleNames.includes(role));
+        if (!hasRequiredRole) {
+          return res.status(403).json({
+            success: false,
+            message: `Akses Ditolak. Membutuhkan peran: ${allowedRoleNames.join(" atau ")}`,
+          });
+        }
       }
+
+      next();
     } catch (error) {
-      console.error("Error saat verifikasi role:", error);
       return res.status(500).json({
         success: false,
         message: "Kesalahan server saat memeriksa otorisasi.",

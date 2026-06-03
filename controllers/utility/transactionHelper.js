@@ -1,5 +1,5 @@
 // 📁 src/utils/transactionHelper.js
-import db from "../models/index.js";
+import db from "../../models/index.js";
 
 export const getValidatedTxType = async (typeCode) => {
   try {

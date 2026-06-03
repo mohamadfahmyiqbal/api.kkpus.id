@@ -9,17 +9,17 @@ const Transaction = (sequelize) => {
     "transactions",
     {
       transaction_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.BIGINT.UNSIGNED, // 🚨 TAMBAHKAN .UNSIGNED
         primaryKey: true,
         autoIncrement: true,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING(36),
         allowNull: false,
       },
       bill_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING(36),
         allowNull: true,
       },
       midtrans_order_id: {

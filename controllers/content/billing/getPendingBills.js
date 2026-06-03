@@ -1,64 +1,52 @@
+// 📁 controllers/billing/getPendingBills.js
 import db from "../../../models/index.js";
+import { Op } from "sequelize";
 
-const { Bill, BillType } = db;
+const { BillType, BillItem } = db;
 
-/**
- * Mengambil daftar tagihan UNPAID/PENDING dengan filter kategori dinamis
- */
 const getPendingBills = async (req, res) => {
   try {
     const memberId = req.userId;
-    // Menangkap category dari query params (misal: ?category=Simpanan Wajib)
-    const { limit, category } = req.query;
+    const billTypeIdRaw = req.query['bill_type_id[]'] || req.query.bill_type_id;
 
     if (!memberId) {
-      return res.status(401).json({
-        status: false,
-        message: "Otorisasi gagal: ID Anggota tidak ditemukan dalam token.",
-      });
+      return res.status(401).json({ status: false, message: "Otorisasi gagal." });
     }
 
-    const billLimit = limit ? parseInt(limit, 10) : 10;
+    let itemCondition = {
+      member_id: memberId,
+      status: "UNPAID"
+    };
 
-    // Menyiapkan filter untuk BillType (Tabel Relasi)
-    let billTypeCondition = {};
-    if (category) {
-      // Filter berdasarkan category_map sesuai permintaan di frontend
-      billTypeCondition.category_map = category;
+    if (billTypeIdRaw) {
+      itemCondition.bill_type_id = Array.isArray(billTypeIdRaw)
+        ? { [Op.in]: billTypeIdRaw }
+        : billTypeIdRaw;
     }
 
-    const { count, rows } = await Bill.findAndCountAll({
-      where: {
-        member_id: memberId,
-        status: "UNPAID",
-      },
+    const { count, rows } = await BillItem.findAndCountAll({
+      where: itemCondition,
       include: [
         {
           model: BillType,
-          as: "billType",
-          attributes: ["type_name", "tx_type", "category_map"],
-          // Menerapkan filter kategori di sini
-          where:
-            Object.keys(billTypeCondition).length > 0
-              ? billTypeCondition
-              : null,
-          required: category ? true : false, // Jika ada kategori, gunakan INNER JOIN agar data terfilter
-        },
+          as: "type",
+          attributes: ["type_name", "category_map"],
+          required: false,
+        }
       ],
-      limit: billLimit,
-      order: [["createdAt", "DESC"]],
+      // Gunakan 'createdAt' (Sequelize akan menerjemahkan ke 'created_at' karena underscored: true)
+      order: [["createdAt", "ASC"]],
     });
 
     return res.status(200).json({
       status: true,
-      message: category
-        ? `Daftar tagihan kategori ${category} berhasil diambil.`
-        : "Semua daftar tagihan berhasil diambil.",
+      message: "Data rincian tagihan berhasil diambil.",
       total_count: count,
       data: rows,
     });
+
   } catch (error) {
-    console.error("Kesalahan getPendingBills:", error);
+    console.error("Error pada getPendingBills:", error);
     return res.status(500).json({
       status: false,
       message: "Terjadi kesalahan pada server.",

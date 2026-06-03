@@ -1,52 +1,102 @@
-import { Sequelize } from "sequelize";
+import { DataTypes } from "sequelize";
 
 const MemberLoan = (sequelize) => {
-  const { DataTypes } = Sequelize;
-
-  const MemberLoanModel = sequelize.define("member_loans", {
-    loan_id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
-      allowNull: false,
+  const MemberLoanModel = sequelize.define(
+    "member_loans",
+    {
+      loan_id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
+      },
+      member_id: {
+        type: DataTypes.STRING(36),
+        allowNull: true, // Foreign Key - UUID format
+      },
+      product_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false, // Foreign Key
+      },
+      loan_product_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false, // Foreign Key
+      },
+      nominal_principal: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+      },
+      term_count: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      installment_amount: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      disbursement_method: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      disbursement_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      bank_name: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      bank_account_no: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      principal_amount: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+        // STORED GENERATED
+      },
+      tenor_months: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        // STORED GENERATED
+      },
+      margin_amount: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+        defaultValue: 0.0,
+      },
+      interest_rate: {
+        type: DataTypes.DECIMAL(5, 4),
+        allowNull: true,
+        defaultValue: 0.0,
+      },
+      monthly_payment: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+        // STORED GENERATED
+      },
+      loan_amount: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+        // STORED GENERATED
+      },
+      total_repayment: {
+        type: DataTypes.DECIMAL(18, 2),
+        allowNull: true,
+        // STORED GENERATED
+      },
     },
-    member_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
+    {
+      freezeTableName: true,
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     },
-    product_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
-    },
-    principal_amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    tenor_months: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    margin_amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    total_repayment: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-    },
-    disbursement_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    status: {
-      type: DataTypes.ENUM('PENDING', 'APPROVED', 'DISBURSED', 'PAID'),
-      allowNull: false,
-      defaultValue: 'PENDING',
-    },
-  }, { 
-    freezeTableName: true, 
-    timestamps: true,
-  });
+  );
 
   return MemberLoanModel;
 };

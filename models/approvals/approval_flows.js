@@ -1,3 +1,4 @@
+// 📁 models/approvals/approval_flows.js
 import { Sequelize } from "sequelize";
 
 const ApprovalFlow = (sequelize) => {
@@ -17,31 +18,35 @@ const ApprovalFlow = (sequelize) => {
         allowNull: false,
       },
       entity_ref: {
-        type: DataTypes.STRING(100), // Contoh: 'member_registration', 'loan_application'
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
       entity_id: {
-        type: DataTypes.BIGINT, // ID dari entitas yang disetujui, contoh: registration_id
+        type: DataTypes.BIGINT,
         allowNull: false,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: Sequelize.NOW,
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: Sequelize.NOW,
       },
     },
     {
       freezeTableName: true,
-      timestamps: true, // Mengaktifkan created_at dan updated_at
+      timestamps: true, // Sequelize akan otomatis map: createdAt -> created_at, updatedAt -> updated_at
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
     }
   );
 
   ApprovalFlowModel.associate = (models) => {
-    // Satu Flow memiliki banyak Steps
     ApprovalFlowModel.hasMany(models.ApprovalStep, {
       foreignKey: "approval_flow_id",
       as: "steps",
     });
-    // Jika Anda memiliki model untuk entitas yang dirujuk (misal MemberRegistration)
-    // ApprovalFlowModel.belongsTo(models.MemberRegistration, {
-    //   foreignKey: "entity_id",
-    //   constraints: false, // Nonaktifkan foreign key constraint karena entity_ref bisa berbeda
-    // });
   };
 
   return ApprovalFlowModel;

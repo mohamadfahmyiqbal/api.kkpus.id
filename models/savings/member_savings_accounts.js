@@ -9,7 +9,7 @@ export default (sequelize) => {
       autoIncrement: true,
       allowNull: false,
     },
-    member_id: { type: DataTypes.BIGINT, allowNull: false },
+    member_id: { type: DataTypes.STRING(36), allowNull: false },
     savings_product_id: { type: DataTypes.BIGINT },
     account_no: { type: DataTypes.STRING }, // Sesuai kolom database Anda
     account_type: { type: DataTypes.STRING }, // Sesuai kolom database Anda

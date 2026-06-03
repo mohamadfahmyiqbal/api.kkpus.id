@@ -19,7 +19,7 @@ const BillType = (sequelize) => {
       },
       // 🟢 TAMBAHKAN KOLOM INI
       tx_type: {
-        type: DataTypes.ENUM("SETORAN", "PENARIKAN"),
+        type: DataTypes.ENUM("SETORAN", "PENARIKAN", "LAINNYA"),
         defaultValue: "SETORAN",
         allowNull: false,
       },

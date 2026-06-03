@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+import { NOTIFICATION_STATUS } from "../../constants/notificationConstants.js";
 
 const Notification = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -13,7 +14,7 @@ const Notification = (sequelize) => {
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false, // Foreign Key Penerima
       },
       title: {
@@ -32,7 +33,7 @@ const Notification = (sequelize) => {
       status: {
         type: DataTypes.STRING(50), // Sesuai varchar(50)
         allowNull: false,
-        defaultValue: "unread", // Asumsi: Status awal adalah 'unread'
+        defaultValue: NOTIFICATION_STATUS.UNREAD, // Use constant
       },
       // created_at dan updated_at ditangani oleh timestamps: true
     },

@@ -1,35 +1,37 @@
-import { Sequelize } from "sequelize";
+import { DataTypes } from "sequelize";
 
 const SavingsProduct = (sequelize) => {
-  const { DataTypes } = Sequelize;
-
   const SavingsProductModel = sequelize.define("savings_products", {
-    // Sesuai dengan savings_product_id (Primary Key)
+    // Primary Key: savings_product_id
     savings_product_id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
       allowNull: false,
     },
-    // Sesuai dengan product_code varchar(50)
+    // product_code varchar(50)
     product_code: {
       type: DataTypes.STRING(50),
-      allowNull: true, // Karena di deskripsi database YES
+      allowNull: true,
     },
-    // Sesuai dengan name varchar(255)
+    // name varchar(255)
     name: {
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    // Sesuai dengan akad_type varchar(50)
+    // akad_type varchar(50)
     akad_type: {
       type: DataTypes.STRING(50),
       allowNull: true,
     },
   }, { 
     freezeTableName: true, 
-    timestamps: true, // Ini akan menangani created_at dan updated_at secara otomatis
-    underscored: true, // Agar Sequelize mencari created_at bukan createdAt
+    timestamps: true,
+    // Mapping eksplisit agar Sequelize tidak mencari 'createdAt' (camelCase)
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    // underscored: true memastikan kolom lain hasil relasi juga menggunakan snake_case
+    underscored: true, 
   });
 
   return SavingsProductModel;

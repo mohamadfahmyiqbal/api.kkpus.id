@@ -14,7 +14,7 @@ const ActivityLog = (sequelize) => {
       allowNull: false,
     },
     member_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING(36),
       allowNull: false, // Foreign Key Pelaku aktivitas
     },
     activity_type: {

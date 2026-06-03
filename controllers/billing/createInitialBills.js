@@ -1,70 +1,64 @@
-// 📁 controllers/billing/createInitialBills.js
 import db from "../../models/index.js";
 import moment from "moment";
 
-// Ambil model sesuai dengan nama yang didefinisikan di db (index.js)
-const { Member, Bill, BillType, BillItem } = db;
+const { BillType, BillItem, Bill } = db;
 
-moment.locale("id");
-
-export const createInitialBills = async (memberId, typeCodes, customAmount = null, t) => {
+/**
+ * createInitialBills
+ * Menghasilkan rincian item tagihan awal untuk member baru (Pokok & Wajib 12 bulan)
+ * Hanya menyimpan ke tabel bill_items sesuai struktur schema.
+ */
+export const createInitialBills = async (memberId, typeCodes, t, monthsToGenerate = 1) => {
   try {
-    // 1. Ambil Data Member dan Tipe Tagihan
-    // Note: Member menggunakan member_id untuk pencarian awal
-    const [memberData, requiredBillTypes] = await Promise.all([
-      Member.findOne({
-        where: { member_id: memberId },
-        attributes: ["member_no", "member_id"], // Ambil member_no karena Bill butuh ini
-        transaction: t,
-      }),
-      BillType.findAll({
-        where: { type_code: typeCodes },
-        transaction: t,
-      }),
-    ]);
-
-    if (!memberData || requiredBillTypes.length === 0) {
-      throw new Error("Gagal: Member atau Tipe Tagihan tidak ditemukan.");
+    if (!memberId || !t || !Array.isArray(typeCodes)) {
+      throw new Error("Parameter tidak lengkap atau transaksi tidak valid.");
     }
 
-    let totalAmount = 0;
-    const billItemsData = requiredBillTypes.map((type) => {
-      const amount = customAmount ? parseFloat(customAmount) : (parseFloat(type.default_amount) || 0);
-      totalAmount += amount;
-      return {
-        description: type.type_name,
-        amount: amount,
-      };
+    const billTypes = await BillType.findAll({
+      where: { type_code: typeCodes },
+      transaction: t,
     });
 
-    // 2. Buat Parent Bill
-    // Berdasarkan models/index.js, Bill butuh member_id dan member_no
-    const newBill = await Bill.create(
-      {
-        member_id: memberId,
-        member_no: memberData.member_no, // Penting karena ada relasi foreignKey: "member_no"
-        bill_type_id: requiredBillTypes[0].bill_type_id,
-        description: customAmount ? `Setoran ${requiredBillTypes[0].type_name}` : "Tagihan Awal Anggota",
-        amount: totalAmount,
-        due_date: moment().add(1, "days").toDate(),
-        status: "UNPAID",
-      },
-      { transaction: t }
-    );
+    if (billTypes.length === 0) {
+      console.warn(`⚠️ Warning: No bill types found for codes: ${typeCodes.join(", ")}`);
+      return { success: false };
+    }
 
-    // 3. Buat Detail Items
-    await BillItem.bulkCreate(
-      billItemsData.map((item) => ({
-        bill_id: newBill.bill_id,
-        description: item.description,
-        amount: item.amount,
-      })),
-      { transaction: t }
-    );
+    for (const type of billTypes) {
+      const nominal = parseFloat(type.default_amount) || 0;
+      
+      const iterations = type.period_type === 'MONTHLY' ? monthsToGenerate : 1;
 
-    return newBill.bill_id;
+      for (let i = 0; i < iterations; i++) {
+        if (t.finished) throw new Error("TRANSACTION_ABORTED");
+
+        const dueDate = moment().add(i, "months").endOf("month").toDate();
+        const monthLabel = type.period_type === 'MONTHLY' 
+          ? ` - ${moment(dueDate).format("MMMM YYYY")}` 
+          : "";
+
+        const fullDescription = `${type.type_name}${monthLabel}`;
+
+        // HANYA CREATE BILL_ITEM
+        // bill_id dibiarkan null (nullable di database)
+        await BillItem.create({
+          bill_type_id: type.bill_type_id,
+          category_code: type.type_code, // Gunakan type_code sebagai category_code
+          bill_id: null, 
+          member_id: memberId,
+          description: fullDescription,
+          amount: nominal,
+          due_date: dueDate,
+          status: 'UNPAID'
+        }, { transaction: t });
+      }
+    }
+
+    return { success: true };
   } catch (error) {
-    console.error("Error in createInitialBills:", error);
+    console.error("CRITICAL_ERROR_CREATE_BILLS:", error.message);
     throw error;
   }
 };
+
+export default createInitialBills;

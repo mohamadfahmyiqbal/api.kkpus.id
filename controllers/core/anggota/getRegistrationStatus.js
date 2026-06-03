@@ -1,59 +1,121 @@
-// controllers/core/anggota/getRegistrationStatus.js
-import db from "../../../models/index.js";
-import fs from "fs"; // Tambahkan fs untuk membaca file
-import path from "path";
+// path: controllers/core/anggota/getRegistrationStatus.js
 
-const { MemberRegistration, ApprovalStep, Bill, Member, Approval, BillType } = db;
-const __dirname = path.resolve();
+import db from "../../../models/index.js";
+import fs from "fs";
+
+
+const { MemberRegistration, Member, MemberStatus, BillItem, ApprovalFlow, ApprovalStep, EntityStepApproval, Sequelize } = db;
+const { Op } = Sequelize;
 
 export const getRegistrationStatus = async (req, res) => {
   const member_id = req.userId;
+  const BASE_URL = process.env.BASE_URL;
 
   try {
     const registrationData = await MemberRegistration.findOne({
       where: { member_id },
-      order: [["registered_at", "DESC"]],
+      include: [
+        {
+          model: Member,
+          as: "member",
+          attributes: ["member_id", "full_name", "is_registration_done"],
+          include: [
+            { 
+              model: MemberStatus, 
+              as: "status", 
+              attributes: ["status_name"] 
+            }
+          ],
+        },
+        {
+          model: ApprovalFlow,
+          as: "flow",
+          attributes: ["approval_flow_id", "flow_name", "entity_ref"],
+          include: [
+            {
+              model: ApprovalStep,
+              as: "steps",
+              include: [
+                {
+                  model: EntityStepApproval,
+                  as: "entityApprovals",
+                  where: { entity_ref: 'members' },
+                  required: false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      // Berdasarkan log error Anda, gunakan createdAt (CamelCase)
+      order: [["createdAt", "DESC"]], 
     });
 
     if (!registrationData) {
-      return res.status(200).json({ status: true, is_registration_done: false, data: null });
+      return res.status(200).json({ 
+        status: true, 
+        is_registration_done: false, 
+        data: null 
+      });
     }
 
-    const responseData = registrationData.get({ plain: true });
+    // FIX: Hapus registration_id karena kolom tidak ada di DB
+    const activeBillItem = await BillItem.findOne({
+      where: {
+        member_id: member_id, // Hanya gunakan member_id
+        bill_type_id: { [Op.in]: [1, 2] },
+        status: 'UNPAID'
+      },
+      attributes: ["bill_id", "status", "amount", "bill_item_id"],
+      // BillItem pakai created_at karena underscored: true di model
+      order: [["created_at", "DESC"]] 
+    });
 
-    // --- LOGIKA BASE64 START ---
-    const convertToBase64 = (filePath) => {
-      try {
-        if (!filePath) return null;
-        // Gabungkan path dasar server dengan path yang ada di DB
-        // Menghilangkan '/' di awal jika ada agar path.join bekerja benar
-        const fullPath = path.join(__dirname, filePath);
-        
-        if (fs.existsSync(fullPath)) {
-          const bitmap = fs.readFileSync(fullPath);
-          const extension = path.extname(fullPath).replace(".", "");
-          return `data:image/${extension};base64,${bitmap.toString("base64")}`;
-        }
-        return null;
-      } catch (err) {
-        console.error("Gagal convert Base64:", err);
-        return null;
-      }
+    const responseData = registrationData.get({ plain: true });
+    
+    // Mapping untuk UI
+    responseData.bill_id = activeBillItem?.bill_id || null;
+    responseData.bill_item_id = activeBillItem?.bill_item_id || null;
+    responseData.bill_status = activeBillItem ? "WAITING_PAYMENT" : "PAID";
+    responseData.bill_amount = activeBillItem ? parseFloat(activeBillItem.amount) : 0;
+    
+    responseData.foto_ktp = responseData.ktp_photo_path ? `${BASE_URL}${responseData.ktp_photo_path.startsWith('/') ? '' : '/'}${responseData.ktp_photo_path}` : null;
+    responseData.foto_swafoto = responseData.selfie_photo_path ? `${BASE_URL}${responseData.selfie_photo_path.startsWith('/') ? '' : '/'}${responseData.selfie_photo_path}` : null;
+
+    // Mapping Wilayah ke Key Frontend
+    responseData.provinsi = responseData.province_name;
+    responseData.kota_kab = responseData.city_name;
+    responseData.kecamatan = responseData.district_name;
+    responseData.kelurahan = responseData.subdistrict_name;
+
+    // Helper Approval (tetap pakai ID 52 & 53 sesuai DB Anda)
+    const isStepApproved = (stepId) => {
+      const step = responseData.flow?.steps?.find(s => s.approval_step_id === stepId);
+      // Cocokkan entity_id dengan registration_id pendaftaran saat ini
+      const approval = step?.entityApprovals?.find(a => a.entity_id == registrationData.registration_id);
+      return !!(approval && approval.is_approved === 1);
     };
 
-    // Ganti path dengan data Base64
-    responseData.ktp_photo_base64 = convertToBase64(responseData.ktp_photo_path);
-    responseData.selfie_photo_base64 = convertToBase64(responseData.selfie_photo_path);
-    // --- LOGIKA BASE64 END ---
+    responseData.is_approved_pengawas = isStepApproved(52);
+    responseData.is_approved_ketua = isStepApproved(53);
 
-    // (Sisa kode ambil steps dan bill tetap sama seperti sebelumnya...)
-    // ...
-    
     return res.status(200).json({
       status: true,
+      is_registration_done: true,
       data: responseData,
     });
+
   } catch (error) {
-    return res.status(500).json({ status: false, error: error.message });
+    console.error("DEBUG_GET_REG_STATUS_ERROR:", error);
+    try {
+      fs.appendFileSync("api_error.log", `${new Date().toISOString()} - ERROR: ${error.stack}\n`);
+    } catch (fsErr) {
+      console.error("Failed to write to api_error.log:", fsErr);
+    }
+    return res.status(500).json({
+      status: false,
+      message: "Gagal memproses status pendaftaran.",
+      error: error.message
+    });
   }
 };

@@ -4,36 +4,41 @@ const SavingTarget = (sequelize) => {
   const { DataTypes } = Sequelize;
 
   const SavingTargetModel = sequelize.define("saving_targets", {
-    target_id: {
+    saving_target_id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
       allowNull: false,
     },
-    member_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key
+    target_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+    category: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
     target_amount: {
       type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
+      allowNull: true,
     },
-    target_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
+    term_months: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
-    current_saved: {
+    min_monthly_deposit: {
       type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      defaultValue: 0.00,
+      allowNull: true,
+    },
+    akad_type: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
   }, { 
     freezeTableName: true, 
     timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 
   return SavingTargetModel;

@@ -8,48 +8,51 @@ const Member = (sequelize) => {
     "members",
     {
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
-      },
-      // Menggunakan full_name (Sesuai skema database yang Anda berikan)
-      full_name: { 
-        type: DataTypes.STRING(255),
-        allowNull: false,
-      },
-      email: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: true,
-      },
-      phone_number: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-      },
-      // Kolom lain sesuai skema
-      gender: {
-        type: DataTypes.STRING(10),
-        allowNull: true,
-      },
-      join_date: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
       },
       member_no: {
         type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
       },
-      member_type: {
-        type: DataTypes.ENUM("calon", "reguler", "alb"),
+      full_name: {
+        type: DataTypes.STRING(255),
         allowNull: false,
       },
-      nik_ktp: {
-        type: DataTypes.STRING(30),
+      email: {
+        type: DataTypes.STRING(255), // Sesuai skema varchar(255)
         allowNull: true,
-        unique: true,
+      },
+      phone_number: {
+        type: DataTypes.STRING(50), // Sesuai skema varchar(50)
+        allowNull: true,
+      },
+      password_hash: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      member_type: {
+        type: DataTypes.STRING(20), // Ubah dari ENUM ke VARCHAR sesuai skema
+        allowNull: true,
+      },
+      gender: {
+        type: DataTypes.STRING(20), // Sesuai skema varchar(20)
+        allowNull: true,
+      },
+      date_of_brith: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      join_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      nik_ktp: {
+        type: DataTypes.STRING(50), // Sesuai skema varchar(50)
+        allowNull: true,
       },
       address: {
         type: DataTypes.TEXT,
@@ -57,18 +60,39 @@ const Member = (sequelize) => {
       },
       status_id: {
         type: DataTypes.BIGINT,
-        allowNull: false,
+        allowNull: true,
       },
-      password_hash: { // Ditambahkan, karena ada di skema tapi tidak di model
-        type: DataTypes.STRING(255),
+      // --- KOLOM BARU UNTUK ALAMAT GRANULAR (STEP 1) ---
+      province_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      city_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      district_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      subdistrict_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      rt: {
+        type: DataTypes.STRING(5),
+        allowNull: true,
+      },
+      rw: {
+        type: DataTypes.STRING(5),
         allowNull: true,
       },
     },
     {
       tableName: "members",
-      timestamps: true,
-      underscored: false,
-    }
+      timestamps: true, // Menggunakan createdAt & updatedAt secara otomatis
+      underscored: false, // Tetap false agar mengikuti camelCase (createdAt)
+    },
   );
 
   return MemberModel;

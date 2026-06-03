@@ -1,23 +1,31 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import db from "../../../models/index.js"; 
+import db from "../../../models/index.js";
+// import { logLoginAttempt, checkAccountLockout } from "../../../services/authLoggingService.js";
 
 // Hapus referensi ke MemberRegistration
 const Member = db.Member;
 const Sequelize = db.Sequelize;
 const Op = Sequelize.Op;
 
-// PENTING: Ganti dengan secret key yang kuat dan ambil dari environment variable (process.env.JWT_SECRET)
-const JWT_SECRET = "naila";
+// PENTING: JWT Secret harus diambil dari environment variable
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Validasi JWT Secret
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('CRITICAL: JWT_SECRET tidak valid atau tidak diatur di environment variables');
+  process.exit(1);
+}
 
 /**
  * Kontroler untuk menangani proses login anggota, langsung menggunakan tabel 'members'.
  */
 export const accountLogin = async (req, res) => {
   const { emailHp, password } = req.body;
-  
+
   // 1. Validasi Input Dasar
   if (!emailHp || !password) {
+    // await logLoginAttempt(req, false, null, "Missing credentials");
     return res.status(400).json({
       success: false,
       message: "Email/Nomor Handphone dan Password wajib diisi.",
@@ -25,6 +33,15 @@ export const accountLogin = async (req, res) => {
   }
 
   try {
+    // 2. Cek Account Lockout
+    // const lockoutCheck = await checkAccountLockout(emailHp);
+    // if (lockoutCheck.locked) {
+    //   await logLoginAttempt(req, false, null, "Account locked");
+    //   return res.status(429).json({
+    //     success: false,
+    //     message: lockoutCheck.message,
+    //   });
+    // }
     // 2. CARI AKUN di tabel 'members'
     // Mencari berdasarkan email ATAU phone_number
     const member = await Member.findOne({
@@ -50,6 +67,7 @@ export const accountLogin = async (req, res) => {
 
     // 3. Cek Keberadaan Member
     if (!member) {
+      // await logLoginAttempt(req, false, null, "User not found");
       return res.status(401).json({
         success: false,
         message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
@@ -59,10 +77,11 @@ export const accountLogin = async (req, res) => {
     // 4. Bandingkan Password menggunakan bcrypt
     const isMatch = await bcrypt.compare(
       password,
-      member.password_hash // Menggunakan hash dari record Member
+      member.password_hash, // Menggunakan hash dari record Member
     );
 
     if (!isMatch) {
+      // await logLoginAttempt(req, false, member.member_id, "Invalid password");
       return res.status(401).json({
         success: false,
         message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
@@ -82,14 +101,17 @@ export const accountLogin = async (req, res) => {
       expiresIn: "1d",
     });
 
-    // 6. Respon Sukses
-    // Mengembalikan atribut user, kecuali password_hash (Sequelize secara otomatis tidak menyertakannya jika tidak diminta secara spesifik, 
+    // 6. Log successful login
+    // await logLoginAttempt(req, true, member.member_id, "Login successful");
+
+    // 7. Respon Sukses
+    // Mengembalikan atribut user, kecuali password_hash (Sequelize secara otomatis tidak menyertakannya jika tidak diminta secara spesifik,
     // namun kita telah meminta di atas. Pastikan Anda menghapus atribut password_hash di response, atau atur default scope pada model)
-    
+
     // Hapus password_hash dari objek member sebelum dikirim ke frontend
     const userResponse = member.toJSON();
     delete userResponse.password_hash;
-    
+
     return res.status(200).json({
       success: true,
       message: "Login berhasil!",
@@ -99,11 +121,18 @@ export const accountLogin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login API Error:", error);
+    console.error("Login API Error:", {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
+    // Jangan expose error details ke client
     return res.status(500).json({
       success: false,
-      message: "Login gagal. Terjadi kesalahan server internal.",
-      error: error.message,
+      message: "Login gagal. Terjadi kesalahan server internal."
     });
   }
 };

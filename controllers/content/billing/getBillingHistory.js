@@ -1,12 +1,12 @@
 // src/controllers/content/billing/getBillingHistory.js
 import db from "../../../models/index.js";
-import { Op } from "sequelize"; // Import Operator Sequelize
+import { Op } from "sequelize";
 
-const { Bill, BillType, BillItem } = db;
+// PERBAIKAN: Gunakan nama properti yang sesuai dengan db.Bill dan db.BillItem di initModels.js
+const { Bill, BillItem } = db;
 
 /**
  * Mengambil riwayat tagihan PAID/SETTLED
- * dengan detail item yang deskripsinya sama dengan kategori
  */
 const getBillingHistory = async (req, res) => {
   try {
@@ -20,28 +20,28 @@ const getBillingHistory = async (req, res) => {
       });
     }
 
-    const historyLimit = limit ? parseInt(limit, 10) : 20;
-
-    // Kondisi filter kategori
-    let billTypeCondition = {};
-    if (category) {
-      billTypeCondition.category_map = category;
+    // Pastikan Bill terdefinisi sebelum memanggil findAll
+    if (!Bill) {
+      throw new Error("Model 'Bill' tidak ditemukan di database object.");
     }
+
+    const historyLimit = limit ? parseInt(limit, 10) : 20;
 
     const rows = await Bill.findAll({
       where: {
         member_id: memberId,
-        status: ["PAID", "SETTLED"],
+        status: {
+          [Op.in]: ["PAID", "SETTLED"]
+        },
       },
       include: [
         {
           model: BillItem,
-          as: "items",
-          // LOGIKA FILTER: deskripsi bill_items harus sama dengan category_map dari BillType
+          as: "items", // Pastikan alias ini sesuai dengan defineAssociations (db.Bill.hasMany(db.BillItem, { as: "items" }))
           where: category
             ? {
                 description: {
-                  [Op.like]: `%${category}%`, // Menggunakan LIKE jika deskripsi mengandung nama kategori
+                  [Op.like]: `%${category}%`,
                 },
               }
             : null,
@@ -49,8 +49,10 @@ const getBillingHistory = async (req, res) => {
         },
       ],
       limit: historyLimit,
-      order: [["updatedAt", "DESC"]],
+      // Menggunakan nama kolom fisik agar aman dari isu camelCase/snake_case
+      order: [["updated_at", "DESC"]],
     });
+
     return res.status(200).json({
       status: true,
       message: "Riwayat item berhasil diambil sesuai kategori.",
