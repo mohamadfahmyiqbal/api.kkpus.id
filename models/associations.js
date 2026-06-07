@@ -392,4 +392,10 @@ export default function defineAssociations(db) {
     foreignKey: "member_id",
     as: "member",
   });
+
+  // Sukuk associations
+  db.SukukIssue.hasMany(db.SukukOrder, { foreignKey: "sukuk_issue_id", as: "orders" });
+  db.SukukOrder.belongsTo(db.SukukIssue, { foreignKey: "sukuk_issue_id", as: "sukukIssue" });
+  db.SukukOrder.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+  db.Member.hasMany(db.SukukOrder, { foreignKey: "member_id", as: "sukukOrders" });
 }

@@ -104,6 +104,29 @@ export const midtransNotification = async (req, res) => {
         }
       }
 
+      // Logika Sukuk Investment
+      if (localTx.tx_category === "SUKUK_INVESTMENT") {
+        const targetBillId = localTx.bill_id;
+        if (targetBillId) {
+          const billItem = await BillItem.findOne({ where: { bill_id: targetBillId }, transaction: dbTransaction });
+          if (billItem && billItem.description) {
+            // Description format: Pembelian Sukuk (Order #8)
+            const match = billItem.description.match(/Order #(\d+)/);
+            if (match && match[1]) {
+              const orderId = match[1];
+              await db.sequelize.query(
+                `UPDATE sukuk_orders SET status = 'PAID' WHERE order_id = :orderId`,
+                {
+                  replacements: { orderId },
+                  transaction: dbTransaction
+                }
+              );
+              console.log(`[Midtrans Webhook] Updated sukuk_orders ${orderId} to PAID`);
+            }
+          }
+        }
+      }
+
       await localTx.update({ is_ledger_recorded: true }, { transaction: dbTransaction });
     }
 
@@ -128,6 +151,16 @@ export const midtransNotification = async (req, res) => {
           sent_datetime: new Date().toISOString(),
           status: 1,
         });
+
+        // Trigger UI refresh transaksi
+        if (localTx.tx_category === "SUKUK_INVESTMENT" || localTx.tx_category === "FINANCING_PAYMENT") {
+          // Cari orderId untuk Sukuk jika ada
+          sendToUser(localTx.member_id, "TRANSACTION_UPDATED", {
+            entityRef: localTx.tx_category,
+            status: "PAID",
+            trigger: true
+          });
+        }
       });
     }
 

@@ -6,6 +6,11 @@ import getFinancingDetail from "../controllers/financing/getFinancingDetail.js";
 import getFinancingOptions from "../controllers/financing/getFinancingOptions.js";
 import getFinancingTerms from "../controllers/financing/getFinancingTerms.js";
 import getLoanProducts from "../controllers/loan/getLoanProducts.js";
+import getSukukCatalog from "../controllers/financing/getSukukCatalog.js";
+import getSukukPortfolio from "../controllers/financing/getSukukPortfolio.js";
+import getSukukDetail from "../controllers/financing/getSukukDetail.js";
+import createSukukOrder from "../controllers/financing/createSukukOrder.js";
+import getSukukOrderDetail from "../controllers/financing/getSukukOrderDetail.js";
 import { MidAnggota } from "../middleware/MidAnggota.js";
 import {
   uploadEvidence,
@@ -26,6 +31,13 @@ router.post("/apply-arisan", MidAnggota, applyArisan);
 router.get("/detail/:id", MidAnggota, getFinancingDetail);
 router.get("/options", MidAnggota, getFinancingOptions);
 router.get("/terms", MidAnggota, getFinancingTerms);
+
+// Sukuk Routes
+router.get("/sukuk/catalog", MidAnggota, getSukukCatalog);
+router.get("/sukuk/portfolio", MidAnggota, getSukukPortfolio);
+router.get("/sukuk/detail/:id", MidAnggota, getSukukDetail);
+router.post("/sukuk/order", MidAnggota, createSukukOrder);
+router.get("/sukuk/order/:id", MidAnggota, getSukukOrderDetail);
 
 // File Evidence Routes (require authentication)
 router.post(

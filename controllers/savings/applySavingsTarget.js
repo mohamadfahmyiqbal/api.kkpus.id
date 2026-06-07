@@ -63,6 +63,32 @@ export const applySavingsTarget = async (req, res) => {
       status: 'PENDING'
     }, { transaction: t });
 
+    // Generate Setoran Awal bill
+    if (setoranAwal > 0) {
+      const [tabunganBillType] = await db.BillType.findOrCreate({
+        where: { type_code: 'TABUNGAN_DEPOSIT' },
+        defaults: {
+          tx_type: 'SETORAN',
+          category_map: 'SAVINGS_TARGET',
+          type_name: 'Setoran Tabungan',
+          period_type: 'MONTHLY',
+          default_amount: 0
+        },
+        transaction: t
+      });
+
+      await db.BillItem.create({
+        bill_type_id: tabunganBillType.bill_type_id,
+        category_code: `TAB_DEP_${newMemberTarget.member_saving_target_id}`,
+        bill_id: null,
+        member_id: memberId,
+        description: `Setoran Awal ${targetName}`,
+        amount: setoranAwal,
+        due_date: new Date(),
+        status: 'UNPAID'
+      }, { transaction: t });
+    }
+
     if (initialStepId && flowId) {
         // Biarkan tabel Approval dan EntityStepApproval diisi nanti oleh processApproval.js
         // untuk menghindari error STEP_ALREADY_PROCESSED akibat is_approved: 0

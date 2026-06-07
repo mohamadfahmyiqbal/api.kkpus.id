@@ -8,6 +8,7 @@ import getBillingHistory from "../controllers/content/billing/getBillingHistory.
 import { createDepositSukarela } from "../controllers/billing/createDepositSukarela.js";
 import { processSavingsPayment } from "../controllers/savings/processSavingsPayment.js";
 import { createVoluntaryBill } from "../controllers/billing/createVoluntaryBill.js";
+import { syncMidtransStatus } from "../controllers/billing/syncMidtransStatus.js";
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.post("/create-voluntary-bill", createVoluntaryBill);
 router.post("/create-deposit", createDepositSukarela);
 router.post("/process-payment", MidAnggota, createMidtransTransaction);
 router.post("/process-savings", processSavingsPayment);
+router.post("/sync-status", syncMidtransStatus);
 
 export default router;

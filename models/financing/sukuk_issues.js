@@ -31,6 +31,29 @@ const SukukIssue = (sequelize) => {
       allowNull: false,
       defaultValue: 'OPEN',
     },
+    issuer: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: 'Koperasi',
+    },
+    type: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: 'Sukuk Ritel',
+    },
+    coupon: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    min_investment: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+    },
+    price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 100.0,
+    },
   }, { 
     freezeTableName: true, 
     timestamps: true,

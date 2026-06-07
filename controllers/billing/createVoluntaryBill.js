@@ -4,7 +4,7 @@ import moment from "moment";
 
 export const createVoluntaryBill = async (req, res) => {
   try {
-    const { category, amount } = req.body;
+    const { category, amount, tabungan_id } = req.body;
     const memberId = req.userId; 
 
     // 1. Validasi Input
@@ -28,13 +28,12 @@ export const createVoluntaryBill = async (req, res) => {
     }
 
     // 3. Buat BillItem Baru
-    // Hasil dari .create() akan mengembalikan objek yang baru saja disimpan di DB
     const newItem = await db.BillItem.create({
       member_id: memberId,
       bill_type_id: billType.bill_type_id,
-      category_code: category,
+      category_code: tabungan_id ? `TAB_DEP_${tabungan_id}` : category,
       amount: parseFloat(amount),
-      description: `Setoran ${billType.type_name}`,
+      description: tabungan_id ? `Setoran Manual Tabungan` : `Setoran ${billType.type_name}`,
       due_date: moment().add(30, "days").toDate(),
       status: "UNPAID",
     });

@@ -271,39 +271,16 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
         transaction: t
       });
       
-      const catalog = await db.SavingTarget.findOne({ 
-        where: { saving_target_id: entity.saving_target_id }, 
-        transaction: t 
-      });
-      
-      const monthsTabungan = catalog?.term_months || 0;
-      const minDeposit = parseFloat(catalog?.min_monthly_deposit) || 0;
-      
-      let billsCreatedTabungan = 0;
-      for (let i = 1; i <= monthsTabungan; i++) {
-        const dueDate = moment().add(i, "months").endOf("month").toDate();
-        await BillItem.create({
-          bill_type_id: tabunganBillType.bill_type_id,
-          category_code: `TAB_DEP_${entity.member_saving_target_id}`,
-          bill_id: null,
-          member_id: targetMemberIdForTabungan,
-          description: `Setoran ${catalog?.target_name || 'Tabungan'} - Bulan ${i}`,
-          amount: minDeposit,
-          due_date: dueDate,
-          status: 'UNPAID'
-        }, { transaction: t });
-        billsCreatedTabungan++;
-      }
-      
-      console.log(`[performFinalAction] Created ${billsCreatedTabungan} bills for Tabungan ${entity.member_saving_target_id}`);
-      
+      console.log(`[performFinalAction] MemberSavingTarget ${entity.member_saving_target_id} approved. No monthly installment bills generated because saving targets are completely flexible.`);
+
       t.afterCommit(() => {
+        sendToUser(targetMemberIdForTabungan, "savings:update", { trigger: true });
         sendToUser(targetMemberIdForTabungan, "bills:update", { trigger: true });
         
         sendGlobalNotification({
           memberId: targetMemberIdForTabungan,
           title: "Pengajuan Tabungan Disetujui!",
-          content: `Pengajuan ${catalog?.target_name || 'Tabungan'} Anda telah disetujui. ${billsCreatedTabungan} tagihan telah dibuat.`,
+          content: `Pengajuan Tabungan Anda telah disetujui.`,
           type: "APPROVAL",
           url: "/",
         }).catch((err) => console.error("[performFinalAction] Tabungan notification failed:", err.message));

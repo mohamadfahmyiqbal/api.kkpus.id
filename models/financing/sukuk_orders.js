@@ -15,8 +15,8 @@ const SukukOrder = (sequelize) => {
       allowNull: false, // Foreign Key
     },
     member_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false, // Foreign Key Investor
+      type: DataTypes.STRING(36),
+      allowNull: false, // Foreign Key Investor (UUID)
     },
     amount: {
       type: DataTypes.DECIMAL(18, 2),
@@ -28,9 +28,28 @@ const SukukOrder = (sequelize) => {
       defaultValue: DataTypes.NOW,
     },
     status: {
-      type: DataTypes.ENUM('PENDING', 'PAID', 'CANCELLED'),
+      type: DataTypes.ENUM('PENDING', 'READY_TO_PAY', 'WAITING_PAYMENT', 'APPROVED', 'PAID', 'REJECTED', 'CANCELLED'),
       allowNull: false,
       defaultValue: 'PENDING',
+    },
+    is_approved_pengawas: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    is_approved_ketua: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    is_approved_bendahara: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    rejected_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   }, { 
     freezeTableName: true, 

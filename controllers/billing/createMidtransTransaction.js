@@ -100,51 +100,7 @@ export const createMidtransTransaction = async (req, res) => {
       }];
     }
     
-    // --- LOGIKA C: TABUNGAN_DEPOSIT (Update item yang sudah ada dengan nominal fleksibel) ---
-    else if (tx_category === "TABUNGAN_DEPOSIT") {
-      const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])
-        .map(id => Number(id))
-        .filter(id => !isNaN(id));
 
-      if (sanitizedIds.length === 0) throw new Error("Item tagihan tidak dipilih.");
-      if (sanitizedIds.length > 1) throw new Error("Hanya bisa membayar satu tagihan tabungan sekaligus untuk nominal fleksibel.");
-
-      const existingItems = await BillItem.findAll({
-        where: { 
-          bill_item_id: sanitizedIds,
-          member_id: member.member_id,
-          status: 'UNPAID'
-        },
-        transaction: dbTransaction,
-      });
-
-      if (existingItems.length !== sanitizedIds.length) {
-        throw new Error(`Tagihan tidak ditemukan atau sudah dibayar. (ID: ${sanitizedIds.join(',')})`);
-      }
-
-      bill_type_id = existingItems[0].bill_type_id;
-
-      const parsedAmount = parseFloat(amount);
-      if (isNaN(parsedAmount) || parsedAmount < 10000) {
-        throw new Error("Nominal setoran minimal Rp 10.000.");
-      }
-
-      // Update the BillItem amount to the flexible amount specified by the user
-      await BillItem.update(
-        { amount: parsedAmount },
-        { where: { bill_item_id: sanitizedIds[0] }, transaction: dbTransaction }
-      );
-
-      total_gross = parsedAmount;
-      item_details = [{
-        id: `ITEM-${existingItems[0].bill_item_id}`,
-        price: total_gross,
-        quantity: 1,
-        name: existingItems[0].description.substring(0, 50)
-      }];
-      final_bill_item_ids = sanitizedIds;
-    }
-    
     // --- LOGIKA D: DEFAULT TRANSAKSI LAINNYA ---
     else {
       const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])

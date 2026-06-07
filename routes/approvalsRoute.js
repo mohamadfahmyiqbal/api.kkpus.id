@@ -4,6 +4,7 @@ import MidRole from "../middleware/MidRole.js";
 import { processApproval } from "../controllers/core/approvals/processApproval.js";
 import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js";
 import { verifyApprovalChain } from "../middleware/verifyApprovalChain.js";
+import approveSukukOrder from "../controllers/financing/approveSukukOrder.js";
 
 const router = express.Router();
 
@@ -27,5 +28,8 @@ router.put("/penarikan/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KET
 router.post("/penarikan/pembayaran/:entityId", MidAnggota, MidRole(["BENDAHARA"]), disburseWithdrawal);
 router.put("/financing/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), verifyApprovalChain(FIN), processApproval(FIN));
 router.put("/tabungan/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), verifyApprovalChain("member_saving_targets"), processApproval("member_saving_targets"));
+
+// Custom sukuk order approval bypassing ApprovalFlow
+router.put("/sukuk/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), approveSukukOrder);
 
 export default router;

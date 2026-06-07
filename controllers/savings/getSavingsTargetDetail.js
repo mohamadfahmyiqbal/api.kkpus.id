@@ -55,10 +55,18 @@ export const getSavingsTargetDetail = async (req, res) => {
     });
 
     // Calculate specific flags based on standard roles
-    const isApprovedPengawas = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'PENGAWAS' && a.is_approved === 1);
-    const isApprovedKetua = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'KETUA' && a.is_approved === 1);
-    const isApprovedBendahara = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'BENDAHARA' && a.is_approved === 1);
-    const isRejected = approvals.some(a => a.is_approved === 0 && approvalLogs.some(l => l.decision === 'REJECTED' && l.approval_step_id === a.approval_step_id));
+    const checkIsApproved = (val) => {
+      if (Buffer.isBuffer(val)) return val[0] === 1;
+      return val === 1 || val === true || val === '1';
+    };
+
+    const isApprovedPengawas = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'PENGAWAS' && checkIsApproved(a.is_approved));
+    const isApprovedKetua = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'KETUA' && checkIsApproved(a.is_approved));
+    const isApprovedBendahara = approvals.some(a => a.step?.verifierRole?.role_name?.toUpperCase() === 'BENDAHARA' && checkIsApproved(a.is_approved));
+    const isRejected = approvals.some(a => !checkIsApproved(a.is_approved) && approvalLogs.some(l => l.decision === 'REJECTED' && l.approval_step_id === a.approval_step_id));
+
+    console.log("[DEBUG] getSavingsTargetDetail approvals:", JSON.stringify(approvals, null, 2));
+    console.log("[DEBUG] Flags:", { isApprovedPengawas, isApprovedKetua, isApprovedBendahara });
 
     return res.status(200).json({
       status: true,
