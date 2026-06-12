@@ -6,12 +6,12 @@ export default (sequelize) => {
     "PushSubscription",
     {
       subscription_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
       },
       member_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: false,
       },
       endpoint: {

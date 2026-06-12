@@ -7,13 +7,13 @@ const MemberRegistration = (sequelize) => {
     "member_registrations",
     {
       registration_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       full_name: {
@@ -37,7 +37,7 @@ const MemberRegistration = (sequelize) => {
         allowNull: true,
       },
       province_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       province_name: {
@@ -45,7 +45,7 @@ const MemberRegistration = (sequelize) => {
         allowNull: true,
       },
       city_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       city_name: {
@@ -53,7 +53,7 @@ const MemberRegistration = (sequelize) => {
         allowNull: true,
       },
       district_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       district_name: {
@@ -61,7 +61,7 @@ const MemberRegistration = (sequelize) => {
         allowNull: true,
       },
       subdistrict_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       subdistrict_name: {
@@ -89,15 +89,15 @@ const MemberRegistration = (sequelize) => {
         allowNull: true,
       },
       status_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       approval_flow_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       current_step_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       final_status: {

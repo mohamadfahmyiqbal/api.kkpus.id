@@ -68,15 +68,17 @@ export const verifyApprovalChain = (entityRef) => async (req, res, next) => {
 
     const currentStepIndex = allSteps.findIndex(s => s.approval_step_id === entity.current_step_id);
 
+    const hasRole = currentStep.role_id ? req.userRoleIds.some(id => String(id) === String(currentStep.role_id)) : true;
+
     // Validasi Role (Sesuai role_id di approval_steps)
     console.log("[verifyApprovalChain] Role check:", {
       requiredRoleId: currentStep.role_id,
       requiredStepName: currentStep.step_name,
       userRoleIds: req.userRoleIds,
-      hasAccess: currentStep.role_id ? req.userRoleIds.includes(Number(currentStep.role_id)) : true
+      hasAccess: hasRole
     });
     
-    if (currentStep.role_id && !req.userRoleIds.includes(Number(currentStep.role_id))) {
+    if (!hasRole) {
       return res.status(403).json({
         success: false,
         message: `Otoritas ditolak. Tahap ini memerlukan peran: ${currentStep.step_name}`,

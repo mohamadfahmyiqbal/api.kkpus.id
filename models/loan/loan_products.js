@@ -7,9 +7,9 @@ const LoanProduct = (sequelize) => {
     "loan_products",
     {
       loan_product_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       product_id: {

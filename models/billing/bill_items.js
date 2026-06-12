@@ -8,20 +8,20 @@ const BillItem = (sequelize) => {
     "bill_items",
     {
       bill_item_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
       },
       bill_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: true,
       },
       member_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       bill_type_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       category_code: {

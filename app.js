@@ -10,7 +10,7 @@ import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes/routes.js";
-import { initSocket, users } from "./controllers/utility/socket.js";
+import { initSocket, users } from "./utils/socket.js";
 import ErrorHandler from "./middleware/ErrorHandler.js";
 // Trigger restart for CORS config
 console.log("✅ App starting...");
@@ -31,6 +31,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://*.googleapis.com", "https://*.mozilla.com", "https://*.push.apple.com"],
       },
     },
   }),
@@ -65,12 +66,41 @@ if (sslOptions) {
   console.log("✅ HTTP Server configured on port", PORT);
 }
 
+const allowedOrigins = [
+  "https://kkpus.id",
+  "https://admin.kkpus.id",
+  "http://localhost:3000",
+  "http://localhost:4173",
+  "https://localhost:4173",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(",").forEach((origin) => {
+    const trimmed = origin.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+}
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim())
-      : true,
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith("kkpus.id")) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Rejected origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   }),
 );
 app.use(express.json({ limit: "100mb" }));

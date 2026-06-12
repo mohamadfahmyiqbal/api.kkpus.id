@@ -7,13 +7,13 @@ const ArisanBatch = (sequelize) => {
     "arisan_batches",
     {
       arisan_batch_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       arisan_program_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       batch_name: {

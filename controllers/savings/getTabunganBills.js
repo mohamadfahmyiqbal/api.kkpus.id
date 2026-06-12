@@ -1,7 +1,7 @@
 // 📁 controllers/savings/getTabunganBills.js
 import db from "../../models/index.js";
 import midtransClient from "midtrans-client";
-import { processLedgerRecording } from "../utility/ledgerHelper.js";
+import { processLedgerRecording } from "../../services/ledgerHelper.js";
 
 const getTabunganBills = async (req, res) => {
   try {

@@ -59,9 +59,22 @@ const requestWithdrawal = async (req, res) => {
             });
         }
 
-        // 4. Cari Step Pertama Approval (Flow ID 7 untuk Penarikan Simpanan)
+        // 4. Cari Approval Flow untuk Penarikan Simpanan
+        const approvalFlow = await db.ApprovalFlow.findOne({
+            where: { entity_ref: 'savings_withdrawals' },
+            transaction: t
+        });
+
+        if (!approvalFlow) {
+            await t.rollback();
+            return res.status(500).json({
+                status: false,
+                message: "Sistem error: Approval Flow untuk penarikan tidak ditemukan."
+            });
+        }
+
         const firstStep = await db.ApprovalStep.findOne({
-            where: { approval_flow_id: 7, step_order: 1 },
+            where: { approval_flow_id: approvalFlow.approval_flow_id, step_order: 1 },
             transaction: t
         });
 
@@ -80,7 +93,7 @@ const requestWithdrawal = async (req, res) => {
             cash_name: method === 'TUNAI' ? cash_name : null,
             cash_time: method === 'TUNAI' ? cash_time : null,
             cash_location: method === 'TUNAI' ? cash_location : null,
-            approval_flow_id: 7,
+            approval_flow_id: approvalFlow.approval_flow_id,
             current_step_id: firstStep?.approval_step_id || null
         }, { transaction: t });
 

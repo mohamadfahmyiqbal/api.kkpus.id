@@ -5,17 +5,17 @@ const SukukOrder = (sequelize) => {
 
   const SukukOrderModel = sequelize.define("sukuk_orders", {
     order_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     sukuk_issue_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: false, // Foreign Key
     },
     member_id: {
-      type: DataTypes.STRING(36),
+      type: DataTypes.UUID,
       allowNull: false, // Foreign Key Investor (UUID)
     },
     amount: {

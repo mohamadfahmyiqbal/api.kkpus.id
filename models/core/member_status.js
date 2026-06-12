@@ -5,9 +5,9 @@ const MemberStatus = (sequelize) => {
 
   const MemberStatusModel = sequelize.define("member_status", {
     status_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     status_name: {

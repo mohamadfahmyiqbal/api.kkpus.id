@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-import { initiateMidtransDisbursement } from "../utility/midtransDisbursement.js";
+import { initiateMidtransDisbursement } from "../../services/midtransDisbursement.js";
 
 export const processMidtransDisbursement = async (withdrawal_id) => {
   const t = await db.sequelize.transaction();

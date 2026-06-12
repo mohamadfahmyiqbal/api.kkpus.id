@@ -15,11 +15,12 @@ import regionRoutes from "./regionRoutes.js";
 import midtransRoutes from "./midtrans.js";
 import programRoute from "./programRoute.js";
 import financingRoute from "./financingRoute.js";
-import transactionRoute from "./transactionRoute.js";
+import jualbeliRoute from "./jualbeliRoute.js";
 import savingsRoute from "./savingsRoute.js";
 import dashboardRoute from "./dashboardRoute.js";
 import trainingRoute from "./trainingRoute.js";
 import landingRoute from "./landingRoute.js";
+import tabunganRoute from "./tabunganRoute.js";
 // import analyticsRoute from "./analyticsRoute.js";
 // import dataRoute from "./dataRoute.js";
 
@@ -52,12 +53,13 @@ router.use("/api/regions", regionRoutes);
 router.use("/api/midtrans", midtransRoutes);
 router.use("/api/program", programRoute);
 router.use("/api/financing", financingRoute);
-router.use("/api/transaction", transactionRoute);
+router.use("/api/jualbeli", jualbeliRoute);
 
 router.use("/api/savings", savingsRoute);
 router.use("/api/dashboard", dashboardRoute);
 router.use("/api/training", trainingRoute);
 router.use("/api/landing", landingRoute);
+router.use("/api/tabungan", tabunganRoute);
 // router.use("/api/analytics", analyticsRoute);
 // router.use("/api/data", dataRoute);
 

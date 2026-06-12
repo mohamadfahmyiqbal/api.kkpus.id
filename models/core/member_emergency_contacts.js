@@ -6,13 +6,13 @@ const MemberEmergencyContact = (sequelize) => {
 
   const MemberEmergencyContactModel = sequelize.define("member_emergency_contacts", {
     emergency_contact_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     member_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: false, // Foreign Key
     },
     contact_name: {

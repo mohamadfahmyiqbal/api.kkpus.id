@@ -1,8 +1,8 @@
 import db from "../../../models/index.js";
 import { createInitialBills } from "../../billing/createInitialBills.js";
 import { processMidtransDisbursement } from "../../savings/disburseWithdrawal.js";
-import { sendToUser } from "../../../controllers/utility/socket.js";
-import { sendGlobalNotification } from "../../utility/notificationHelper.js";
+import { sendToUser } from "../../../utils/socket.js";
+import { sendGlobalNotification } from "../../../services/notificationHelper.js";
 import moment from "moment";
 
 export const performFinalAction = async ({ entityRef, entity, transaction: t, approverId }) => {
@@ -231,6 +231,22 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
         approved_at: new Date(),
         is_approved_bendahara: true
       }, { where: { withdrawal_id: entity.withdrawal_id }, transaction: t });
+
+      // 5. Tambahkan record PENARIKAN ke tabel Transaction agar masuk ke perhitungan summary keuangan
+      const txCategoryMap = {
+        "Simpanan Sukarela": "SS_SUKARELA",
+        "Simpanan Pokok": "SW_POKOK",
+        "Simpanan Wajib": "SW_WAJIB"
+      };
+      await db.Transaction.create({
+        member_id: entity.member_id,
+        midtrans_order_id: `WD-${entity.withdrawal_id}-${Date.now()}`,
+        tx_type: "PENARIKAN",
+        tx_category: txCategoryMap[account?.account_type] || account?.account_type || "PENARIKAN_SIMPANAN",
+        amount: entity.amount,
+        status: "PAID",
+        settlement_time: new Date()
+      }, { transaction: t });
 
       t.afterCommit(async () => {
         try {

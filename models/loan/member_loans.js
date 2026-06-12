@@ -5,21 +5,21 @@ const MemberLoan = (sequelize) => {
     "member_loans",
     {
       loan_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: true, // Foreign Key - UUID format
       },
       product_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false, // Foreign Key
       },
       loan_product_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false, // Foreign Key
       },
       nominal_principal: {

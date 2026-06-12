@@ -11,7 +11,20 @@ export const getSavingsProducts = async (req, res) => {
         ["name", "product_name"],     // Alias dari 'name' ke 'product_name'
         ["akad_type", "akad"]         // Alias dari 'akad_type' ke 'akad'
       ],
-      order: [["savings_product_id", "ASC"]],
+      raw: true
+    });
+
+    const orderMap = {
+      'SP_POKOK': 1,
+      'SW_POKOK': 1,
+      'SW_WAJIB': 2,
+      'SS_SUKARELA': 3
+    };
+
+    products.sort((a, b) => {
+      const orderA = orderMap[a.product_code] || 99;
+      const orderB = orderMap[b.product_code] || 99;
+      return orderA - orderB;
     });
 
     return res.status(200).json({

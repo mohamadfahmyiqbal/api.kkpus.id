@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
 
 const createSavingsApplication = async (req, res) => {
   const t = await db.sequelize.transaction();

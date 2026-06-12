@@ -7,9 +7,9 @@ const MaterialNote = (sequelize) => {
     "material_notes",
     {
       note_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
@@ -17,7 +17,7 @@ const MaterialNote = (sequelize) => {
         allowNull: false,
       },
       material_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       note_content: {

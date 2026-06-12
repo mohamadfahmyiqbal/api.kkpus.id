@@ -6,9 +6,9 @@ export default (sequelize) => {
     "ForgotPasswordSession",
     {
       id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       email_hp: {
@@ -16,7 +16,7 @@ export default (sequelize) => {
         allowNull: false,
       },
       session_id: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.UUID,
         allowNull: false,
         unique: true,
       },
@@ -37,7 +37,7 @@ export default (sequelize) => {
         defaultValue: 0,
       },
       member_id: {
-        type: DataTypes.STRING(36), // varchar(36) to match production schema
+        type: DataTypes.UUID, // varchar(36) to match production schema
         allowNull: false,
       },
     },

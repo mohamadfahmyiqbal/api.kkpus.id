@@ -57,7 +57,7 @@ const getPendingBills = async (req, res) => {
             });
 
             // Gunakan module terpisah agar rapi
-            const { processLedgerRecording } = await import("../../utility/ledgerHelper.js");
+            const { processLedgerRecording } = await import("../../../services/ledgerHelper.js");
 
             for (const tx of pendingTxs) {
               if (!tx.midtrans_order_id) continue;

@@ -8,14 +8,14 @@ const SavingsTransaction = (sequelize) => {
     {
       // savings_tx_id: bigint (Primary Key)
       savings_tx_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       // savings_account_id: bigint (Foreign Key ke tabel accounts)
       savings_account_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       // tx_type: varchar(50) (Contoh: 'SETORAN', 'TARIKAN', 'ADMIN')
@@ -57,7 +57,7 @@ const SavingsTransaction = (sequelize) => {
       },
       // invoice_id: bigint (Relasi ke tabel bills/invoices)
       invoice_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
     },

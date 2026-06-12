@@ -7,9 +7,9 @@ const BillType = (sequelize) => {
     "bill_type",
     {
       bill_type_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       type_code: {

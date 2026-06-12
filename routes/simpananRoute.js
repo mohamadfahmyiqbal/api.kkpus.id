@@ -9,18 +9,7 @@ import { getTransactionDetail } from "../controllers/savings/getTransactionDetai
 import { getWithdrawalDetail } from "../controllers/savings/getWithdrawalDetail.js";
 import { getWithdrawalHistory } from "../controllers/savings/getWithdrawalHistory.js";
 import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js"; // Import baru
-import { applySavingsTarget } from "../controllers/savings/applySavingsTarget.js";
-import { getSavingsTargetDetail } from "../controllers/savings/getSavingsTargetDetail.js";
-import { getSavingsTargetCheck } from "../controllers/savings/getSavingsTargetCheck.js";
-import getTabunganBills from "../controllers/savings/getTabunganBills.js";
-
 const router = express.Router();
-
-// Route untuk pengajuan target tabungan
-router.post("/pengajuan", MidAnggota, applySavingsTarget);
-router.get("/pengajuan/detail/:id", MidAnggota, getSavingsTargetDetail);
-router.get("/pengajuan/check", MidAnggota, getSavingsTargetCheck);
-router.get("/pengajuan/:id/tagihan", MidAnggota, getTabunganBills);
 
 // Route untuk Master Data Produk (Tab Navigasi)
 router.get("/products", MidAnggota, getSavingsProducts);

@@ -88,16 +88,16 @@ export const getRegistrationStatus = async (req, res) => {
     responseData.kecamatan = responseData.district_name;
     responseData.kelurahan = responseData.subdistrict_name;
 
-    // Helper Approval (tetap pakai ID 52 & 53 sesuai DB Anda)
-    const isStepApproved = (stepId) => {
-      const step = responseData.flow?.steps?.find(s => s.approval_step_id === stepId);
-      // Cocokkan entity_id dengan registration_id pendaftaran saat ini
+    // Helper Approval berdasarkan step_order (1: Pengawas, 2: Ketua) untuk menghindari hardcode ID
+    const isStepApprovedByOrder = (orderIndex) => {
+      const step = responseData.flow?.steps?.find(s => s.step_order === orderIndex);
       const approval = step?.entityApprovals?.find(a => a.entity_id == registrationData.registration_id);
       return !!(approval && approval.is_approved === 1);
     };
 
-    responseData.is_approved_pengawas = isStepApproved(52);
-    responseData.is_approved_ketua = isStepApproved(53);
+    // Gunakan dari DB jika sudah ada, atau evaluasi dari ApprovalStep
+    responseData.is_approved_pengawas = responseData.is_approved_pengawas || isStepApprovedByOrder(1);
+    responseData.is_approved_ketua = responseData.is_approved_ketua || isStepApprovedByOrder(2);
 
     return res.status(200).json({
       status: true,

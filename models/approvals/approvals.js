@@ -9,22 +9,22 @@ const Approval = (sequelize) => {
     "Approval",
     {
       approval_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       // FIX: Menambahkan approval_flow_id yang sebelumnya hilang dari model
       approval_flow_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       approval_step_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       approver_member_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: true,
       },
       decision: {
@@ -45,7 +45,7 @@ const Approval = (sequelize) => {
         allowNull: false,
       },
       entity_id: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.UUID,
         allowNull: false,
       },
     },

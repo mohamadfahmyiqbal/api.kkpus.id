@@ -6,9 +6,9 @@ const FinancingTerm = (sequelize) => {
 
   return sequelize.define("financing_terms", {
     term_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false
     },
     label: {
@@ -22,6 +22,16 @@ const FinancingTerm = (sequelize) => {
     is_active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    persentase_anggota: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
+    persentase_reguler: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: false,
+      defaultValue: 0
     }
   }, {
     freezeTableName: true,

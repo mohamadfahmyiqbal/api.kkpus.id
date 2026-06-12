@@ -8,13 +8,14 @@ const ApprovalStatus = (sequelize) => {
     "ApprovalStatus",
     {
       approval_status_id: {
-        type: DataTypes.BIGINT.UNSIGNED,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
+        
         allowNull: false,
       },
       approval_flow_id: {
-        type: DataTypes.BIGINT.UNSIGNED,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       status_code: {

@@ -7,9 +7,9 @@ const MembershipTermination = (sequelize) => {
     "membership_terminations",
     {
       termination_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
@@ -30,15 +30,15 @@ const MembershipTermination = (sequelize) => {
         defaultValue: "PENDING",
       },
       approval_flow_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       current_step_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       receipt_id: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.UUID,
         allowNull: true,
       },
       payment_status: {

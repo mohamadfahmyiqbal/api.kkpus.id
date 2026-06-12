@@ -6,12 +6,12 @@ const MidtransDisbursement = (sequelize) => {
     "MidtransDisbursement",
     {
       disbursement_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
       },
       withdrawal_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: "savings_withdrawals",
@@ -19,7 +19,7 @@ const MidtransDisbursement = (sequelize) => {
         },
       },
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: "members",
@@ -45,7 +45,7 @@ const MidtransDisbursement = (sequelize) => {
         defaultValue: "PENDING",
       },
       midtrans_transaction_id: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.UUID,
       },
       created_at: {
         type: DataTypes.DATE,

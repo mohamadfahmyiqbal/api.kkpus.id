@@ -2,8 +2,8 @@
 
 import db from "../../../models/index.js";
 import { performFinalAction } from "./performFinalAction.js";
-import { sendGlobalNotification } from "../../../controllers/utility/notificationHelper.js";
-import { sendToUser } from "../../../controllers/utility/socket.js";
+import { sendGlobalNotification } from "../../../services/notificationHelper.js";
+import { sendToUser } from "../../../utils/socket.js";
 
 const { Approval, ApprovalStep, ApprovalFlow, EntityStepApproval, ApprovalStatus, UserRole, sequelize } = db;
 
@@ -133,7 +133,7 @@ export const processApproval = (entityRef) => async (req, res) => {
 
     if (!currentStep) throw new Error("INVALID_CURRENT_STEP");
 
-    if (currentStep.role_id && !req.userRoleIds.includes(Number(currentStep.role_id))) {
+    if (currentStep.role_id && !req.userRoleIds.includes(String(currentStep.role_id))) {
       throw new Error("FORBIDDEN");
     }
 
@@ -210,7 +210,7 @@ export const processApproval = (entityRef) => async (req, res) => {
         }
       } else {
         updateData.current_step_id = nextStep.approval_step_id;
-        finalStatusValue = "IN_PROGRESS";
+        finalStatusValue = "PENDING";
       }
     } else {
       updateData.current_step_id = null;
@@ -234,6 +234,14 @@ export const processApproval = (entityRef) => async (req, res) => {
         updateData[statusField] = statusRecord ? statusRecord.status_code : finalStatusValue;
       } else {
         updateData[statusField] = finalStatusValue;
+      }
+    }
+
+    if (entityRef === "members") {
+      if (currentStep.step_order === 1) {
+        updateData.is_approved_pengawas = action === "approve";
+      } else if (currentStep.step_order === 2) {
+        updateData.is_approved_ketua = action === "approve";
       }
     }
 
@@ -305,15 +313,21 @@ export const processApproval = (entityRef) => async (req, res) => {
         };
 
         sendToUser(targetMemberId, socketEvent, socketPayload);
+        if (approverId && approverId !== targetMemberId) {
+          sendToUser(approverId, socketEvent, socketPayload);
+        }
 
         // Compatibility events
         if (entityRef === "members") {
           sendToUser(targetMemberId, "REGISTRATION_UPDATED", socketPayload);
+          if (approverId && approverId !== targetMemberId) sendToUser(approverId, "REGISTRATION_UPDATED", socketPayload);
         } else if (entityRef === "transactions") {
           sendToUser(targetMemberId, "TRANSACTION_UPDATED", socketPayload);
+          if (approverId && approverId !== targetMemberId) sendToUser(approverId, "TRANSACTION_UPDATED", socketPayload);
         } else {
           // Standard pattern for others
           sendToUser(targetMemberId, `${entityRef.toUpperCase()}_UPDATED`, socketPayload);
+          if (approverId && approverId !== targetMemberId) sendToUser(approverId, `${entityRef.toUpperCase()}_UPDATED`, socketPayload);
         }
 
         // 2. Kirim Global Notification (Simpan ke DB + Push + Socket Bell)

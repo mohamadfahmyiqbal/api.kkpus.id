@@ -2,7 +2,7 @@
 import db from "../../models/index.js";
 import midtransClient from "midtrans-client";
 import { v4 as uuidv4 } from "uuid";
-import { jwtEncode } from "../utility/jwtHelpers.js";
+import { jwtEncode } from "../../utils/jwtHelpers.js";
 
 const { Bill, BillItem, BillType, Transaction, Member } = db;
 
@@ -36,8 +36,7 @@ export const createMidtransTransaction = async (req, res) => {
     // --- LOGIKA A: MEMBER_REGISTRATION (Update item yang sudah ada) ---
     if (tx_category === "MEMBER_REGISTRATION") {
       const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])
-        .map(id => Number(id))
-        .filter(id => !isNaN(id));
+        .filter(id => id && String(id).trim() !== '');
 
       if (sanitizedIds.length === 0) throw new Error("Item tagihan tidak dipilih.");
 
@@ -104,8 +103,7 @@ export const createMidtransTransaction = async (req, res) => {
     // --- LOGIKA D: DEFAULT TRANSAKSI LAINNYA ---
     else {
       const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])
-        .map(id => Number(id))
-        .filter(id => !isNaN(id));
+        .filter(id => id && String(id).trim() !== '');
 
       if (sanitizedIds.length === 0) throw new Error("Item tagihan tidak dipilih.");
 
@@ -179,7 +177,6 @@ export const createMidtransTransaction = async (req, res) => {
 
     const basePayload = {
       page: pageName,
-      billItemIds: final_bill_item_ids,
       billId: generatedBillId,
       return: returnPage,
     };
@@ -193,6 +190,13 @@ export const createMidtransTransaction = async (req, res) => {
       customer_details: { 
         first_name: member.full_name, 
         email: member.email || "" 
+      },
+      gopay: {
+        enable_callback: true,
+        callback_url: `${FRONTEND_URL}/${successToken}`
+      },
+      shopeepay: {
+        callback_url: `${FRONTEND_URL}/${successToken}`
       },
       callbacks: {
         finish: `${FRONTEND_URL}/${successToken}`,

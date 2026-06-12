@@ -115,7 +115,7 @@ const handleEvidenceUpload = async (req, res) => {
       status: true,
       message: "File evidence berhasil diupload",
       data: {
-        financing_id: parseInt(financingId),
+        financing_id: financingId,
         file_path: filePath,
         file_name: req.file.filename,
         original_name: req.file.originalname,

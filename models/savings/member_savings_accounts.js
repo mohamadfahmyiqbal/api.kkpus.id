@@ -4,13 +4,13 @@ export default (sequelize) => {
 
   return sequelize.define("member_savings_accounts", {
     savings_account_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
-    member_id: { type: DataTypes.STRING(36), allowNull: false },
-    savings_product_id: { type: DataTypes.BIGINT },
+    member_id: { type: DataTypes.UUID, allowNull: false },
+    savings_product_id: { type: DataTypes.UUID },
     account_no: { type: DataTypes.STRING }, // Sesuai kolom database Anda
     account_type: { type: DataTypes.STRING }, // Sesuai kolom database Anda
     open_date: { type: DataTypes.DATEONLY },

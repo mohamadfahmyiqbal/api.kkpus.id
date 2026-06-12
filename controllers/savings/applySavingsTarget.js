@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import moment from "moment";
 
 export const applySavingsTarget = async (req, res) => {
@@ -104,7 +104,7 @@ export const applySavingsTarget = async (req, res) => {
           title: "Pengajuan Tabungan Berhasil",
           content: `Pengajuan ${targetName} senilai Rp ${Number(nominalTarget).toLocaleString('id-ID')} telah diproses.`,
           type: "SAVINGS",
-          url: "/simpanan"
+          url: "/tabungan"
         });
       } catch (err) {
         console.error("Notification Error:", err.message);

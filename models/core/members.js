@@ -59,24 +59,28 @@ const Member = (sequelize) => {
         allowNull: true,
       },
       status_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
+      },
+      is_registration_done: {
+        type: DataTypes.TINYINT(1),
+        defaultValue: 0,
       },
       // --- KOLOM BARU UNTUK ALAMAT GRANULAR (STEP 1) ---
       province_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       city_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       district_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       subdistrict_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       rt: {

@@ -5,20 +5,20 @@ const EntityStepApproval = (sequelize) => {
 
   const Model = sequelize.define("EntityStepApproval", {
     entity_step_approval_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
     },
     entity_ref: {
       type: DataTypes.STRING(50), // 'financing_application', 'member_registration', dll
       allowNull: false,
     },
     entity_id: {
-      type: DataTypes.STRING(36),
+      type: DataTypes.UUID,
       allowNull: false,
     },
     approval_step_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: false,
     },
     is_approved: {

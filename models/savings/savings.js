@@ -6,12 +6,12 @@ export default function Savings(sequelize, Sequelize) {
     "Savings",
     {
       savings_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
       },
       member_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: "members",
@@ -39,7 +39,7 @@ export default function Savings(sequelize, Sequelize) {
         defaultValue: "PENDING",
       },
       approval_flow_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
         references: {
           model: "approval_flows",
@@ -47,7 +47,7 @@ export default function Savings(sequelize, Sequelize) {
         },
       },
       current_step_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true,
         references: {
           model: "approval_steps",

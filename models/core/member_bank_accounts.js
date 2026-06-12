@@ -6,13 +6,13 @@ const MemberBankAccount = (sequelize) => {
 
   const MemberBankAccountModel = sequelize.define("member_bank_accounts", {
     member_bank_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     member_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: false, // Foreign Key
     },
     bank_name: {

@@ -1,7 +1,7 @@
 // 📁 controllers/savings/processSavingsPayment.js
 import db from "../../models/index.js";
 import { createInitialBills } from "../billing/createInitialBills.js";
-import { createSnapTransaction } from "../utility/midtransApi.js";
+import { createSnapTransaction } from "../../services/midtransApi.js";
 
 const { Bill, BillItem, Member, BillType, Transaction } = db;
 

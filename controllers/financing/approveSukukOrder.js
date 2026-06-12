@@ -1,6 +1,6 @@
 import db from "../../models/index.js";
-import { sendToUser } from "../utility/socket.js";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
+import { sendToUser } from "../../utils/socket.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
 
 /**
  * PUT /api/approvals/sukuk/approve/:entityId

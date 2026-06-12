@@ -100,13 +100,13 @@ export const getWithdrawalDetail = async (req, res) => {
       createdAt: data.created_at || data.createdAt,
 
       is_approved_pengawas: formattedApprovals.some(a => 
-        a.role_name === 'PENGAWAS' && a.decision === 'APPROVED'
+        a.role_name?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'
       ),
       is_approved_ketua: formattedApprovals.some(a => 
-        a.role_name === 'KETUA' && a.decision === 'APPROVED'
+        a.role_name?.toUpperCase() === 'KETUA' && a.decision === 'APPROVED'
       ),
       is_approved_bendahara: formattedApprovals.some(a => 
-        a.role_name === 'BENDAHARA' && a.decision === 'APPROVED'
+        a.role_name?.toUpperCase() === 'BENDAHARA' && a.decision === 'APPROVED'
       ),
       is_rejected: formattedApprovals.some(a => a.decision === 'REJECTED') || statusStr === "REJECTED",
 

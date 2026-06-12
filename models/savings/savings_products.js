@@ -4,9 +4,9 @@ const SavingsProduct = (sequelize) => {
   const SavingsProductModel = sequelize.define("savings_products", {
     // Primary Key: savings_product_id
     savings_product_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     // product_code varchar(50)

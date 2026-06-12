@@ -1,9 +1,9 @@
 import db from "../../models/index.js";
 import crypto from "crypto";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
-import { sendToUser } from "../utility/socket.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { sendToUser } from "../../utils/socket.js";
 
-import { processLedgerRecording } from "../utility/ledgerHelper.js";
+import { processLedgerRecording } from "../../services/ledgerHelper.js";
 
 const {
   Bill, BillItem, BillType, Transaction, Member,

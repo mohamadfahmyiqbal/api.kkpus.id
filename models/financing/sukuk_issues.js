@@ -5,9 +5,9 @@ const SukukIssue = (sequelize) => {
 
   const SukukIssueModel = sequelize.define("sukuk_issues", {
     issue_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     issue_name: {

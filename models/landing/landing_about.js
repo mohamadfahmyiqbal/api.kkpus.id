@@ -7,9 +7,9 @@ const LandingAbout = (sequelize) => {
     "landing_about",
     {
       about_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       title: {

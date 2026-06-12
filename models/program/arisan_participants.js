@@ -7,17 +7,17 @@ const ArisanParticipant = (sequelize) => {
     "arisan_participants",
     {
       arisan_participant_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       arisan_batch_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: true,
       },
       participant_no: {

@@ -90,13 +90,13 @@ const getFinancingDetail = async (req, res) => {
         
         // Status Approval
         is_approved_pengawas: existingApprovals.some(a => 
-          a.step?.verifierRole?.role_name === 'PENGAWAS' && a.decision === 'APPROVED'
+          a.step?.verifierRole?.role_name?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'
         ),
         is_approved_ketua: existingApprovals.some(a => 
-          a.step?.verifierRole?.role_name === 'KETUA' && a.decision === 'APPROVED'
+          a.step?.verifierRole?.role_name?.toUpperCase() === 'KETUA' && a.decision === 'APPROVED'
         ),
         is_approved_bendahara: existingApprovals.some(a => 
-          a.step?.verifierRole?.role_name === 'BENDAHARA' && a.decision === 'APPROVED'
+          a.step?.verifierRole?.role_name?.toUpperCase() === 'BENDAHARA' && a.decision === 'APPROVED'
         ),
         is_rejected: existingApprovals.some(a => a.decision === 'REJECTED'),
         

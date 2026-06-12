@@ -13,7 +13,7 @@ import Bill from "./billing/bills.js";
 import BillItem from "./billing/bill_items.js";
 import BillType from "./billing/bill_type.js";
 import Transaction from "./billing/transactions.js";
-import GeneralTransaction from "./transaction/general_transactions.js";
+import GeneralTransaction from "./jualbeli/jual_beli.js";
 import Savings from "./savings/savings.js";
 import Article from "./content/articles.js";
 import Notification from "./content/notifications.js";

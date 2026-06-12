@@ -8,9 +8,9 @@ const ApprovalFlow = (sequelize) => {
     "approval_flows",
     {
       approval_flow_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       flow_name: {
@@ -22,7 +22,7 @@ const ApprovalFlow = (sequelize) => {
         allowNull: false,
       },
       entity_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       created_at: {

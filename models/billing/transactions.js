@@ -9,17 +9,17 @@ const Transaction = (sequelize) => {
     "transactions",
     {
       transaction_id: {
-        type: DataTypes.BIGINT.UNSIGNED, // 🚨 TAMBAHKAN .UNSIGNED
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: false,
       },
       bill_id: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.UUID,
         allowNull: true,
       },
       midtrans_order_id: {
@@ -42,14 +42,13 @@ const Transaction = (sequelize) => {
       },
       is_ledger_recorded: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false, // Digunakan untuk menandai apakah sudah masuk ke saldo accounts
+        defaultValue: false,
       },
       tx_category: {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
       payment_type: {
-        // Kolom baru
         type: DataTypes.STRING(50),
         allowNull: true,
       },
@@ -58,12 +57,10 @@ const Transaction = (sequelize) => {
         allowNull: true,
       },
       va_number: {
-        // Kolom baru
         type: DataTypes.STRING(50),
         allowNull: true,
       },
       bank_name: {
-        // Kolom baru
         type: DataTypes.STRING(50),
         allowNull: true,
       },
@@ -87,7 +84,6 @@ const Transaction = (sequelize) => {
         defaultValue: "PENDING",
       },
       fraud_status: {
-        // Kolom baru
         type: DataTypes.STRING(50),
         allowNull: true,
       },
@@ -96,7 +92,6 @@ const Transaction = (sequelize) => {
         allowNull: true,
       },
       pdf_url: {
-        // Kolom baru
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -105,8 +100,8 @@ const Transaction = (sequelize) => {
       tableName: "transactions",
       freezeTableName: true,
       timestamps: true,
-      createdAt: "created_at", // Penyesuaian ke snake_case
-      updatedAt: "updated_at", // Penyesuaian ke snake_case
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     }
   );
 

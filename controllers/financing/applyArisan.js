@@ -1,7 +1,7 @@
 // controllers/financing/applyArisan.js
 
 import db from "../../models/index.js";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
 
 const { ArisanBatch, ArisanProgram, ArisanParticipant, FinancingApplication, ApprovalFlow, ApprovalStep } = db;
 

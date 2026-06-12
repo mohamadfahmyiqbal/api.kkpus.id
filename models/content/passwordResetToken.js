@@ -6,13 +6,13 @@ export default (sequelize) => {
     "PasswordResetToken",
     {
       id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       session_id: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.UUID,
         allowNull: false,
       },
       reset_token: {
@@ -29,7 +29,7 @@ export default (sequelize) => {
         allowNull: true,
       },
       member_id: {
-        type: DataTypes.STRING(36), // varchar(36) to match production schema
+        type: DataTypes.UUID, // varchar(36) to match production schema
         allowNull: false,
       },
     },

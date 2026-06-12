@@ -7,9 +7,9 @@ const ArisanProgram = (sequelize) => {
     "arisan_programs",
     {
       arisan_program_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       program_name: {

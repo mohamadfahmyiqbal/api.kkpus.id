@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-import { sendGlobalNotification } from "../utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
 
 const createFinancingApplication = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -40,15 +40,16 @@ const createFinancingApplication = async (req, res) => {
     });
 
     if (existingApplication) {
-      const typeName = isPinjaman ? "Pinjaman" : "Pembiayaan";
-      return res.status(400).json({
-        status: false,
-        message: `Anda memiliki ${typeName} yang sedang berjalan (Status: ${existingApplication.status}). Tidak dapat mengajukan ${typeName} baru sampai transaksi sebelumnya selesai.`,
-        data: {
-          existing_financing_id: existingApplication.financing_id,
-          existing_status: existingApplication.status
-        }
-      });
+      // NOTE: Diberhentikan sementara agar bisa mengajukan berkali-kali untuk testing.
+      // const typeName = isPinjaman ? "Pinjaman" : "Pembiayaan";
+      // return res.status(400).json({
+      //   status: false,
+      //   message: `Anda memiliki ${typeName} yang sedang berjalan (Status: ${existingApplication.status}). Tidak dapat mengajukan ${typeName} baru sampai transaksi sebelumnya selesai.`,
+      //   data: {
+      //     existing_financing_id: existingApplication.financing_id,
+      //     existing_status: existingApplication.status
+      //   }
+      // });
     }
 
     const { 
@@ -58,48 +59,10 @@ const createFinancingApplication = async (req, res) => {
       principal_amount, 
       tenure, 
       monthly_installment,
-      metode_pencairan,
-      nama_nasabah,
-      // Field untuk Non Tunai
-      no_rekening,
-      bank_tujuan,
-      // Field untuk Tunai
-      lokasi_pencairan,
-      tanggal_pencairan,
-      jam_pencairan
+      margin_percent,
+      margin_amount,
+      total_tagihan
     } = req.body;
-
-    // Validasi metode pencairan
-    if (!metode_pencairan || !['Tunai', 'Non Tunai'].includes(metode_pencairan)) {
-      throw new Error("Metode pencairan tidak valid. Pilih 'Tunai' atau 'Non Tunai'");
-    }
-
-    // Validasi field berdasarkan metode pencairan
-    if (metode_pencairan === 'Non Tunai') {
-      if (!no_rekening || !bank_tujuan) {
-        throw new Error("Untuk metode Non Tunai, nomor rekening dan bank tujuan wajib diisi");
-      }
-      // Validasi format nomor rekening (hanya angka, minimal 10 digit)
-      if (!/^\d{10,}$/.test(no_rekening)) {
-        throw new Error("Nomor rekening minimal 10 digit dan hanya boleh angka");
-      }
-    } else if (metode_pencairan === 'Tunai') {
-      if (!lokasi_pencairan || !tanggal_pencairan || !jam_pencairan) {
-        throw new Error("Untuk metode Tunai, lokasi, tanggal dan jam pencairan wajib diisi");
-      }
-      // Validasi tanggal tidak boleh kurang dari hari ini
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const selectedDate = new Date(tanggal_pencairan);
-      if (selectedDate < today) {
-        throw new Error("Tanggal pencairan tidak boleh kurang dari hari ini");
-      }
-    }
-
-    // Validasi nama nasabah
-    if (!nama_nasabah || nama_nasabah.trim().length < 3) {
-      throw new Error("Nama nasabah minimal 3 karakter");
-    }
 
     const flow = await db.ApprovalFlow.findOne({ 
       where: { entity_ref: 'financing_applications' },
@@ -126,23 +89,14 @@ const createFinancingApplication = async (req, res) => {
       amount_requested: principal_amount,
       cooperation_months: parseInt(tenure),
       monthly_installment: monthly_installment,
+      margin_percent: margin_percent || 0,
+      margin_amount: margin_amount || 0,
+      total_tagihan: total_tagihan || 0,
       status: 'PENDING',
       approval_flow_id: flow.approval_flow_id,
       current_step_id: firstStep.approval_step_id,
-      akad_type: 'Murabahah',
-      metode_pencairan: metode_pencairan,
-      nama_nasabah: nama_nasabah.trim()
+      akad_type: 'Murabahah'
     };
-
-    // Tambahkan field berdasarkan metode pencairan
-    if (metode_pencairan === 'Non Tunai') {
-      applicationData.no_rekening = no_rekening;
-      applicationData.bank_tujuan = bank_tujuan;
-    } else if (metode_pencairan === 'Tunai') {
-      applicationData.lokasi_pencairan = lokasi_pencairan.trim();
-      applicationData.tanggal_pencairan = tanggal_pencairan;
-      applicationData.jam_pencairan = jam_pencairan;
-    }
 
     const newApplication = await db.FinancingApplication.create(applicationData, { transaction: t });
 
@@ -151,14 +105,10 @@ const createFinancingApplication = async (req, res) => {
     // Kirim notifikasi dengan detail metode pencairan
     setImmediate(async () => {
       try {
-        const disbursementInfo = metode_pencairan === 'Non Tunai' 
-          ? `Transfer ke ${bank_tujuan} (${no_rekening.slice(-4)})`
-          : `Pencairan tunai di ${lokasi_pencairan} pada ${new Date(tanggal_pencairan).toLocaleDateString('id-ID')} ${jam_pencairan}`;
-
         await sendGlobalNotification({
           memberId: memberId,
           title: "Pengajuan Pembiayaan",
-          content: `Pengajuan ${category} (${item_name}) senilai Rp ${Number(principal_amount).toLocaleString('id-ID')} dengan metode ${metode_pencairan}. ${disbursementInfo}`,
+          content: `Pengajuan ${category} (${item_name}) senilai Rp ${Number(principal_amount).toLocaleString('id-ID')} telah berhasil dikirim.`,
           type: "FINANCING",
           url: "/transaksi"
         });
@@ -171,8 +121,7 @@ const createFinancingApplication = async (req, res) => {
       status: true,
       message: "Pengajuan pembiayaan berhasil diproses.",
       data: { 
-        financing_id: newApplication.financing_id,
-        metode_pencairan: metode_pencairan
+        financing_id: newApplication.financing_id
       }
     });
 

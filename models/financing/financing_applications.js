@@ -6,18 +6,18 @@ const FinancingApplication = (sequelize) => {
 
   const FinancingApplicationModel = sequelize.define("financing_applications", {
     financing_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
       field: 'financing_id'
     },
     member_id: {
-      type: DataTypes.STRING(36),
+      type: DataTypes.UUID,
       allowNull: false,
     },
     business_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     category: {
@@ -52,17 +52,32 @@ const FinancingApplication = (sequelize) => {
       type: DataTypes.DECIMAL(18, 2),
       allowNull: true,
     },
+    margin_percent: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    margin_amount: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    total_tagihan: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
     status: {
       type: DataTypes.STRING(50),
       allowNull: false,
       defaultValue: 'PENDING',
     },
     approval_flow_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     current_step_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     akad_type: {
@@ -85,9 +100,8 @@ const FinancingApplication = (sequelize) => {
     },
     // Kolom untuk metode pencairan
     metode_pencairan: {
-      type: DataTypes.ENUM('Tunai', 'Non Tunai'),
-      allowNull: false,
-      defaultValue: 'Non Tunai',
+      type: DataTypes.STRING(50),
+      allowNull: true,
       field: 'metode_pencairan'
     },
     // Field untuk Non Tunai (Transfer)
@@ -134,7 +148,7 @@ const FinancingApplication = (sequelize) => {
       field: 'keterangan'
     },
     arisan_batch_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
       field: 'arisan_batch_id'
     },
@@ -149,6 +163,22 @@ const FinancingApplication = (sequelize) => {
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
+  });
+
+  FinancingApplicationModel.addHook('afterDestroy', async (instance, options) => {
+    const t = options.transaction;
+    if (sequelize.models.EntityStepApproval) {
+      await sequelize.models.EntityStepApproval.destroy({
+        where: { entity_id: String(instance.financing_id), entity_ref: 'financing_applications' },
+        transaction: t
+      });
+    }
+    if (sequelize.models.Approval) {
+      await sequelize.models.Approval.destroy({
+        where: { entity_id: String(instance.financing_id), entity_ref: 'financing_applications' },
+        transaction: t
+      });
+    }
   });
 
   return FinancingApplicationModel;

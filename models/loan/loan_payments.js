@@ -8,14 +8,14 @@ const LoanPayment = (sequelize) => {
     {
       // loan_payment_id (Primary Key, BigInt)
       loan_payment_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       // loan_bill_id (Foreign Key ke tabel tagihan pinjaman)
       loan_bill_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
         // 💡 Relasi ini akan didefinisikan di index.js
       },
@@ -37,7 +37,7 @@ const LoanPayment = (sequelize) => {
       },
       // invoice_id (Foreign Key ke tabel Invoice/Tagihan)
       invoice_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: true,
       },
       // created_at dan updated_at dihandle otomatis oleh Sequelize

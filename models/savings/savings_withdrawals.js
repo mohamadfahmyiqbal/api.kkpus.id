@@ -6,12 +6,12 @@ const SavingsWithdrawal = (sequelize) => {
     "SavingsWithdrawal",
     {
       withdrawal_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
       },
       savings_account_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: "member_savings_accounts",
@@ -19,7 +19,7 @@ const SavingsWithdrawal = (sequelize) => {
         },
       },
       member_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: "members",
@@ -45,24 +45,24 @@ const SavingsWithdrawal = (sequelize) => {
         type: DataTypes.STRING(50),
       },
       approval_flow_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         references: {
           model: "approval_flows",
           key: "approval_flow_id",
         },
       },
       current_step_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         references: {
           model: "approval_steps",
           key: "approval_step_id",
         },
       },
       invoice_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
       },
       midtrans_transaction_id: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.UUID,
       },
       created_at: {
         type: DataTypes.DATE,

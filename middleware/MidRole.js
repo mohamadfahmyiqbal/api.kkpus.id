@@ -42,7 +42,8 @@ const MidRole = (allowedRoleNames = []) => {
       req.userRoleIds = userRoleIds;
 
       if (allowedRoleNames.length > 0) {
-        const hasRequiredRole = userRoles.some((role) => allowedRoleNames.includes(role));
+        const allowedUpper = allowedRoleNames.map(r => r.toUpperCase());
+        const hasRequiredRole = userRoles.some((role) => allowedUpper.includes(role.toUpperCase()));
         if (!hasRequiredRole) {
           return res.status(403).json({
             success: false,

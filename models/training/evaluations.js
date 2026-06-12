@@ -7,9 +7,9 @@ const Evaluation = (sequelize) => {
     "evaluations",
     {
       evaluation_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false,
       },
       member_id: {
@@ -17,7 +17,7 @@ const Evaluation = (sequelize) => {
         allowNull: false,
       },
       material_id: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.UUID,
         allowNull: false,
       },
       score: {

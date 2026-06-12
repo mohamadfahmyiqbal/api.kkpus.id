@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { subscribeToPush, testPushNotification, getVapidPublicKey } from "../controllers/utility/pushController.js";
+import { subscribeToPush, testPushNotification, getVapidPublicKey } from "../controllers/notification/pushController.js";
 
 // Endpoint untuk mendapatkan VAPID public key
 router.get("/vapid-public-key", getVapidPublicKey);

@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from "../../../models/index.js";
-import { sendGlobalNotification } from "../../../controllers/utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../../services/notificationHelper.js";
 
 const {
   MemberRegistration,
@@ -48,7 +48,7 @@ export const submitRegistration = async (req, res) => {
   try {
     const [checkMember, existingReg] = await Promise.all([
       Member.findByPk(member_id),
-      MemberRegistration.findOne({ where: { member_id, final_status: 'WAITING_APPROVAL' } })
+      MemberRegistration.findOne({ where: { member_id, final_status: 'PENDING' } })
     ]);
 
     if (!checkMember) return res.status(404).json({ status: false, message: "Member tidak ditemukan." });
@@ -63,7 +63,7 @@ export const submitRegistration = async (req, res) => {
     tempPaths.push(swafotoPath);
 
     const flow = await ApprovalFlow.findOne({ 
-      where: { flow_name: "FLOW_PENDAFTARAN" },
+      where: { entity_ref: "member_registrations" },
       attributes: ["approval_flow_id", "flow_name", "entity_ref", "created_at", "updated_at"]
     });
     
@@ -110,7 +110,7 @@ export const submitRegistration = async (req, res) => {
       approval_flow_id: flow.approval_flow_id,
       current_step_id: initialStep.approval_step_id,
       status_id: statusInitial.approval_status_id,
-      final_status: "WAITING_APPROVAL",
+      final_status: "PENDING",
       registered_at: new Date()
     }, { transaction });
 

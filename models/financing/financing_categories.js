@@ -6,9 +6,9 @@ const FinancingCategory = (sequelize) => {
 
   return sequelize.define("financing_categories", {
     category_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false
     },
     category_name: {

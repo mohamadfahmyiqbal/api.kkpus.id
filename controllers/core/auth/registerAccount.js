@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import db from "../../../models/index.js";
-import { sendGlobalNotification } from "../../../controllers/utility/notificationHelper.js";
+import { sendGlobalNotification } from "../../../services/notificationHelper.js";
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "naila";

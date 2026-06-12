@@ -10,7 +10,7 @@ const getFinancingOptions = async (req, res) => {
       db.FinancingTerm.findAll({ 
         where: { is_active: true }, 
         order: [['value_months', 'ASC']],
-        attributes: ['label', 'value_months']
+        attributes: ['label', 'value_months', 'persentase_anggota', 'persentase_reguler']
       })
     ]);
 
@@ -20,7 +20,9 @@ const getFinancingOptions = async (req, res) => {
         categories: categories.map(c => c.category_name),
         terms: terms.map(t => ({ 
           label: t.label, 
-          value: String(t.value_months) 
+          value: String(t.value_months),
+          persentase_anggota: parseFloat(t.persentase_anggota),
+          persentase_reguler: parseFloat(t.persentase_reguler)
         }))
       }
     });

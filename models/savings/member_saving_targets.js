@@ -5,17 +5,17 @@ const MemberSavingTarget = (sequelize) => {
 
   const MemberSavingTargetModel = sequelize.define("member_saving_targets", {
     member_saving_target_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
     },
     member_id: {
-      type: DataTypes.STRING(36),
+      type: DataTypes.UUID,
       allowNull: true,
     },
     saving_target_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: false,
     },
     start_period_month: {
@@ -32,11 +32,11 @@ const MemberSavingTarget = (sequelize) => {
       defaultValue: 0,
     },
     current_step_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     approval_flow_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     status: {
