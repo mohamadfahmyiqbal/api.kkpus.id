@@ -4,6 +4,31 @@ import db from "../../../models/index.js";
 import { performFinalAction } from "./performFinalAction.js";
 import { sendGlobalNotification } from "../../../services/notificationHelper.js";
 import { sendToUser } from "../../../utils/socket.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const rootDir = path.join(path.dirname(__filename), "..", "..", "..");
+
+const saveBase64File = (base64File, identifier, prefix) => {
+  if (!base64File?.includes("base64,")) throw new Error(`Data file tidak valid.`);
+  const parts = base64File.match(/^data:(image\/(jpeg|png|jpg)|application\/pdf);base64,(.*)$/);
+  if (!parts) throw new Error(`Format file harus JPG, PNG, atau PDF.`);
+
+  const mimeType = parts[1];
+  const fileBuffer = Buffer.from(parts[3], "base64");
+  
+  let extension = mimeType.split("/")[1];
+  if (extension === 'jpeg') extension = 'jpg';
+
+  const uploadDir = path.join(rootDir, "public", "uploads", "transfers");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+  const publicPath = `uploads/transfers/${identifier}_${prefix}_${Date.now()}.${extension}`;
+  fs.writeFileSync(path.join(rootDir, "public", publicPath), fileBuffer);
+  return publicPath;
+};
 
 const { Approval, ApprovalStep, ApprovalFlow, EntityStepApproval, ApprovalStatus, UserRole, sequelize } = db;
 
@@ -60,7 +85,7 @@ const logDebug = (label, data = {}) => {
 
 export const processApproval = (entityRef) => async (req, res) => {
   const entityId = req.params.entityId; 
-  const { action, notes } = req.body;
+  const { action, notes, amount, transfer_proof } = req.body;
   const approverId = req.userId;
   
   console.log("[DEBUG] processApproval called - entityRef:", entityRef, "entityId:", entityId);
@@ -212,6 +237,21 @@ export const processApproval = (entityRef) => async (req, res) => {
         updateData.current_step_id = nextStep.approval_step_id;
         finalStatusValue = "PENDING";
       }
+      
+      // Khusus untuk savings_withdrawal
+      if (entityRef === "savings_withdrawal") {
+        if (amount !== undefined) {
+          updateData.amount = amount;
+        }
+        if (transfer_proof) {
+          try {
+            updateData.transfer_proof_path = saveBase64File(transfer_proof, entityId, "wd");
+          } catch (e) {
+            console.error("Failed to save transfer proof", e);
+            throw new Error("Gagal menyimpan bukti transfer: " + e.message);
+          }
+        }
+      }
     } else {
       updateData.current_step_id = null;
       finalStatusValue = "REJECTED";
@@ -338,6 +378,29 @@ export const processApproval = (entityRef) => async (req, res) => {
           type: "APPROVAL",
           url: entityRef === "members" ? "/registration-status" : "/",
         });
+
+        // 3. Notifikasi ke Approver Berikutnya
+        if (action === "approve" && nextStep) {
+          const nextApprovers = await db.MemberRoleAssignment.findAll({
+            where: { role_id: nextStep.role_id },
+          });
+
+          const entityLabel = entityRef.replace(/_/g, " ");
+          const applicant = await db.Member.findByPk(targetMemberId, { attributes: ["full_name"] });
+          const applicantName = applicant?.full_name || "Seorang Anggota";
+
+          await Promise.allSettled(
+            nextApprovers.map((approver) =>
+              sendGlobalNotification({
+                memberId: approver.member_id,
+                title: `Persetujuan ${entityLabel}`,
+                content: `Menunggu verifikasi Anda: Pengajuan ${entityLabel} dari ${applicantName}.`,
+                type: "APPROVAL_REQUIRED",
+                url: "/approvals",
+              })
+            )
+          );
+        }
       } catch (e) {
         console.error("[processApproval] Notification emission error:", e.message);
       }

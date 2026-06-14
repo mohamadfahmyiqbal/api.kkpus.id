@@ -19,6 +19,20 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
         { where: { registration_id: entity.registration_id }, transaction: t }
       );
 
+      // Sync data to Member table
+      await db.Member.update({
+        nik_ktp: entity.nik_ktp || null,
+        address: entity.address_ktp || null,
+        province_id: entity.province_id || null,
+        city_id: entity.city_id || null,
+        district_id: entity.district_id || null,
+        subdistrict_id: entity.subdistrict_id || null,
+        rt: entity.rt || null,
+        rw: entity.rw || null,
+        member_type: entity.member_type || 'Reguler',
+        foto: entity.selfie_photo_path || null
+      }, { where: { member_id: targetMemberId }, transaction: t });
+
       // 1. Generate Invoice (1 Pokok + 12 Wajib)
       await createInitialBills(targetMemberId, ["SW_POKOK", "SW_WAJIB"], t, 12);
       

@@ -56,10 +56,45 @@ const getFinancingDetail = async (req, res) => {
       });
     });
 
+    // Cek transaksi terakhir untuk pembayaran pembiayaan (DP) yang berstatus PAID
+    // Filter berdasarkan created_at >= detail.created_at agar tidak nyangkut ke pembiayaan lama
+    const latestPaidTx = await db.Transaction.findOne({
+      where: {
+        member_id: detail.member_id,
+        tx_category: 'FINANCING_PAYMENT',
+        status: 'PAID',
+        created_at: {
+          [db.Sequelize.Op.gte]: detail.createdAt || detail.created_at
+        }
+      },
+      order: [['created_at', 'DESC']]
+    });
+
+    // Cari langsung di tabel BillItem sebagai fallback jika Transaction gagal terupdate
+    const paidDPItem = await db.BillItem.findOne({
+      where: {
+        member_id: detail.member_id,
+        category_code: 'TRANSACTION_DOWN_PAYMENT',
+        status: 'PAID',
+        created_at: {
+          [db.Sequelize.Op.gte]: detail.createdAt || detail.created_at
+        }
+      },
+      order: [['created_at', 'DESC']]
+    });
+
+    const isDPPaid = !!latestPaidTx || !!paidDPItem;
+    const eligibleForPaidStatus = ["WAITING_PAYMENT", "READY_TO_PAY", "PAID"].includes(detail.status);
+    const finalStatus = (isDPPaid && eligibleForPaidStatus) ? 'PAID' : detail.status;
+
     return res.json({
       status: true,
       data: {
         financing_id: detail.financing_id,
+        // Gunakan status dari transaksi/billItem jika ada dan sudah PAID dan memang valid untuk jadi PAID
+        status: finalStatus,
+        payment_type: latestPaidTx?.payment_type || 'midtrans',
+        settlement_time: latestPaidTx?.settlement_time || paidDPItem?.updated_at,
         // Field Utama
         purpose: detail.purpose,
         category: detail.category,
@@ -71,7 +106,6 @@ const getFinancingDetail = async (req, res) => {
         // Field Cicilan & Status
         cooperation_months: detail.cooperation_months,
         monthly_installment: detail.monthly_installment,
-        status: detail.status,
         akad_type: detail.akad_type,
         
         // Metode Pencairan

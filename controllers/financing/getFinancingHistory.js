@@ -59,7 +59,8 @@ const getFinancingHistory = async (req, res) => {
     const result = history.map((h, idx) => {
       const data = h.toJSON ? h.toJSON() : h;
       if (idx === 0 && (data.status === 'APPROVED' || data.status === 'COMPLETED')) {
-        data.paid_amount = totalPaid;
+        const hasPaidDP = paidInstallments.some(item => item.category_code === 'TRANSACTION_DOWN_PAYMENT' || item.category_code === 'DP_PEMBIAYAAN');
+        data.paid_amount = totalPaid + (!hasPaidDP ? parseFloat(data.down_payment || 0) : 0);
       } else {
         data.paid_amount = 0;
       }

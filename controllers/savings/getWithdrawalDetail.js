@@ -98,6 +98,7 @@ export const getWithdrawalDetail = async (req, res) => {
       current_step_id: stepId,
       current_step_name: currentStep?.step_name || '',
       createdAt: data.created_at || data.createdAt,
+      transfer_proof_path: data.transfer_proof_path || null,
 
       is_approved_pengawas: formattedApprovals.some(a => 
         a.role_name?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'

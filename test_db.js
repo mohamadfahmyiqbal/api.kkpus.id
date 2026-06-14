@@ -1,14 +1,8 @@
-import db from "./models/index.js";
+import db from './models/index.js';
 
 async function test() {
-  try {
-    const products = await db.SavingsProduct.findAll();
-    console.log("Products:", JSON.stringify(products, null, 2));
-  } catch (err) {
-    console.error("Error:", err);
-  } finally {
-    process.exit();
-  }
+  const member = await db.Member.findOne();
+  console.log("Member Type is:", member?.member_type);
+  process.exit(0);
 }
-
 test();

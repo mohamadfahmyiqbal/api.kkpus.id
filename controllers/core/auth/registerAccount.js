@@ -219,9 +219,9 @@ export const registerAccount = async (req, res) => {
           type: "WELCOME_MESSAGE",
         });
 
-        // B. Cari Role Pengawas dan Ketua
+        // B. Cari Role Pengawas, Ketua, dan Bendahara
         const roles = await UserRole.findAll({
-          where: { role_name: ["Pengawas", "Ketua"] },
+          where: { role_name: ["Pengawas", "Ketua", "Bendahara"] },
         });
 
         let adminNotifs = [];

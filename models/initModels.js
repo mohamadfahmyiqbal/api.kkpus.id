@@ -55,6 +55,7 @@ import LandingStats from "./landing/landing_stats.js";
 import LandingAbout from "./landing/landing_about.js";
 import LandingContact from "./landing/landing_contact.js";
 import ContactForm from "./landing/contact_forms.js";
+import FeatureConfig from "./core/feature_configs.js";
 
 export default function initModels(db, sequelizeInstance, DataTypes) {
   db.MemberStatus = MemberStatus(sequelizeInstance, DataTypes);
@@ -122,4 +123,5 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.LandingAbout = LandingAbout(sequelizeInstance, DataTypes);
   db.LandingContact = LandingContact(sequelizeInstance, DataTypes);
   db.ContactForm = ContactForm(sequelizeInstance, DataTypes);
+  db.FeatureConfig = FeatureConfig(sequelizeInstance, DataTypes);
 }

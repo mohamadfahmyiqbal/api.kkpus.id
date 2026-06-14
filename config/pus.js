@@ -27,7 +27,7 @@ const pus = new Sequelize(
     logging: process.env.NODE_ENV === "development" ? console.log : false,
     retry: {
       max: 3,
-      timeout: 5000,
+      timeout: 15000,
     },
   },
 );

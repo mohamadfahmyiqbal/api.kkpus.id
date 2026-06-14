@@ -100,6 +100,72 @@ export const createMidtransTransaction = async (req, res) => {
     }
     
 
+    // --- LOGIKA C: FINANCING_PAYMENT ---
+    else if (tx_category === "FINANCING_PAYMENT") {
+      const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])
+        .filter(id => id && String(id).trim() !== '');
+
+      const isDP = sanitizedIds.length > 0 && String(sanitizedIds[0]).startsWith('dp-');
+
+      if (isDP || sanitizedIds.length === 0) {
+        // Buat BillItem baru untuk DP secara on-the-fly
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+          throw new Error("Nominal down payment tidak valid.");
+        }
+        
+        total_gross = parsedAmount;
+        const typeDP = await BillType.findOne({ where: { type_code: "TRANSACTION_DOWN_PAYMENT" }, transaction: dbTransaction });
+        bill_type_id = typeDP?.bill_type_id || 99; 
+
+        const newItem = await BillItem.create({
+          member_id: member.member_id,
+          bill_type_id: bill_type_id,
+          amount: total_gross,
+          status: "UNPAID",
+          description: "Down Payment Pembiayaan",
+          category_code: "TRANSACTION_DOWN_PAYMENT",
+          due_date: new Date()
+        }, { transaction: dbTransaction });
+
+        final_bill_item_ids = [newItem.bill_item_id];
+        item_details = [{ 
+          id: `ITEM-${newItem.bill_item_id}`, 
+          price: total_gross, 
+          quantity: 1, 
+          name: "Down Payment Pembiayaan" 
+        }];
+      } else {
+        if (sanitizedIds.length === 0) throw new Error("Item tagihan tidak dipilih.");
+
+        const existingItems = await BillItem.findAll({
+          where: { 
+            bill_item_id: sanitizedIds,
+            member_id: member.member_id,
+            status: 'UNPAID'
+          },
+          transaction: dbTransaction,
+        });
+
+        if (existingItems.length !== sanitizedIds.length) {
+          throw new Error("Sebagian tagihan cicilan sudah dibayar atau tidak ditemukan.");
+        }
+
+        bill_type_id = existingItems[0].bill_type_id;
+        item_details = existingItems.map(item => {
+          const amt = parseFloat(item.amount);
+          total_gross += amt;
+          return {
+            id: `ITEM-${item.bill_item_id}`,
+            price: amt,
+            quantity: 1,
+            name: item.description.substring(0, 50)
+          };
+        });
+        final_bill_item_ids = sanitizedIds;
+      }
+    }
+
     // --- LOGIKA D: DEFAULT TRANSAKSI LAINNYA ---
     else {
       const sanitizedIds = (Array.isArray(bill_item_ids) ? bill_item_ids : [bill_item_ids])

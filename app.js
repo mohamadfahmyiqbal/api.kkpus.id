@@ -172,6 +172,12 @@ const shutdown = async (signal) => {
 
   console.log(`\n🛑 Shutdown Sequence Started (${signal})`);
 
+  // Fallback kill jika graceful shutdown hang
+  setTimeout(() => {
+    console.error("⏳ Shutdown timeout, forcing process exit...");
+    process.exit(1);
+  }, 5000).unref();
+
   try {
     console.log("1️⃣  Blocking new connections...");
     if (typeof serverInstance.closeAllConnections === "function") {
@@ -186,23 +192,20 @@ const shutdown = async (signal) => {
     console.log("3️⃣  Closing Services Concurrently...");
     const cleanupTasks = [];
 
-    // Optimasi: Menjalankan penutupan HTTP dan Socket secara paralel
-    if (server) {
-      cleanupTasks.push(
-        new Promise((resolve) => {
-          server.close(() => {
-            console.log("   ✅ HTTP server closed");
-            resolve();
-          });
-        }),
-      );
-    }
-
     if (io) {
       cleanupTasks.push(
         new Promise((resolve) => {
           io.close(() => {
             console.log("   ✅ Socket.IO closed");
+            resolve();
+          });
+        }),
+      );
+    } else if (server) {
+      cleanupTasks.push(
+        new Promise((resolve) => {
+          server.close(() => {
+            console.log("   ✅ HTTP server closed");
             resolve();
           });
         }),
@@ -218,7 +221,11 @@ const shutdown = async (signal) => {
     }
 
     console.log("🚪 Process exiting cleanly");
-    process.exit(0);
+    if (signal === "SIGUSR2") {
+      process.kill(process.pid, "SIGUSR2");
+    } else {
+      process.exit(0);
+    }
   } catch (err) {
     console.error("❌ Critical shutdown error:", err);
     process.exit(1);
@@ -227,9 +234,11 @@ const shutdown = async (signal) => {
 
 process.removeAllListeners("SIGTERM");
 process.removeAllListeners("SIGINT");
+process.removeAllListeners("SIGUSR2");
 
-process.once("SIGTERM", shutdown);
-process.once("SIGINT", shutdown);
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGUSR2", () => shutdown("SIGUSR2")); // Untuk nodemon restart
 
 startServer();
 
@@ -242,7 +251,7 @@ setInterval(() => {
 
   // Auto restart jika heap used > 512MB
   if (memUsage.heapUsed > 512 * 1024 * 1024) {
-    console.warn("🚨 Memory usage too high, restarting process...");
-    process.exit(1);
+    console.warn("🚨 Memory usage too high, shutting down gracefully...");
+    shutdown("SIGTERM");
   }
 }, 60000);

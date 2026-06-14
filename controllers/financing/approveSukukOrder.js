@@ -17,11 +17,14 @@ const approveSukukOrder = async (req, res) => {
 
     // Ambil role yang relevan untuk approval (bisa ada lebih dari 1 role, kita ambil salah satu)
     const validRoles = ["PENGAWAS", "KETUA", "BENDAHARA"];
-    const role = req.roles.find(r => validRoles.includes(r));
+    const role = req.roles.find(r => validRoles.includes(r.toUpperCase()));
 
     if (!role) {
       return res.status(403).json({ success: false, message: "Akses ditolak. Bukan role yang berwenang." });
     }
+
+    // Normalisasi role string ke Uppercase (karena bisa jadi 'Pengawas')
+    const upperRole = role.toUpperCase();
 
     if (action !== "approve" && action !== "reject") {
       return res.status(400).json({ success: false, message: "action harus 'approve' atau 'reject'" });
@@ -63,7 +66,7 @@ const approveSukukOrder = async (req, res) => {
       KETUA: "is_approved_ketua",
       BENDAHARA: "is_approved_bendahara",
     };
-    await order.update({ [colMap[role]]: true });
+    await order.update({ [colMap[upperRole]]: true });
 
     // Reload to check if all 3 approved
     await order.reload();

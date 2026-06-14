@@ -40,6 +40,10 @@ const Material = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      quiz_questions: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

@@ -146,14 +146,29 @@ export const submitRegistration = async (req, res) => {
           content: "Data Anda sedang diverifikasi.",
           type: "REGISTRATION_SUBMITTED"
         });
-        const approvers = await MemberRoleAssignment.findAll({ where: { role_id: initialStep.role_id } });
-        for (const admin of approvers) {
-          await sendGlobalNotification({ 
-            memberId: admin.member_id, 
-            title: "Tugas Baru", 
-            content: `Verifikasi pendaftaran: ${req.body.full_name}`, 
-            type: "APPROVAL_TASK" 
+
+        // Cari Role Pengawas, Ketua, dan Bendahara
+        const roles = await db.UserRole.findAll({
+          where: { role_name: ["Pengawas", "Ketua", "Bendahara"] },
+        });
+
+        if (roles.length > 0) {
+          const administrators = await db.MemberRoleAssignment.findAll({
+            where: { role_id: roles.map((r) => r.role_id) },
           });
+
+          for (const admin of administrators) {
+            const isInitialApprover = String(admin.role_id) === String(initialStep.role_id);
+            
+            await sendGlobalNotification({ 
+              memberId: admin.member_id, 
+              title: isInitialApprover ? "Tugas Baru" : "Pendaftaran Anggota Baru", 
+              content: isInitialApprover 
+                ? `Verifikasi pendaftaran: ${req.body.full_name}`
+                : `${req.body.full_name} telah mengirimkan data pendaftaran.`, 
+              type: isInitialApprover ? "APPROVAL_TASK" : "ADMIN_ALERT"
+            });
+          }
         }
       } catch (err) { console.error("Notification Error:", err); }
     });

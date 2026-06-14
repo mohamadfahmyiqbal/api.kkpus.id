@@ -64,6 +64,9 @@ const SavingsWithdrawal = (sequelize) => {
       midtrans_transaction_id: {
         type: DataTypes.UUID,
       },
+      transfer_proof_path: {
+        type: DataTypes.STRING(255),
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

@@ -8,11 +8,18 @@ import { getAccountDetail } from "../controllers/savings/getAccountDetail.js";
 import { getTransactionDetail } from "../controllers/savings/getTransactionDetail.js";
 import { getWithdrawalDetail } from "../controllers/savings/getWithdrawalDetail.js";
 import { getWithdrawalHistory } from "../controllers/savings/getWithdrawalHistory.js";
-import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js"; // Import baru
+import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js"; // Tambahan
+import { updateSavingsAkad } from "../controllers/savings/updateSavingsAkad.js"; // Tambahan
+import { getFeatures } from "../controllers/savings/getFeatures.js";
+import { updateFeatureAkad } from "../controllers/savings/updateFeatureAkad.js";
+
 const router = express.Router();
 
 // Route untuk Master Data Produk (Tab Navigasi)
 router.get("/products", MidAnggota, getSavingsProducts);
+router.put("/products/:id/akad", MidAnggota, updateSavingsAkad);
+router.get("/features", MidAnggota, getFeatures);
+router.put("/features/:id/akad", MidAnggota, updateFeatureAkad);
 router.get("/account-detail", MidAnggota, getAccountDetail);
 // Route untuk Riwayat & Transaksi
 router.get("/riwayat", MidAnggota, getSavingsHistory);

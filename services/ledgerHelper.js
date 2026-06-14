@@ -6,10 +6,21 @@ import db from "../models/index.js";
  * Dipanggil dari Webhook Midtrans DAN Fail-safe sync di getInvoiceDetail.
  */
 export const processLedgerRecording = async (localTx, dbTransaction) => {
-  const { BillItem, BillType, MemberSavingsAccount, Account, SavingsProduct } = db;
+  const { BillItem, BillType, MemberSavingsAccount, Account, SavingsProduct, Transaction } = db;
 
   const targetBillId = localTx.bill_id;
   if (!targetBillId) return;
+
+  // Lock and check the transaction directly from DB to prevent race condition double-entry
+  const freshTx = await Transaction.findByPk(localTx.transaction_id, {
+    transaction: dbTransaction,
+    lock: dbTransaction.LOCK.UPDATE
+  });
+
+  if (!freshTx || freshTx.is_ledger_recorded) {
+    console.log(`[Ledger] Transaction ${localTx.transaction_id} already recorded or not found. Skipping.`);
+    return;
+  }
 
   const items = await BillItem.findAll({
     where: { bill_id: targetBillId },
@@ -94,5 +105,5 @@ export const processLedgerRecording = async (localTx, dbTransaction) => {
   await mainAccount.increment("current_balance", { by: totalItemAmount, transaction: dbTransaction });
   
   // Tandai transaksi sudah diproses ledgernya
-  await localTx.update({ is_ledger_recorded: true }, { transaction: dbTransaction });
+  await freshTx.update({ is_ledger_recorded: true }, { transaction: dbTransaction });
 };

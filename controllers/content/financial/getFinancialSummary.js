@@ -10,33 +10,77 @@ export const getFinancialSummary = async (req, res) => {
     const savingsAccounts = await Account.findAll({
       where: {
         member_id: memberId,
-        account_type: ["SW_POKOK", "SW_WAJIB", "SS_SUKARELA", "TABUNGAN_DEPOSIT"],
+        account_type: {
+          [db.Sequelize.Op.or]: [
+            "SW_POKOK", "SW_WAJIB", "SS_SUKARELA", "TABUNGAN_DEPOSIT",
+            { [db.Sequelize.Op.like]: 'TABUNGAN_%' }
+          ]
+        }
       },
     });
 
-    // Kalkulasi total saldo simpanan (Hanya Pokok, Wajib, Sukarela seperti rule sebelumnya)
+    const detailsMap = {};
     let totalSavings = 0;
-    const details = [];
 
     const nameMap = {
       "SW_POKOK": "Simpanan Pokok",
       "SW_WAJIB": "Simpanan Wajib",
       "SS_SUKARELA": "Simpanan Sukarela",
-      "TABUNGAN_DEPOSIT": "Tabungan"
+      "TABUNGAN_DEPOSIT": "Tabungan Reguler"
     };
 
     savingsAccounts.forEach(acc => {
       const balance = parseFloat(acc.current_balance || 0);
-      details.push({
-        type: acc.account_type,
-        name: nameMap[acc.account_type] || acc.account_type,
+      let accName = nameMap[acc.account_type];
+      
+      if (!accName && acc.account_type.startsWith("TABUNGAN_")) {
+        const typePart = acc.account_type.replace("TABUNGAN_", "");
+        accName = "Tabungan " + typePart.charAt(0).toUpperCase() + typePart.slice(1).toLowerCase();
+      }
+
+      const type = acc.account_type;
+      detailsMap[type] = {
+        type: type,
+        name: accName || type,
         balance: balance
-      });
+      };
 
       if (["SW_POKOK", "SW_WAJIB", "SS_SUKARELA"].includes(acc.account_type)) {
         totalSavings += balance;
       }
     });
+
+    // Ambil target tabungan (termasuk yang PENDING jika sudah ada saldonya)
+    const memberSavingTargets = await db.MemberSavingTarget.findAll({
+      where: { 
+        member_id: memberId,
+        [db.Sequelize.Op.or]: [
+          { status: "APPROVED" },
+          { current_balance: { [db.Sequelize.Op.gt]: 0 } }
+        ]
+      },
+      include: [{ model: db.SavingTarget, as: "savingTarget" }]
+    });
+
+    memberSavingTargets.forEach(mst => {
+      const balance = parseFloat(mst.current_balance || 0);
+      const name = mst.savingTarget ? mst.savingTarget.target_name : "Tabungan";
+      
+      // Gunakan nama target sebagai key untuk konsolidasi jika perlu, 
+      // tapi biasanya kita ingin menampilkannya sebagai item terpisah jika tipenya unik.
+      const type = `TABUNGAN_TARGET_${mst.member_saving_target_id}`;
+      
+      // Jika sudah ada entri dengan nama yang sama persis, kita bisa pilih untuk menggabung 
+      // atau membiarkannya jika memang tujuannya berbeda.
+      // Di sini kita masukkan sebagai entri unik agar semua target muncul di detail.
+      detailsMap[type] = {
+        type: type,
+        name: name,
+        balance: balance
+      };
+    });
+
+    const details = Object.values(detailsMap);
 
     const financingApps = await db.FinancingApplication.findAll({
       where: { member_id: memberId, status: "APPROVED" }

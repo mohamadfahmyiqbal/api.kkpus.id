@@ -54,6 +54,15 @@ export default function defineAssociations(db) {
     as: "member",
   });
 
+  db.Member.hasMany(db.MemberEmergencyContact, {
+    foreignKey: "member_id",
+    as: "emergencyContacts",
+  });
+  db.MemberEmergencyContact.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
   db.Member.hasMany(db.Bill, { foreignKey: "member_id", as: "bills" });
   db.Bill.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 
@@ -79,6 +88,15 @@ export default function defineAssociations(db) {
     as: "transactions",
   });
   db.Transaction.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
+  db.Member.hasMany(db.GeneralTransaction, {
+    foreignKey: "member_id",
+    as: "general_transactions",
+  });
+  db.GeneralTransaction.belongsTo(db.Member, {
     foreignKey: "member_id",
     as: "member",
   });
@@ -169,6 +187,15 @@ export default function defineAssociations(db) {
   db.MemberSavingsAccount.belongsTo(db.SavingsProduct, {
     foreignKey: "savings_product_id",
     as: "savingsProduct",
+  });
+
+  db.SavingsTransaction.belongsTo(db.MemberSavingsAccount, {
+    foreignKey: "savings_account_id",
+    as: "savingsAccount",
+  });
+  db.MemberSavingsAccount.hasMany(db.SavingsTransaction, {
+    foreignKey: "savings_account_id",
+    as: "transactions",
   });
 
   db.SavingsWithdrawal.belongsTo(db.MemberSavingsAccount, {
@@ -270,6 +297,10 @@ export default function defineAssociations(db) {
   db.MemberRegistration.belongsTo(db.ApprovalFlow, {
     foreignKey: "approval_flow_id",
     as: "flow",
+  });
+  db.MemberRegistration.belongsTo(db.MemberStatus, {
+    foreignKey: "member_type",
+    as: "memberTypeDetail",
   });
   db.MemberRegistration.belongsTo(db.ApprovalStep, {
     foreignKey: "current_step_id",
@@ -398,4 +429,23 @@ export default function defineAssociations(db) {
   db.SukukOrder.belongsTo(db.SukukIssue, { foreignKey: "sukuk_issue_id", as: "sukukIssue" });
   db.SukukOrder.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
   db.Member.hasMany(db.SukukOrder, { foreignKey: "member_id", as: "sukukOrders" });
+
+  // Training Associations
+  db.Curriculum.hasMany(db.Material, { foreignKey: "curriculum_id", as: "materials" });
+  db.Material.belongsTo(db.Curriculum, { foreignKey: "curriculum_id", as: "curriculum" });
+
+  db.Material.hasMany(db.Evaluation, { foreignKey: "material_id", as: "evaluations" });
+  db.Evaluation.belongsTo(db.Material, { foreignKey: "material_id", as: "material" });
+
+  db.Member.hasMany(db.Evaluation, { foreignKey: "member_id", as: "evaluations" });
+  db.Evaluation.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+
+  db.Material.hasMany(db.MaterialNote, { foreignKey: "material_id", as: "notes" });
+  db.MaterialNote.belongsTo(db.Material, { foreignKey: "material_id", as: "material" });
+
+  db.Member.hasMany(db.MaterialNote, { foreignKey: "member_id", as: "notes" });
+  db.MaterialNote.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+
+  db.Member.hasOne(db.Ranking, { foreignKey: "member_id", as: "trainingRanking" });
+  db.Ranking.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 }

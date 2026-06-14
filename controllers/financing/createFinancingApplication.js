@@ -40,16 +40,15 @@ const createFinancingApplication = async (req, res) => {
     });
 
     if (existingApplication) {
-      // NOTE: Diberhentikan sementara agar bisa mengajukan berkali-kali untuk testing.
-      // const typeName = isPinjaman ? "Pinjaman" : "Pembiayaan";
-      // return res.status(400).json({
-      //   status: false,
-      //   message: `Anda memiliki ${typeName} yang sedang berjalan (Status: ${existingApplication.status}). Tidak dapat mengajukan ${typeName} baru sampai transaksi sebelumnya selesai.`,
-      //   data: {
-      //     existing_financing_id: existingApplication.financing_id,
-      //     existing_status: existingApplication.status
-      //   }
-      // });
+      const typeName = isPinjaman ? "Pinjaman" : "Pembiayaan";
+      return res.status(400).json({
+        status: false,
+        message: `Anda memiliki ${typeName} yang sedang berjalan (Status: ${existingApplication.status}). Tidak dapat mengajukan ${typeName} baru sampai transaksi sebelumnya selesai.`,
+        data: {
+          existing_financing_id: existingApplication.financing_id,
+          existing_status: existingApplication.status
+        }
+      });
     }
 
     const { 

@@ -5,6 +5,7 @@ import { processApproval } from "../controllers/core/approvals/processApproval.j
 import { disburseWithdrawal } from "../controllers/savings/disburseWithdrawal.js";
 import { verifyApprovalChain } from "../middleware/verifyApprovalChain.js";
 import approveSukukOrder from "../controllers/financing/approveSukukOrder.js";
+import { getPendingMemberApprovals } from "../controllers/core/approvals/getPendingMemberApprovals.js";
 
 const router = express.Router();
 
@@ -22,6 +23,9 @@ router.post("/process/:entityRef/:entityId",
     return processApproval(entityRef)(req, res, next);
   }
 );
+
+// Get pending approvals for members
+router.get("/pendaftaran/pending", MidAnggota, MidRole(), getPendingMemberApprovals);
 
 router.put("/pendaftaran/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA"]), processApproval(REG));
 router.put("/penarikan/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), verifyApprovalChain(WD), processApproval(WD));

@@ -5,20 +5,25 @@ const getMaterials = async (req, res) => {
     const { curriculum_id } = req.params;
     const memberId = req.userId;
 
+    console.log(`Fetching materials for curriculum: ${curriculum_id}, member: ${memberId}`);
+
     const materials = await db.Material.findAll({
-      where: { 
-        curriculum_id: curriculum_id,
-        is_unlocked: true
-      },
+      where: { curriculum_id },
       order: [['order_index', 'ASC']],
       include: [
         {
+          model: db.Curriculum,
+          as: "curriculum",
+        },
+        {
           model: db.MaterialNote,
+          as: "notes",
           where: { member_id: memberId },
           required: false
         },
         {
           model: db.Evaluation,
+          as: "evaluations",
           where: { member_id: memberId },
           required: false
         }
@@ -32,9 +37,12 @@ const getMaterials = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("CRITICAL ERROR in getMaterials:", error);
     return res.status(500).json({
       status: false,
-      message: error.message || "Terjadi kesalahan sistem."
+      message: "Internal Server Error",
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
@@ -49,11 +57,13 @@ const getMaterialDetail = async (req, res) => {
       include: [
         {
           model: db.MaterialNote,
+          as: "notes",
           where: { member_id: memberId },
           required: false
         },
         {
           model: db.Evaluation,
+          as: "evaluations",
           where: { member_id: memberId },
           required: false
         }

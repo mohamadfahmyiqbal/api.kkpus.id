@@ -27,29 +27,37 @@ const getBillingHistory = async (req, res) => {
 
     const historyLimit = limit ? parseInt(limit, 10) : 20;
 
-    const rows = await Bill.findAll({
-      where: {
-        member_id: memberId,
-        status: {
-          [Op.in]: ["PAID", "SETTLED"]
-        },
-      },
+    const rows = await BillItem.findAll({
+      where: (() => {
+        const cond = {
+          member_id: memberId,
+          status: {
+            [Op.in]: ["PAID", "paid", "SETTLED", "settled", "SUCCESS", "success"]
+          }
+        };
+        if (category) {
+          cond[Op.or] = [
+            { category_code: category },
+            { description: { [Op.like]: `%${category}%` } }
+          ];
+        }
+        return cond;
+      })(),
       include: [
         {
-          model: BillItem,
-          as: "items", // Pastikan alias ini sesuai dengan defineAssociations (db.Bill.hasMany(db.BillItem, { as: "items" }))
-          where: category
-            ? {
-                description: {
-                  [Op.like]: `%${category}%`,
-                },
-              }
-            : null,
-          required: category ? true : false,
+          model: db.BillType,
+          as: "type",
+          attributes: ["type_name", "category_map"],
+          required: false,
         },
+        {
+          model: Bill,
+          as: "bill",
+          attributes: ["status", "updated_at"],
+          required: false,
+        }
       ],
       limit: historyLimit,
-      // Menggunakan nama kolom fisik agar aman dari isu camelCase/snake_case
       order: [["updated_at", "DESC"]],
     });
 
