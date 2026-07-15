@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 const SukukOrder = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -28,7 +29,7 @@ const SukukOrder = (sequelize) => {
       defaultValue: DataTypes.NOW,
     },
     status: {
-      type: DataTypes.ENUM('PENDING', 'READY_TO_PAY', 'WAITING_PAYMENT', 'APPROVED', 'PAID', 'REJECTED', 'CANCELLED'),
+      type: DataTypes.ENUM('PENDING', 'READY_TO_PAY', 'WAITING_PAYMENT', 'APPROVED', 'PAID', 'REJECTED', 'CANCELLED', 'WITHDRAWAL_REQUESTED', 'WITHDRAWN'),
       allowNull: false,
       defaultValue: 'PENDING',
     },
@@ -51,9 +52,21 @@ const SukukOrder = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    transfer_proof: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   }, { 
     freezeTableName: true, 
     timestamps: true,
+  });
+
+  SukukOrderModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  SukukOrderModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
   });
 
   return SukukOrderModel;

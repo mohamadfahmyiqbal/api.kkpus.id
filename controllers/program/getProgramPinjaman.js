@@ -7,6 +7,7 @@ const {
   Member,
   LoanProduct,
   FinancingApplication,
+  BillItem,
 } = db;
 
 const getProgramPinjaman = async (req, res) => {
@@ -56,17 +57,105 @@ const getProgramPinjaman = async (req, res) => {
       member_id: financingApp.member_id
     } : "null");
 
-    // 2. Jika ada financing application dengan status PENDING/IN_PROGRESS/APPROVED, return itu
+    // 2. Cek member_loans (pinjaman aktif atau lunas) terlebih dahulu
+    // 2. Cek member_loans (pinjaman aktif atau lunas) terlebih dahulu
+    console.log("[getProgramPinjaman] Checking member_loans...");
+    const loan = await MemberLoan.findOne({
+      where: { member_id: memberId },
+      include: [
+        { model: Member, as: "member" },
+        { model: LoanProduct, as: "product" },
+      ],
+      order: [["created_at", "DESC"]],
+    });
+
+    let isAppCompleted = financingApp && (financingApp.status === "COMPLETED" || financingApp.status === "PAID_OFF" || financingApp.status === "PAID");
+    
+    if (!isAppCompleted && financingApp && financingApp.financing_id) {
+        const unpaidCount = await BillItem.count({
+            where: {
+                financing_application_id: financingApp.financing_id,
+                status: { [db.Sequelize.Op.in]: ['UNPAID', 'OVERDUE'] }
+            }
+        });
+        const paidCount = await BillItem.count({
+            where: {
+                financing_application_id: financingApp.financing_id,
+                status: 'PAID'
+            }
+        });
+        if (paidCount > 0 && unpaidCount === 0) {
+            isAppCompleted = true;
+            console.log(`[getProgramPinjaman] Financing App ${financingApp.financing_id} is considered COMPLETED because all generated bills are PAID.`);
+        }
+    }
+
+    if (!isAppCompleted && loan && loan.loan_id) {
+        const unpaidCountLoan = await BillItem.count({
+            where: {
+                financing_application_id: loan.loan_id,
+                status: { [db.Sequelize.Op.in]: ['UNPAID', 'OVERDUE'] }
+            }
+        });
+        const paidCountLoan = await BillItem.count({
+            where: {
+                financing_application_id: loan.loan_id,
+                status: 'PAID'
+            }
+        });
+        // Pastikan loan benar-benar lunas jika ada bill terbayar dan tidak ada yang belum dibayar
+        if (paidCountLoan > 0 && unpaidCountLoan === 0) {
+            isAppCompleted = true;
+            console.log(`[getProgramPinjaman] Loan ${loan.loan_id} is considered COMPLETED because all generated bills are PAID.`);
+        }
+    }
+
+    if (loan) {
+      console.log("[getProgramPinjaman] member_loans found, returning it");
+      const data = {
+        loan_id: loan.loan_id,
+        loan_product_id: loan.loan_product_id,
+        member_id: loan.member_id,
+        nominal_principal: loan.nominal_principal,
+        term_count: loan.term_count,
+        installment_amount: loan.installment_amount,
+        disbursement_method: loan.disbursement_method,
+        disbursement_date: loan.disbursement_date,
+        bank_name: loan.bank_name,
+        bank_account_no: loan.bank_account_no,
+        product_id: loan.product_id,
+        member: loan.member,
+        product: loan.product,
+        created_at: loan.created_at,
+        updated_at: loan.updated_at,
+        principal_amount: loan.principal_amount,
+        loan_amount: loan.loan_amount,
+        monthly_payment: loan.monthly_payment,
+        total_repayment: loan.total_repayment,
+        interest_rate: loan.interest_rate,
+        margin_amount: loan.margin_amount,
+        tenor_months: loan.tenor_months,
+        status: (loan.loan_amount > 0 && loan.total_repayment >= loan.loan_amount) || isAppCompleted
+                ? "LUNAS" 
+                : loan.status,
+        is_pending: false,
+        is_approved: true, // Since it's a loan, it's already approved
+      };
+      return res.json({ success: true, data });
+    }
+
+    // 3. Jika tidak ada loan yang terbentuk, cek apakah ada financing application yang pending/approved/lunas
     if (
       financingApp &&
       (financingApp.status === "PENDING" ||
         financingApp.status === "IN_PROGRESS" ||
         financingApp.status === "WAITING_APPROVAL" ||
         financingApp.status === "APPROVED" ||
+        isAppCompleted ||
         financingApp.current_step_id != null)
     ) {
       console.log("[getProgramPinjaman] Returning financing application data");
-      const isApproved = financingApp.status === "APPROVED";
+      const isApproved = financingApp.status === "APPROVED" || isAppCompleted;
       const data = {
         loan_id: financingApp.financing_id,
         financing_id: financingApp.financing_id,
@@ -81,13 +170,13 @@ const getProgramPinjaman = async (req, res) => {
         disbursement_method: financingApp.metode_pencairan,
         bank_name: financingApp.bank_tujuan,
         bank_account_no: financingApp.no_rekening,
-        status: financingApp.status,
+        status: isAppCompleted ? "LUNAS" : financingApp.status,
         current_step_id: financingApp.current_step_id,
         approval_flow_id: financingApp.approval_flow_id,
         akad_type: financingApp.akad_type || "Murabahah",
         is_pending: !isApproved, // false jika sudah approved
         is_approved: isApproved, // true jika sudah approved
-        status_label: isApproved ? "Aktif (Disetujui)" : "Menunggu Approval",
+        status_label: isAppCompleted ? "Lunas" : (isApproved ? "Aktif (Disetujui)" : "Menunggu Approval"),
         created_at: financingApp.created_at,
         updated_at: financingApp.updated_at,
         member: financingApp.member,
@@ -102,55 +191,8 @@ const getProgramPinjaman = async (req, res) => {
       return res.json({ success: true, data });
     }
 
-    // 3. Jika tidak ada financing pending, cek member_loans (pinjaman aktif)
-    console.log("[getProgramPinjaman] No pending financing, checking member_loans...");
-    const loan = await MemberLoan.findOne({
-      where: { member_id: memberId },
-      include: [
-        { model: Member, as: "member" },
-        { model: LoanProduct, as: "product" },
-      ],
-      order: [["created_at", "DESC"]],
-    });
-
-    console.log("[getProgramPinjaman] member_loans found:", loan ? {
-      id: loan.loan_id,
-      status: loan.status
-    } : "null");
-
-    if (!loan) {
-      console.log("[getProgramPinjaman] No loan data found, returning null");
-      return res.json({ success: true, data: null });
-    }
-
-    const data = {
-      loan_id: loan.loan_id,
-      loan_product_id: loan.loan_product_id,
-      member_id: loan.member_id,
-      nominal_principal: loan.nominal_principal,
-      term_count: loan.term_count,
-      installment_amount: loan.installment_amount,
-      disbursement_method: loan.disbursement_method,
-      disbursement_date: loan.disbursement_date,
-      bank_name: loan.bank_name,
-      bank_account_no: loan.bank_account_no,
-      product_id: loan.product_id,
-      member: loan.member,
-      product: loan.product,
-      created_at: loan.created_at,
-      updated_at: loan.updated_at,
-      principal_amount: loan.principal_amount,
-      loan_amount: loan.loan_amount,
-      monthly_payment: loan.monthly_payment,
-      total_repayment: loan.total_repayment,
-      interest_rate: loan.interest_rate,
-      margin_amount: loan.margin_amount,
-      tenor_months: loan.tenor_months,
-      status: loan.status,
-      is_pending: false,
-    };
-
-    res.json({ success: true, data });
+    console.log("[getProgramPinjaman] No pending financing and no loan data found, returning null");
+    return res.json({ success: true, data: null });
   } catch (error) {
     console.error("[getProgramPinjaman] ERROR:", error.message);
     console.error(error.stack);

@@ -27,7 +27,7 @@ const SukukIssue = (sequelize) => {
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('OPEN', 'CLOSED', 'FULLY_PAID'),
+      type: DataTypes.ENUM('OPEN', 'CLOSED', 'FULLY_PAID', 'BERJALAN', 'COMPLETED'),
       allowNull: false,
       defaultValue: 'OPEN',
     },
@@ -40,6 +40,11 @@ const SukukIssue = (sequelize) => {
       type: DataTypes.STRING(100),
       allowNull: true,
       defaultValue: 'Sukuk Ritel',
+    },
+    tenor: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: '12 Bulan',
     },
     coupon: {
       type: DataTypes.STRING(50),

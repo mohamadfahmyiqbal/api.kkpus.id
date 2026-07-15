@@ -53,14 +53,23 @@ export const getStats = async (req, res) => {
       ],
     });
 
+    const activeMembersCount = await db.Member.count();
+    const financedBusinessesCount = await db.FinancingApplication.count({
+      where: { status: 'APPROVED' }
+    });
+    const citiesCount = await db.Member.count({
+      col: 'city_id',
+      distinct: true
+    });
+
     res.status(200).json({
       success: true,
-      data: stats || {
-        active_members: 0,
-        financed_businesses: 0,
-        satisfaction_rate: 0,
-        cities: 0,
-      },
+      data: {
+        active_members: activeMembersCount || stats?.active_members || 0,
+        financed_businesses: financedBusinessesCount || stats?.financed_businesses || 0,
+        satisfaction_rate: stats?.satisfaction_rate || 0,
+        cities: citiesCount || stats?.cities || 0,
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -182,7 +191,7 @@ export const submitContactForm = async (req, res) => {
 export const getAllContent = async (req, res) => {
   try {
     // Get all data from database
-    const [services, stats, about, contact] = await Promise.all([
+    const [services, stats, about, contact, activeMembersCount, financedBusinessesCount, citiesCount] = await Promise.all([
       db.LandingService.findAll({
         where: { is_active: true },
         order: [["order_index", "ASC"]],
@@ -216,6 +225,9 @@ export const getAllContent = async (req, res) => {
           "linkedin_url",
         ],
       }),
+      db.Member.count(),
+      db.FinancingApplication.count({ where: { status: 'APPROVED' } }),
+      db.Member.count({ col: 'city_id', distinct: true })
     ]);
 
     // Format services
@@ -255,11 +267,11 @@ export const getAllContent = async (req, res) => {
       success: true,
       data: {
         services: formattedServices,
-        stats: stats || {
-          active_members: 0,
-          financed_businesses: 0,
-          satisfaction_rate: 0,
-          cities: 0,
+        stats: {
+          active_members: activeMembersCount || stats?.active_members || 0,
+          financed_businesses: financedBusinessesCount || stats?.financed_businesses || 0,
+          satisfaction_rate: stats?.satisfaction_rate || 0,
+          cities: citiesCount || stats?.cities || 0,
         },
         about: about || {
           title: "",

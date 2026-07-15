@@ -9,8 +9,13 @@ import { createDepositSukarela } from "../controllers/billing/createDepositSukar
 import { processSavingsPayment } from "../controllers/savings/processSavingsPayment.js";
 import { createVoluntaryBill } from "../controllers/billing/createVoluntaryBill.js";
 import { syncMidtransStatus } from "../controllers/billing/syncMidtransStatus.js";
+import { manualSyncSummary } from "../controllers/billing/manualSyncSummary.js";
+import { getPaymentFeeConfigs, updatePaymentFeeConfigs } from "../controllers/billing/paymentFeeConfigController.js";
 
 const router = express.Router();
+
+router.get("/payment-fees", getPaymentFeeConfigs);
+router.put("/payment-fees", MidRole(["Admin", "Super Admin"]), updatePaymentFeeConfigs);
 
 router.use(MidAnggota);
 router.get("/list/pending", getPendingBills);
@@ -21,5 +26,6 @@ router.post("/create-deposit", createDepositSukarela);
 router.post("/process-payment", MidAnggota, createMidtransTransaction);
 router.post("/process-savings", processSavingsPayment);
 router.post("/sync-status", syncMidtransStatus);
+router.post("/manual-sync-summary", manualSyncSummary);
 
 export default router;

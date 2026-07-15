@@ -12,7 +12,7 @@ export const generateOTP = () => {
  * Generate session ID
  */
 export const generateSessionId = () => {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomUUID();
 };
 
 /**

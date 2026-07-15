@@ -7,39 +7,10 @@ const loginMax = parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 5; // Lebih longg
 const apiMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
 
 // Rate limiting untuk auth endpoints (register, etc)
-export const authLimiter = rateLimit({
-  windowMs,
-  max: authMax,
-  message: {
-    success: false,
-    message: 'Terlalu banyak percobaan pendaftaran. Silakan coba lagi dalam 15 menit.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true
-});
+export const authLimiter = (req, res, next) => next();
 
 // Stricter rate limiting untuk login attempts
-export const loginLimiter = rateLimit({
-  windowMs,
-  max: loginMax,
-  message: {
-    success: false,
-    message: 'Terlalu banyak percobaan login. Akun dikunci sementara. Silakan coba lagi dalam 15 menit.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true
-});
+export const loginLimiter = (req, res, next) => next();
 
 // General API rate limiting
-export const apiLimiter = rateLimit({
-  windowMs,
-  max: apiMax,
-  message: {
-    success: false,
-    message: 'Terlalu banyak permintaan. Silakan coba lagi nanti.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
+export const apiLimiter = (req, res, next) => next();

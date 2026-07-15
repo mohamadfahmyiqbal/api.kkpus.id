@@ -4,6 +4,8 @@ import { Op } from "sequelize";
 import midtransClient from "midtrans-client";
 
 import { processLedgerRecording } from "../../services/ledgerHelper.js";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
+import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import { sendToUser } from "../../utils/socket.js";
 
@@ -161,6 +163,11 @@ export const getInvoiceDetail = async (req, res) => {
                   });
                 }
                 await dbTransaction.commit();
+
+                if (isPaid) {
+                  await syncFinancialSummary(db.sequelize, localTx.member_id);
+                  await syncJualBeliReport(db.sequelize, localTx.member_id);
+                }
 
                 // Refresh status items agar respons mencerminkan PAID
                 for (const item of items) {

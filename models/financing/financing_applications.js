@@ -1,5 +1,7 @@
 // 📁 src/models/financing/financing_applications.js
 import { Sequelize } from "sequelize";
+import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 const FinancingApplication = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -43,6 +45,11 @@ const FinancingApplication = (sequelize) => {
       type: DataTypes.DECIMAL(18, 2),
       allowNull: false,
       field: 'required_amount' // Mapping ke kolom asli di DB
+    },
+    operational_cost: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      defaultValue: 0,
     },
     cooperation_months: {
       type: DataTypes.INTEGER,
@@ -156,6 +163,50 @@ const FinancingApplication = (sequelize) => {
       type: DataTypes.STRING(255),
       allowNull: true,
       field: 'file_evidence'
+    },
+    discount: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: true,
+      field: 'discount'
+    },
+    business_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    business_sector: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    business_address: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    estimated_yearly_turnover: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    estimated_monthly_turnover: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    investor_profit_share: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    contract_proof: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    additional_documents: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    transfer_proof_path: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     }
   }, { 
     freezeTableName: true, 
@@ -163,6 +214,14 @@ const FinancingApplication = (sequelize) => {
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
+  });
+
+  FinancingApplicationModel.addHook('afterSave', async (instance, options) => {
+    console.log(`[HOOK] afterSave FinancingApplication for member ${instance.member_id}`);
+    setImmediate(async () => {
+      await syncJualBeliReport(sequelize, instance.member_id);
+      await syncFinancialSummary(sequelize, instance.member_id);
+    });
   });
 
   FinancingApplicationModel.addHook('afterDestroy', async (instance, options) => {
@@ -179,6 +238,13 @@ const FinancingApplication = (sequelize) => {
         transaction: t
       });
     }
+    
+    // Sync report after deletion
+    console.log(`[HOOK] afterDestroy FinancingApplication for member ${instance.member_id}`);
+    setImmediate(async () => {
+      await syncJualBeliReport(sequelize, instance.member_id);
+      await syncFinancialSummary(sequelize, instance.member_id);
+    });
   });
 
   return FinancingApplicationModel;

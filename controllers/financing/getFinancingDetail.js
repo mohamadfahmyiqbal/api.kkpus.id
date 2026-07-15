@@ -73,7 +73,7 @@ const getFinancingDetail = async (req, res) => {
     // Cari langsung di tabel BillItem sebagai fallback jika Transaction gagal terupdate
     const paidDPItem = await db.BillItem.findOne({
       where: {
-        member_id: detail.member_id,
+        financing_application_id: detail.financing_id,
         category_code: 'TRANSACTION_DOWN_PAYMENT',
         status: 'PAID',
         created_at: {
@@ -83,9 +83,62 @@ const getFinancingDetail = async (req, res) => {
       order: [['created_at', 'DESC']]
     });
 
+    const unpaidItems = await db.BillItem.findAll({
+      where: {
+        financing_application_id: detail.financing_id,
+        category_code: 'TRANSACTION_INSTALLMENT',
+        status: 'UNPAID'
+      }
+    });
+    const unpaid_amount_raw = unpaidItems.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+    const unpaid_term_count_raw = unpaidItems.length;
+
+    const paidInstallmentItems = await db.BillItem.findAll({
+      where: {
+        financing_application_id: detail.financing_id,
+        category_code: 'TRANSACTION_INSTALLMENT',
+        status: 'PAID'
+      }
+    });
+
+    const paid_installment_amount = paidInstallmentItems.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+    const paid_term_count = paidInstallmentItems.length;
+
+    const allInstallmentsRaw = [...paidInstallmentItems, ...unpaidItems];
+    allInstallmentsRaw.sort((a, b) => new Date(a.created_at || a.createdAt || 0) - new Date(b.created_at || b.createdAt || 0));
+
+    const installments = allInstallmentsRaw.map((item, idx) => ({
+      id: item.bill_item_id || item.id,
+      installment_number: item.term_sequence || (idx + 1),
+      payment_date: item.status === 'PAID' ? (item.updated_at || item.updatedAt) : null,
+      description: item.item_name || item.description || `Setoran ${idx + 1}`,
+      amount: item.amount,
+      status: item.status
+    }));
+
+    const expectedTotalInstallment = (parseFloat(detail.item_price || detail.amount_requested || 0) - parseFloat(detail.down_payment || 0));
+    
+    let unpaid_amount = unpaid_amount_raw;
+    let unpaid_term_count = unpaid_term_count_raw;
+
+    if (paid_installment_amount >= expectedTotalInstallment && expectedTotalInstallment > 0) {
+      unpaid_amount = 0;
+      unpaid_term_count = 0;
+    }
+
     const isDPPaid = !!latestPaidTx || !!paidDPItem;
-    const eligibleForPaidStatus = ["WAITING_PAYMENT", "READY_TO_PAY", "PAID"].includes(detail.status);
-    const finalStatus = (isDPPaid && eligibleForPaidStatus) ? 'PAID' : detail.status;
+    const eligibleForPaidStatus = ["WAITING_PAYMENT", "READY_TO_PAY", "PAID", "APPROVED"].includes(detail.status);
+    
+    let finalStatus = detail.status;
+    if (unpaid_term_count === 0 && paid_term_count > 0) {
+      finalStatus = 'PAID';
+    } else if (isDPPaid && eligibleForPaidStatus) {
+      if (!detail.cooperation_months || detail.cooperation_months === 0 || detail.cooperation_months === "0") {
+        finalStatus = 'PAID';
+      } else if (finalStatus === "WAITING_PAYMENT" || finalStatus === "READY_TO_PAY") {
+        finalStatus = 'APPROVED';
+      }
+    }
 
     return res.json({
       status: true,
@@ -99,20 +152,30 @@ const getFinancingDetail = async (req, res) => {
         purpose: detail.purpose,
         category: detail.category,
         arisan_batch_id: detail.arisan_batch_id,
-        item_price: detail.item_price,         // Pastikan ini dikirim
-        down_payment: detail.down_payment,     // Pastikan ini dikirim
-        amount_requested: detail.amount_requested, // Mengirim required_amount sebagai amount_requested
+        item_price: detail.item_price,         
+        down_payment: detail.down_payment,     
+        amount_requested: detail.amount_requested, 
+        operational_cost: detail.operational_cost,
+        total_tagihan: detail.total_tagihan,
+        discount: detail.discount,
+        margin_percent: detail.margin_percent,
+        margin_amount: detail.margin_amount,
         
         // Field Cicilan & Status
         cooperation_months: detail.cooperation_months,
         monthly_installment: detail.monthly_installment,
         akad_type: detail.akad_type,
+        unpaid_amount: unpaid_amount,
+        unpaid_term_count: unpaid_term_count,
+        paid_term_count: paid_term_count,
+        paid_installment_amount: paid_installment_amount,
         
         // Metode Pencairan
         metode_pencairan: detail.metode_pencairan,
         nama_nasabah: detail.nama_nasabah,
         nama_peserta_2: detail.nama_peserta_2,
         keterangan: detail.keterangan,
+        installments: installments,
         // Field untuk Non Tunai
         no_rekening: detail.no_rekening,
         bank_tujuan: detail.bank_tujuan,
@@ -121,6 +184,17 @@ const getFinancingDetail = async (req, res) => {
         tanggal_pencairan: detail.tanggal_pencairan,
         jam_pencairan: detail.jam_pencairan,
         file_evidence: detail.file_evidence,
+        transfer_proof_path: detail.transfer_proof_path,
+        
+        // Field Pendanaan Syariah UMKM
+        business_name: detail.business_name,
+        business_sector: detail.business_sector,
+        business_address: detail.business_address,
+        estimated_yearly_turnover: detail.estimated_yearly_turnover,
+        estimated_monthly_turnover: detail.estimated_monthly_turnover,
+        investor_profit_share: detail.investor_profit_share,
+        contract_proof: detail.contract_proof,
+        additional_documents: detail.additional_documents,
         
         // Status Approval
         is_approved_pengawas: existingApprovals.some(a => 
@@ -140,7 +214,8 @@ const getFinancingDetail = async (req, res) => {
           stepName: a.step?.step_name,
           decision: a.decision,
           approvedAt: a.created_at,
-          approverName: a.approver?.full_name
+          approverName: a.approver?.full_name,
+          note: a.note
         })),
         
         // Timestamps & Relasi

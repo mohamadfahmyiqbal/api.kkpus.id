@@ -3,20 +3,22 @@ import db from "../../models/index.js";
 export const getSavingsTargetCheck = async (req, res) => {
   try {
     const memberId = req.userId;
-    const { category } = req.query; // 'haji', 'umrah', etc.
+    const { saving_target_id } = req.query; 
 
-    if (!category) {
-      return res.status(400).json({ status: false, message: "Parameter category diperlukan" });
+    if (!saving_target_id) {
+      return res.status(400).json({ status: false, message: "Parameter saving_target_id diperlukan" });
     }
 
-    // Cari mapping target berdasarkan member & category
+    // Cari mapping target berdasarkan member & saving_target_id
     const target = await db.MemberSavingTarget.findOne({
-      where: { member_id: memberId },
+      where: { 
+        member_id: memberId,
+        saving_target_id: saving_target_id
+      },
       include: [
         {
           model: db.SavingTarget,
           as: "savingTarget",
-          where: { category: category }, // Filter by category
         }
       ],
       order: [['created_at', 'DESC']]
@@ -40,9 +42,9 @@ export const getSavingsTargetCheck = async (req, res) => {
         state: target.status, // 'PENDING', 'APPROVED', 'REJECTED'
         member_saving_target_id: target.member_saving_target_id,
         current_balance: target.current_balance,
-        target_amount: target.savingTarget?.target_amount,
+        target_amount: target.target_amount,
         target_name: target.savingTarget?.target_name,
-        min_monthly_deposit: target.savingTarget?.min_monthly_deposit
+        min_monthly_deposit: target.monthly_deposit
       }
     });
 

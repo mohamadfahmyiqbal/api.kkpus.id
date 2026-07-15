@@ -1,8 +1,9 @@
 // 📁 src/models/savings/savings_withdrawals.js
 import { DataTypes } from "sequelize";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 const SavingsWithdrawal = (sequelize) => {
-  return sequelize.define(
+  const SavingsWithdrawalModel = sequelize.define(
     "SavingsWithdrawal",
     {
       withdrawal_id: {
@@ -12,11 +13,11 @@ const SavingsWithdrawal = (sequelize) => {
       },
       savings_account_id: {
         type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: "member_savings_accounts",
-          key: "savings_account_id",
-        },
+        allowNull: true,
+      },
+      member_saving_target_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
       },
       member_id: {
         type: DataTypes.UUID,
@@ -82,6 +83,16 @@ const SavingsWithdrawal = (sequelize) => {
       underscored: true,
     }
   );
+
+  SavingsWithdrawalModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  SavingsWithdrawalModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  return SavingsWithdrawalModel;
 };
 
 export default SavingsWithdrawal;

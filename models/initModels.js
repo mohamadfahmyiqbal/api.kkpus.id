@@ -8,12 +8,14 @@ import MemberEmergencyContact from "./core/member_emergency_contacts.js";
 import MemberBankAccount from "./core/member_bank_accounts.js";
 import MemberRegistration from "./core/member_registrations.js";
 import MembershipTermination from "./core/membership_terminations.js";
+import MemberFinancialSummary from "./core/member_financial_summary.js";
 import Account from "./core/accounts.js";
 import Bill from "./billing/bills.js";
 import BillItem from "./billing/bill_items.js";
 import BillType from "./billing/bill_type.js";
 import Transaction from "./billing/transactions.js";
 import GeneralTransaction from "./jualbeli/jual_beli.js";
+import JualBeliReport from "./jualbeli/jual_beli_report.js";
 import Savings from "./savings/savings.js";
 import Article from "./content/articles.js";
 import Notification from "./content/notifications.js";
@@ -32,6 +34,9 @@ import MemberSavingTarget from "./savings/member_saving_targets.js";
 import MemberSavingsAccount from "./savings/member_savings_accounts.js";
 import SavingsTransaction from "./savings/savings_transactions.js";
 import SavingsWithdrawal from "./savings/savings_withdrawals.js";
+import SavingsReport from "./savings/savings_report.js";
+import SavingsReportList from "./savings/savings_report_list.js";
+import SavingsJournalReport from "./savings/savings_journal_report.js";
 import MidtransDisbursement from "./savings/midtrans_disbursements.js";
 import ApprovalFlow from "./approvals/approval_flows.js";
 import ApprovalStep from "./approvals/approval_steps.js";
@@ -45,6 +50,8 @@ import ProgramOption from "./program/program_options.js";
 import ArisanProgram from "./program/arisan_programs.js";
 import ArisanBatch from "./program/arisan_batches.js";
 import ArisanParticipant from "./program/arisan_participants.js";
+import ArisanPayment from "./program/arisan_payments.js";
+import ArisanDraw from "./program/arisan_draws.js";
 import Curriculum from "./training/curriculums.js";
 import Material from "./training/materials.js";
 import Evaluation from "./training/evaluations.js";
@@ -56,6 +63,7 @@ import LandingAbout from "./landing/landing_about.js";
 import LandingContact from "./landing/landing_contact.js";
 import ContactForm from "./landing/contact_forms.js";
 import FeatureConfig from "./core/feature_configs.js";
+import PaymentFeeConfig from "./billing/payment_fee_configs.js";
 
 export default function initModels(db, sequelizeInstance, DataTypes) {
   db.MemberStatus = MemberStatus(sequelizeInstance, DataTypes);
@@ -73,12 +81,14 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
     sequelizeInstance,
     DataTypes,
   );
+  db.MemberFinancialSummary = MemberFinancialSummary(sequelizeInstance, DataTypes);
   db.Account = Account(sequelizeInstance, DataTypes);
   db.Bill = Bill(sequelizeInstance, DataTypes);
   db.BillItem = BillItem(sequelizeInstance, DataTypes);
   db.BillType = BillType(sequelizeInstance, DataTypes);
   db.Transaction = Transaction(sequelizeInstance, DataTypes);
   db.GeneralTransaction = GeneralTransaction(sequelizeInstance, DataTypes);
+  db.JualBeliReport = JualBeliReport(sequelizeInstance, DataTypes);
   db.Savings = Savings(sequelizeInstance, DataTypes);
   db.Article = Article(sequelizeInstance, DataTypes);
   db.Notification = Notification(sequelizeInstance, DataTypes);
@@ -97,6 +107,9 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.MemberSavingsAccount = MemberSavingsAccount(sequelizeInstance, DataTypes);
   db.SavingsTransaction = SavingsTransaction(sequelizeInstance, DataTypes);
   db.SavingsWithdrawal = SavingsWithdrawal(sequelizeInstance, DataTypes);
+  db.SavingsReport = SavingsReport(sequelizeInstance, DataTypes);
+  db.SavingsReportList = SavingsReportList(sequelizeInstance, DataTypes);
+  db.SavingsJournalReport = SavingsJournalReport(sequelizeInstance, DataTypes);
   db.MidtransDisbursement = MidtransDisbursement(sequelizeInstance, DataTypes);
   db.ApprovalFlow = ApprovalFlow(sequelizeInstance, DataTypes);
   db.ApprovalStep = ApprovalStep(sequelizeInstance, DataTypes);
@@ -113,6 +126,8 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.ArisanProgram = ArisanProgram(sequelizeInstance, DataTypes);
   db.ArisanBatch = ArisanBatch(sequelizeInstance, DataTypes);
   db.ArisanParticipant = ArisanParticipant(sequelizeInstance, DataTypes);
+  db.ArisanPayment = ArisanPayment(sequelizeInstance, DataTypes);
+  db.ArisanDraw = ArisanDraw(sequelizeInstance, DataTypes);
   db.Curriculum = Curriculum(sequelizeInstance, DataTypes);
   db.Material = Material(sequelizeInstance, DataTypes);
   db.Evaluation = Evaluation(sequelizeInstance, DataTypes);
@@ -124,4 +139,5 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.LandingContact = LandingContact(sequelizeInstance, DataTypes);
   db.ContactForm = ContactForm(sequelizeInstance, DataTypes);
   db.FeatureConfig = FeatureConfig(sequelizeInstance, DataTypes);
+  db.PaymentFeeConfig = PaymentFeeConfig(sequelizeInstance, DataTypes);
 }

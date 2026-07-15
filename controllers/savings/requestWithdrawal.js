@@ -84,7 +84,7 @@ const requestWithdrawal = async (req, res) => {
             savings_account_id: account.savings_account_id,
             amount: withdrawalAmount,
             request_datetime: new Date(),
-            status: 'approval_pengawas', // Menunggu persetujuan pertama
+            status: 'PENDING', // Menunggu persetujuan
             method: method || 'TRANSFER',
             // Data Transfer
             bank_name: method === 'TRANSFER' ? bank_name : null,

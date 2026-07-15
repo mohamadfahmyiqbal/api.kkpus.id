@@ -3,6 +3,9 @@ import { createInitialBills } from "../../billing/createInitialBills.js";
 import { processMidtransDisbursement } from "../../savings/disburseWithdrawal.js";
 import { sendToUser } from "../../../utils/socket.js";
 import { sendGlobalNotification } from "../../../services/notificationHelper.js";
+import { syncFinancialSummary } from "../../../services/financialSummarySyncService.js";
+import { syncSavingsReportList } from "../../../services/savingsReportSyncService.js";
+import { syncJualBeliReport } from "../../../services/jualBeliReportSyncService.js";
 import moment from "moment";
 
 export const performFinalAction = async ({ entityRef, entity, transaction: t, approverId }) => {
@@ -58,8 +61,9 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
     case "financing_applications":
       const memberId = entity.member_id;
       const isArisan = entity.category === "Arisan";
+      const isPelunasan = typeof entity.category === 'string' && entity.category.toLowerCase().includes('pelunasan');
       
-      console.log(`[performFinalAction] Creating bills for financing ${entity.financing_id}, member ${memberId}, isArisan: ${isArisan}`);
+      console.log(`[performFinalAction] Creating bills for financing ${entity.financing_id}, member ${memberId}, isArisan: ${isArisan}, isPelunasan: ${isPelunasan}`);
       
       // Update status to APPROVED
       await FinancingApplication.update(
@@ -92,7 +96,8 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
             member_id: memberId,
             participant_no: participantCount + 1,
             saldo_putang: 0,
-            cicilan_target: entity.monthly_installment
+            cicilan_target: entity.monthly_installment,
+            status: 'APPROVED'
           }, { transaction: t });
           
           console.log(`[performFinalAction] Created ArisanParticipant for member ${memberId} in batch ${entity.arisan_batch_id}`);
@@ -115,39 +120,43 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
       
       let billsCreated = 0;
       
-      if (downPayment > 0) {
-        await BillItem.create({
-          bill_type_id: 7,
-          category_code: downPaymentBillType?.type_code || 'TRANSACTION_DOWN_PAYMENT',
-          bill_id: null,
-          member_id: memberId,
-          description: isArisan ? 'Uang Pangkal/DP Arisan' : 'Down Payment for Financing',
-          amount: downPayment,
-          due_date: new Date(),
-          status: 'UNPAID'
-        }, { transaction: t });
-        billsCreated++;
-      }
-      
-      for (let i = 1; i <= months; i++) {
-        const dueDate = moment().add(i, "months").endOf("month").toDate();
-        await BillItem.create({
-          bill_type_id: 8,
-          category_code: installmentBillType?.type_code || 'TRANSACTION_INSTALLMENT',
-          bill_id: null,
-          member_id: memberId,
-          description: isArisan ? `Setoran Arisan - Bulan ${i}` : `Financing Installment - Month ${i}`,
-          amount: monthlyInstallment,
-          due_date: dueDate,
-          status: 'UNPAID'
-        }, { transaction: t });
-        billsCreated++;
+      if (!isPelunasan) {
+        if (downPayment > 0) {
+          await BillItem.create({
+            bill_type_id: 7,
+            category_code: downPaymentBillType?.type_code || 'TRANSACTION_DOWN_PAYMENT',
+            bill_id: null,
+            member_id: memberId,
+            financing_application_id: entity.financing_id,
+            description: isArisan ? 'Uang Pangkal/DP Arisan' : `DP / Uang Muka ${entity.category || 'Pinjaman'}`,
+            amount: downPayment,
+            due_date: new Date(),
+            status: 'UNPAID'
+          }, { transaction: t });
+          billsCreated++;
+        }
+        
+        for (let i = 1; i <= months; i++) {
+          const dueDate = moment().add(i, "months").endOf("month").toDate();
+          await BillItem.create({
+            bill_type_id: 8,
+            category_code: installmentBillType?.type_code || 'TRANSACTION_INSTALLMENT',
+            bill_id: null,
+            member_id: memberId,
+            financing_application_id: entity.financing_id,
+            description: isArisan ? `Setoran Arisan - Bulan ${i}` : `Cicilan ${entity.category || 'Pinjaman Lunak'} - Bulan ${i}`,
+            amount: monthlyInstallment,
+            due_date: dueDate,
+            status: 'UNPAID'
+          }, { transaction: t });
+          billsCreated++;
+        }
       }
       
       console.log(`[performFinalAction] Total bills created: ${billsCreated}`);
       
       // Real-time notification + Global notification
-      t.afterCommit(() => {
+      t.afterCommit(async () => {
         sendToUser(memberId, "bills:update", { trigger: true });
         
         const title = isArisan ? "Arisan Disetujui!" : "Pembiayaan Disetujui!";
@@ -162,11 +171,20 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
           type: "APPROVAL",
           url: isArisan ? "/program" : "/",
         }).catch((err) => console.error("[performFinalAction] Financing notification failed:", err.message));
+
+        // Sync reports
+        try {
+          await syncJualBeliReport(db.sequelize, memberId);
+          await syncFinancialSummary(db.sequelize, memberId);
+        } catch (error) {
+          console.error("[performFinalAction] Failed to sync reports after financing approval:", error.message);
+        }
       });
       break;
 
     case "savings_withdrawal":
-      console.log("[performFinalAction] savings_withdrawal entity:", {
+    case "tabungan_withdrawals":
+      console.log("[performFinalAction] withdrawal entity:", {
         withdrawal_id: entity.withdrawal_id,
         savings_account_id: entity.savings_account_id,
         member_id: entity.member_id,
@@ -174,31 +192,44 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
         status: entity.status
       });
       
-      // 1. Kurangi saldo di member_savings_accounts
-      const account = await MemberSavingsAccount.findOne({
-        where: { savings_account_id: entity.savings_account_id },
-        transaction: t,
-        lock: t.LOCK.UPDATE,
-      });
-      console.log("[performFinalAction] MemberSavingsAccount found:", {
-        found: !!account,
-        savings_account_id: entity.savings_account_id,
-        current_balance: account?.current_balance,
-        account_type: account?.account_type
-      });
-      if (account) {
-        const newBalance = parseFloat(account.current_balance) - parseFloat(entity.amount);
-        if (newBalance < 0) {
-          throw new Error("Saldo tidak mencukupi untuk penarikan.");
-        }
-        const [updated] = await MemberSavingsAccount.update(
-          { current_balance: newBalance },
-          { where: { savings_account_id: entity.savings_account_id }, transaction: t }
-        );
-        console.log("[performFinalAction] MemberSavingsAccount updated:", {
-          updated_rows: updated,
-          new_balance: newBalance
+      // 1. Kurangi saldo di member_savings_accounts atau member_saving_targets
+      let account = null;
+      
+      if (entity.savings_account_id) {
+        account = await MemberSavingsAccount.findOne({
+          where: { savings_account_id: entity.savings_account_id },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
         });
+        if (account) {
+          const newBalance = parseFloat(account.current_balance) - parseFloat(entity.amount);
+          if (newBalance < 0) {
+            throw new Error("Saldo tidak mencukupi untuk penarikan.");
+          }
+          await MemberSavingsAccount.update(
+            { current_balance: newBalance },
+            { where: { savings_account_id: entity.savings_account_id }, transaction: t }
+          );
+        }
+      } else if (entity.member_saving_target_id) {
+        const targetAccount = await db.MemberSavingTarget.findOne({
+          where: { member_saving_target_id: entity.member_saving_target_id },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+        if (targetAccount) {
+          const newBalance = parseFloat(targetAccount.current_balance) - parseFloat(entity.amount);
+          if (newBalance < 0) {
+            throw new Error("Saldo tabungan tidak mencukupi untuk penarikan.");
+          }
+          
+          const targetStatus = newBalance <= 0 ? "COMPLETED" : targetAccount.status;
+          
+          await db.MemberSavingTarget.update(
+            { current_balance: newBalance, status: targetStatus },
+            { where: { member_saving_target_id: entity.member_saving_target_id }, transaction: t }
+          );
+        }
       }
 
       // 2. Kurangi saldo di tabel Account (ledger per kategori)
@@ -208,7 +239,7 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
         "Simpanan Pokok": "SW_POKOK",
         "Simpanan Wajib": "SW_WAJIB"
       };
-      const targetAccountType = accountTypeMap[account?.account_type] || account?.account_type;
+      const targetAccountType = account ? (accountTypeMap[account.account_type] || account.account_type) : null;
       
       if (targetAccountType) {
         const typeAccount = await Account.findOne({
@@ -263,6 +294,13 @@ export const performFinalAction = async ({ entityRef, entity, transaction: t, ap
       }, { transaction: t });
 
       t.afterCommit(async () => {
+        try {
+          await syncFinancialSummary(db.sequelize, entity.member_id);
+          await syncSavingsReportList(db.sequelize);
+        } catch (err) {
+          console.error("[performFinalAction] syncFinancialSummary failed:", err.message);
+        }
+
         try {
           await processMidtransDisbursement(entity.withdrawal_id);
         } catch (err) {

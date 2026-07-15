@@ -8,6 +8,11 @@ import createFinancingApplication from "../controllers/financing/createFinancing
 import getFinancingDetail from "../controllers/financing/getFinancingDetail.js";
 import getFinancingOptions from "../controllers/financing/getFinancingOptions.js";
 import getFinancingTerms from "../controllers/financing/getFinancingTerms.js";
+import { getPelunasanBillItems } from "../controllers/financing/getPelunasanBillItems.js";
+import getPinjamanReport from "../controllers/financing/getPinjamanReport.js";
+import createPinjamanHutang from "../controllers/financing/createPinjamanHutang.js";
+import createPinjamanAktivaTetap from "../controllers/financing/createPinjamanAktivaTetap.js";
+import getArisanReport from "../controllers/financing/getArisanReport.js";
 
 const router = express.Router();
 
@@ -22,6 +27,16 @@ router.get("/summary", MidAnggota, getFinancialSummary);
  * Digunakan oleh: TransaksiDashboardPage.jsx
  */
 router.get("/history", MidAnggota, getFinancingHistory);
+
+/**
+ * Endpoint: GET /financial/report/pinjaman
+ */
+router.get("/report/pinjaman", MidAnggota, getPinjamanReport);
+
+/**
+ * Endpoint: GET /financial/report/arisan
+ */
+router.get("/report/arisan", MidAnggota, getArisanReport);
 
 /**
  * Endpoint: POST /financial/apply
@@ -48,5 +63,17 @@ router.get("/options", getFinancingOptions);
  * Public endpoint - tidak perlu autentikasi
  */
 router.get("/terms", getFinancingTerms);
+
+router.get("/pelunasan-items/:id", MidAnggota, getPelunasanBillItems);
+
+/**
+ * Endpoint: POST /financial/hutang/create
+ */
+router.post("/hutang/create", MidAnggota, createPinjamanHutang);
+
+/**
+ * Endpoint: POST /financial/aktiva-tetap/create
+ */
+router.post("/aktiva-tetap/create", MidAnggota, createPinjamanAktivaTetap);
 
 export default router;

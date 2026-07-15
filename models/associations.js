@@ -18,6 +18,9 @@ export default function defineAssociations(db) {
   db.Member.hasOne(db.Account, { foreignKey: "member_id", as: "account" });
   db.Account.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 
+  db.Member.hasOne(db.MemberFinancialSummary, { foreignKey: "member_id", as: "financial_summary" });
+  db.MemberFinancialSummary.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+
   db.UserRole.hasMany(db.MemberRoleAssignment, {
     foreignKey: "role_id",
     as: "assignments",
@@ -145,6 +148,43 @@ export default function defineAssociations(db) {
     as: "member",
   });
 
+
+  db.FinancingApplication.hasMany(db.BillItem, {
+    foreignKey: "financing_application_id",
+    as: "installments",
+  });
+  db.BillItem.belongsTo(db.FinancingApplication, {
+    foreignKey: "financing_application_id",
+    as: "financingApplication",
+  });
+
+  db.Member.hasMany(db.JualBeliReport, {
+    foreignKey: "member_id",
+    as: "jual_beli_reports",
+  });
+  db.JualBeliReport.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
+  db.Member.hasMany(db.SavingsReport, {
+    foreignKey: "member_id",
+    as: "savings_reports",
+  });
+  db.SavingsReport.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
+  db.Member.hasOne(db.SavingsReportList, {
+    foreignKey: "member_id",
+    as: "savings_report_list",
+  });
+  db.SavingsReportList.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
   db.FinancingApplication.belongsTo(db.ApprovalFlow, {
     foreignKey: "approval_flow_id",
     as: "flow",
@@ -201,10 +241,23 @@ export default function defineAssociations(db) {
   db.SavingsWithdrawal.belongsTo(db.MemberSavingsAccount, {
     foreignKey: "savings_account_id",
     as: "savingsAccount",
+    constraints: false,
   });
   db.MemberSavingsAccount.hasMany(db.SavingsWithdrawal, {
     foreignKey: "savings_account_id",
     as: "withdrawals",
+    constraints: false,
+  });
+  
+  db.SavingsWithdrawal.belongsTo(db.MemberSavingTarget, {
+    foreignKey: "member_saving_target_id",
+    as: "savingTarget",
+    constraints: false,
+  });
+  db.MemberSavingTarget.hasMany(db.SavingsWithdrawal, {
+    foreignKey: "member_saving_target_id",
+    as: "withdrawals",
+    constraints: false,
   });
   db.SavingsWithdrawal.belongsTo(db.Member, {
     foreignKey: "member_id",
@@ -247,7 +300,7 @@ export default function defineAssociations(db) {
   db.SavingsWithdrawal.hasMany(db.Approval, {
     foreignKey: "entity_id",
     constraints: false,
-    scope: { entity_ref: "savings_withdrawal" },
+    scope: { entity_ref: ["savings_withdrawal", "tabungan_withdrawals"] },
     as: "approvals",
   });
 
@@ -346,6 +399,12 @@ export default function defineAssociations(db) {
     scope: { entity_ref: "members" },
     as: "checkpoints",
   });
+  db.MemberRegistration.hasMany(db.Approval, {
+    foreignKey: "entity_id",
+    constraints: false,
+    scope: { entity_ref: "members" },
+    as: "approvals",
+  });
 
   db.ApprovalStatus.belongsTo(db.ApprovalFlow, {
     foreignKey: "approval_flow_id",
@@ -370,8 +429,7 @@ export default function defineAssociations(db) {
     as: "member",
   });
 
-  // Forgot Password Associations - Commented until files are deployed
-  /*
+  // Forgot Password Associations
   db.Member.hasMany(db.ForgotPasswordSession, {
     foreignKey: "member_id",
     as: "forgotPasswordSessions",
@@ -384,17 +442,18 @@ export default function defineAssociations(db) {
   db.ForgotPasswordSession.hasMany(db.PasswordResetToken, {
     foreignKey: "session_id",
     as: "resetTokens",
+    sourceKey: "session_id"
   });
   db.PasswordResetToken.belongsTo(db.ForgotPasswordSession, {
     foreignKey: "session_id",
     as: "session",
+    targetKey: "session_id"
   });
 
   db.PasswordResetToken.belongsTo(db.Member, {
     foreignKey: "member_id",
     as: "member",
   });
-  */
 
   // Arisan Associations
   db.ArisanProgram.hasMany(db.ArisanBatch, {
@@ -422,6 +481,42 @@ export default function defineAssociations(db) {
   db.ArisanParticipant.belongsTo(db.Member, {
     foreignKey: "member_id",
     as: "member",
+  });
+
+  // Arisan Payments
+  db.ArisanBatch.hasMany(db.ArisanPayment, {
+    foreignKey: "arisan_batch_id",
+    as: "payments",
+  });
+  db.ArisanPayment.belongsTo(db.ArisanBatch, {
+    foreignKey: "arisan_batch_id",
+    as: "batch",
+  });
+  db.Member.hasMany(db.ArisanPayment, {
+    foreignKey: "member_id",
+    as: "arisan_payments",
+  });
+  db.ArisanPayment.belongsTo(db.Member, {
+    foreignKey: "member_id",
+    as: "member",
+  });
+
+  // Arisan Draws
+  db.ArisanBatch.hasMany(db.ArisanDraw, {
+    foreignKey: "arisan_batch_id",
+    as: "draws",
+  });
+  db.ArisanDraw.belongsTo(db.ArisanBatch, {
+    foreignKey: "arisan_batch_id",
+    as: "batch",
+  });
+  db.Member.hasMany(db.ArisanDraw, {
+    foreignKey: "winner_member_id",
+    as: "arisan_draws_won",
+  });
+  db.ArisanDraw.belongsTo(db.Member, {
+    foreignKey: "winner_member_id",
+    as: "winner",
   });
 
   // Sukuk associations

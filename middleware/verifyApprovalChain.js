@@ -1,11 +1,12 @@
 import db from "../models/index.js";
 
 const EntityModels = {
-  members: db.MemberRegistration,
-  savings_withdrawal: db.SavingsWithdrawal,
-  savings: db.SavingsWithdrawal,
-  financing_applications: db.FinancingApplication,
-  member_saving_targets: db.MemberSavingTarget,
+  members: "MemberRegistration",
+  savings_withdrawal: "SavingsWithdrawal",
+  savings: "SavingsWithdrawal",
+  financing_applications: "FinancingApplication",
+  member_saving_targets: "MemberSavingTarget",
+  tabungan_withdrawals: "SavingsWithdrawal",
 };
 
 export const verifyApprovalChain = (entityRef) => async (req, res, next) => {
@@ -15,13 +16,17 @@ export const verifyApprovalChain = (entityRef) => async (req, res, next) => {
   console.log("[verifyApprovalChain] entityId:", entityId);
   console.log("[verifyApprovalChain] Available models:", Object.keys(EntityModels));
   
-  const EntityModel = EntityModels[entityRef];
+  const modelName = EntityModels[entityRef];
+  const EntityModel = db[modelName];
 
   console.log("[verifyApprovalChain] EntityModel found:", !!EntityModel);
 
-  console.log("EntityModel for", entityRef, ":", EntityModel);
+  console.log("EntityModel for", entityRef, ":", EntityModel ? EntityModel.name : "undefined");
 
   try {
+    if (!EntityModel) {
+      throw new Error(`Model ${modelName} tidak ditemukan untuk entityRef ${entityRef}`);
+    }
     const entity = await EntityModel.findByPk(entityId);
     
     if (!entity || !entity.current_step_id) {

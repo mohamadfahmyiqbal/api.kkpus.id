@@ -1,6 +1,8 @@
 // 📁 controllers/webhooks/irisWebhook.js
 import db from "../../models/index.js";
 import { performFinalAction } from "../core/approvals/performFinalAction.js";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
+import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
 export const irisNotification = async (req, res) => {
     // Iris mengirimkan data dalam format yang sedikit berbeda tergantung tipenya
@@ -67,6 +69,11 @@ export const irisNotification = async (req, res) => {
         }
 
         await transaction.commit();
+        
+        if (status === 'completed') {
+            await syncFinancialSummary(db.sequelize, withdrawal.member_id);
+            await syncSavingsReportList(db.sequelize);
+        }
         
         // 4. Notifikasi ke User (Optional)
         // Anda bisa memicu socket.io atau Push Notification di sini setelah commit

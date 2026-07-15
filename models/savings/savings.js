@@ -1,8 +1,9 @@
 // models/savings/savings.js
 import { DataTypes } from "sequelize";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 export default function Savings(sequelize, Sequelize) {
-  return sequelize.define(
+  const SavingsModel = sequelize.define(
     "Savings",
     {
       savings_id: {
@@ -87,4 +88,14 @@ export default function Savings(sequelize, Sequelize) {
       ],
     },
   );
+
+  SavingsModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  SavingsModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  return SavingsModel;
 }

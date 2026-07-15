@@ -45,8 +45,12 @@ const upload = multer({
   }
 });
 
-// Middleware untuk single file upload
-const uploadEvidence = upload.single('evidence');
+// Middleware untuk single atau multiple file upload
+const uploadEvidence = upload.fields([
+  { name: 'evidence', maxCount: 1 },
+  { name: 'buktiKerjasama', maxCount: 1 },
+  { name: 'filePendukung', maxCount: 1 }
+]);
 
 // Controller untuk handle upload
 const handleEvidenceUpload = async (req, res) => {
@@ -88,39 +92,50 @@ const handleEvidenceUpload = async (req, res) => {
       });
     }
 
-    if (!req.file) {
+    if (!req.file && (!req.files || Object.keys(req.files).length === 0)) {
       return res.status(400).json({
         status: false,
         message: "Tidak ada file yang diupload"
       });
     }
 
-    // Update database dengan path file
-    const filePath = req.file.path.replace(/\\/g, '/'); // Normalisasi path untuk Windows/Linux
+    // Normalisasi path untuk Windows/Linux
+    const normalizePath = (file) => file.path.replace(/\\/g, '/');
+
+    const updateData = { updated_at: new Date() };
+    const resData = { financing_id: financingId };
+
+    if (req.file) {
+      updateData.file_evidence = normalizePath(req.file);
+      resData.file_path = updateData.file_evidence;
+    }
     
-    await db.FinancingApplication.update(
-      { 
-        file_evidence: filePath,
-        updated_at: new Date()
-      },
-      {
-        where: { financing_id: financingId },
-        transaction: t
+    if (req.files) {
+      if (req.files.evidence) {
+        updateData.file_evidence = normalizePath(req.files.evidence[0]);
+        resData.file_path = updateData.file_evidence;
       }
-    );
+      if (req.files.buktiKerjasama) {
+        updateData.contract_proof = normalizePath(req.files.buktiKerjasama[0]);
+        resData.contract_proof = updateData.contract_proof;
+      }
+      if (req.files.filePendukung) {
+        updateData.additional_documents = normalizePath(req.files.filePendukung[0]);
+        resData.additional_documents = updateData.additional_documents;
+      }
+    }
+
+    await db.FinancingApplication.update(updateData, {
+      where: { financing_id: financingId },
+      transaction: t
+    });
 
     await t.commit();
 
     return res.status(200).json({
       status: true,
       message: "File evidence berhasil diupload",
-      data: {
-        financing_id: financingId,
-        file_path: filePath,
-        file_name: req.file.filename,
-        original_name: req.file.originalname,
-        file_size: req.file.size
-      }
+      data: resData
     });
 
   } catch (error) {
@@ -130,9 +145,16 @@ const handleEvidenceUpload = async (req, res) => {
     if (req.file) {
       try {
         fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error("Error deleting file:", unlinkError);
-      }
+      } catch (unlinkError) {}
+    }
+    if (req.files) {
+      Object.values(req.files).forEach(fileArray => {
+        fileArray.forEach(f => {
+          try {
+            fs.unlinkSync(f.path);
+          } catch (unlinkError) {}
+        });
+      });
     }
 
     console.error("Upload Error:", error);
@@ -147,13 +169,14 @@ const handleEvidenceUpload = async (req, res) => {
 const downloadEvidence = async (req, res) => {
   try {
     const { financingId } = req.params;
+    const { type } = req.query;
     const memberId = req.userId;
 
     // Validasi financing application
     const application = await db.FinancingApplication.findOne({
       where: { 
-        financing_id: financingId,
-        member_id: memberId 
+        financing_id: financingId
+        // Dihilangkan member_id agar admin bisa download, proteksi harusnya via token roles
       }
     });
 
@@ -164,14 +187,16 @@ const downloadEvidence = async (req, res) => {
       });
     }
 
-    if (!application.file_evidence) {
+    let filePath = application.file_evidence;
+    if (type === 'contract_proof') filePath = application.contract_proof;
+    if (type === 'additional_documents') filePath = application.additional_documents;
+
+    if (!filePath) {
       return res.status(404).json({
         status: false,
-        message: "File evidence tidak ditemukan"
+        message: "File tidak ditemukan di database"
       });
     }
-
-    const filePath = application.file_evidence;
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -208,7 +233,7 @@ const downloadEvidence = async (req, res) => {
 
     // Send file
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);

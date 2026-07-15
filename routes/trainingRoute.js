@@ -5,6 +5,22 @@ import { getMaterials, getMaterialDetail } from "../controllers/training/getMate
 import { saveNote } from "../controllers/training/saveNote.js";
 import { submitEvaluation } from "../controllers/training/submitEvaluation.js";
 import { getRankings, getMyRanking } from "../controllers/training/getRankings.js";
+import MidRole from "../middleware/MidRole.js";
+import {
+  getAdminCurriculums,
+  createCurriculum,
+  updateCurriculum,
+  deleteCurriculum,
+  getAdminMaterials,
+  createMaterial,
+  updateMaterial,
+  deleteMaterial,
+  getAdminEvaluations,
+  createEvaluation,
+  updateEvaluation,
+  deleteEvaluation,
+  getAdminRankings
+} from "../controllers/training/manageAdminTraining.js";
 
 const router = express.Router();
 
@@ -49,5 +65,27 @@ router.get("/rankings", MidAnggota, getRankings);
  * Digunakan untuk mengambil peringkat sendiri
  */
 router.get("/my-ranking", MidAnggota, getMyRanking);
+
+// ==========================================
+// ADMIN ROUTES
+// ==========================================
+const adminAuth = [MidAnggota, MidRole(['admin', 'superadmin'])];
+
+router.get("/admin/curriculums", adminAuth, getAdminCurriculums);
+router.post("/admin/curriculums", adminAuth, createCurriculum);
+router.put("/admin/curriculums/:id", adminAuth, updateCurriculum);
+router.delete("/admin/curriculums/:id", adminAuth, deleteCurriculum);
+
+router.get("/admin/materials", adminAuth, getAdminMaterials);
+router.post("/admin/materials", adminAuth, createMaterial);
+router.put("/admin/materials/:id", adminAuth, updateMaterial);
+router.delete("/admin/materials/:id", adminAuth, deleteMaterial);
+
+router.get("/admin/evaluations", adminAuth, getAdminEvaluations);
+router.post("/admin/evaluations", adminAuth, createEvaluation);
+router.put("/admin/evaluations/:id", adminAuth, updateEvaluation);
+router.delete("/admin/evaluations/:id", adminAuth, deleteEvaluation);
+
+router.get("/admin/rankings", adminAuth, getAdminRankings);
 
 export default router;

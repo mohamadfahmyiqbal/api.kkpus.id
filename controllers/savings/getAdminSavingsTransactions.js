@@ -52,17 +52,25 @@ export const getAdminSavingsTransactions = async (req, res) => {
 
       if (tCount > 0) {
         count = tCount;
-        results = transactions.map(t => ({
-          id: t.transaction_id,
-          date: t.created_at,
-          member: t.member?.full_name || "Unknown",
-          member_id: t.member_id,
-          type: "Setoran",
-          amount: t.amount,
-          balance: "-", 
-          status: "Selesai",
-          product_name: t.bill?.items?.[0]?.description || type
-        }));
+        results = transactions.map(t => {
+          // Calculate amount from matched items (e.g., only Pokok or only Wajib)
+          let itemAmount = t.amount;
+          if (t.bill && t.bill.items && t.bill.items.length > 0) {
+            itemAmount = t.bill.items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+          }
+          
+          return {
+            id: t.transaction_id,
+            date: t.created_at,
+            member: t.member?.full_name || "Unknown",
+            member_id: t.member_id,
+            type: "Setoran",
+            amount: itemAmount,
+            balance: "-", 
+            status: "Selesai",
+            product_name: t.bill?.items?.[0]?.description || type
+          };
+        });
       }
     }
 
@@ -96,6 +104,11 @@ export const getAdminSavingsTransactions = async (req, res) => {
 
       if (tx_category === "PENCAIRAN") {
         const { count: wCount, rows: withdrawals } = await db.SavingsWithdrawal.findAndCountAll({
+          where: {
+            member_saving_target_id: {
+              [Op.is]: null
+            }
+          },
           include: [
             includeAccounts,
             { 
@@ -111,6 +124,18 @@ export const getAdminSavingsTransactions = async (req, res) => {
               model: db.ApprovalStep, 
               as: 'currentStep',
               include: [{ model: db.UserRole, as: 'verifierRole' }]
+            },
+            {
+              model: db.Approval,
+              as: "approvals",
+              required: false,
+              include: [
+                {
+                  model: db.ApprovalStep,
+                  as: "step",
+                  include: [{ model: db.UserRole, as: "verifierRole", attributes: ["role_name"] }]
+                }
+              ]
             }
           ],
           order: [["created_at", "DESC"]],
@@ -131,8 +156,11 @@ export const getAdminSavingsTransactions = async (req, res) => {
           product_name: w.savingsAccount?.savingsProduct?.name,
           flow: w.flow,
           currentStep: w.currentStep,
-          final_status: w.status
+          final_status: w.status,
+          approvals: w.approvals?.map(a => typeof a.toJSON === 'function' ? a.toJSON() : a)
         }));
+        
+        console.log("DEBUG TRANSACTIONS:", JSON.stringify(results.map(r => ({id: r.id, approvals_count: r.approvals?.length, notes: r.approvals?.map(a => a.note)})), null, 2));
       } else {
         const { count: tCount, rows: transactions } = await db.SavingsTransaction.findAndCountAll({
           include: [includeAccounts],

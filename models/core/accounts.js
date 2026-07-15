@@ -1,6 +1,7 @@
 // 📁 models/core/accounts.js
 
 import { Sequelize } from "sequelize";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 const Account = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -48,6 +49,14 @@ const Account = (sequelize) => {
       updatedAt: "updated_at", // Sesuai skema Anda
     }
   );
+
+  AccountModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  AccountModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
 
   return AccountModel;
 };

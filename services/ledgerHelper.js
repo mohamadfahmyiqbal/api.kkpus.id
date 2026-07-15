@@ -88,6 +88,48 @@ export const processLedgerRecording = async (localTx, dbTransaction) => {
         console.log(`[Ledger] Incremented MemberSavingTarget ${tabunganId} by ${itemAmount}`);
       }
     }
+
+    // 5. Update Financing bill items if it's Pelunasan
+    if (item.financing_application_id) {
+      const { FinancingApplication } = db;
+      const app = await FinancingApplication.findByPk(item.financing_application_id, { transaction: dbTransaction });
+      
+      const isPelunasan = app && typeof app.category === 'string' && app.category.toLowerCase().includes('pelunasan');
+      
+      if (isPelunasan) {
+        console.log(`[Ledger] Processing Pelunasan for member ${localTx.member_id}, Category: ${app.category}`);
+        
+        // Extract original category (e.g., "Pelunasan Jual Beli" -> "Jual Beli")
+        const originalCategory = app.category.replace(/pelunasan\s+/i, '').trim();
+        
+        // Find the active application for this member with that category
+        const originalFinancing = await FinancingApplication.findOne({
+          where: {
+            member_id: localTx.member_id,
+            category: originalCategory,
+            status: { [db.Sequelize.Op.in]: ["APPROVED", "ACTIVE"] }
+          },
+          transaction: dbTransaction
+        });
+
+        if (originalFinancing) {
+          // Mark all its bill items as PAID
+          await BillItem.update(
+            { status: "PAID" }, 
+            { 
+              where: { financing_application_id: originalFinancing.financing_id, status: "UNPAID" }, 
+              transaction: dbTransaction 
+            }
+          );
+          // Mark original financing as COMPLETED
+          await originalFinancing.update({ status: "COMPLETED" }, { transaction: dbTransaction });
+          console.log(`[Ledger] Marked all bill_items for original ${originalCategory} ${originalFinancing.financing_id} as PAID.`);
+        }
+        
+        // Mark the Pelunasan app itself as COMPLETED
+        await app.update({ status: "COMPLETED" }, { transaction: dbTransaction });
+      }
+    }
   }
 
   // 4. Update Total Saldo Global (SAVINGS)

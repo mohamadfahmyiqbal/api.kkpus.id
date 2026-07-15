@@ -41,6 +41,10 @@ const ArisanBatch = (sequelize) => {
         type: DataTypes.DECIMAL(18, 2),
         allowNull: true,
       },
+      jumlah_keberangkatan: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
     },
     {
       freezeTableName: true,

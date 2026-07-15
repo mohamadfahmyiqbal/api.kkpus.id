@@ -1,6 +1,8 @@
 // controllers/savings/getWithdrawalDetail.js
 import db from "../../models/index.js";
 
+import { Op } from "sequelize";
+
 export const getWithdrawalDetail = async (req, res) => {
   try {
     const { withdrawalId } = req.params;
@@ -36,7 +38,11 @@ export const getWithdrawalDetail = async (req, res) => {
         {
           model: db.Approval,
           as: "approvals",
-          where: { entity_ref: 'savings_withdrawal' },
+          where: { 
+            entity_ref: {
+              [Op.in]: ['savings_withdrawal', 'tabungan_withdrawals']
+            } 
+          },
           required: false,
           include: [
             {
@@ -74,9 +80,9 @@ export const getWithdrawalDetail = async (req, res) => {
         step_order: step.step_order,
         step_name: step.step_name,
         role_id: step.role_id,
-        role_name: step.verifierRole?.role_name,
+        role: step.verifierRole?.role_name,
         decision: approval?.decision || 'PENDING',
-        approver_member_id: approval?.approver_member_id || null,
+        approverName: approval?.approver_member_id ? `User ${approval.approver_member_id}` : null,
         decision_datetime: approval?.decision_datetime || null,
         note: approval?.note || null
       };
@@ -101,13 +107,13 @@ export const getWithdrawalDetail = async (req, res) => {
       transfer_proof_path: data.transfer_proof_path || null,
 
       is_approved_pengawas: formattedApprovals.some(a => 
-        a.role_name?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'
+        a.role?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'
       ),
       is_approved_ketua: formattedApprovals.some(a => 
-        a.role_name?.toUpperCase() === 'KETUA' && a.decision === 'APPROVED'
+        a.role?.toUpperCase() === 'KETUA' && a.decision === 'APPROVED'
       ),
       is_approved_bendahara: formattedApprovals.some(a => 
-        a.role_name?.toUpperCase() === 'BENDAHARA' && a.decision === 'APPROVED'
+        a.role?.toUpperCase() === 'BENDAHARA' && a.decision === 'APPROVED'
       ),
       is_rejected: formattedApprovals.some(a => a.decision === 'REJECTED') || statusStr === "REJECTED",
 
@@ -129,7 +135,7 @@ export const getWithdrawalDetail = async (req, res) => {
         location: "Kantor Pusat"
       },
 
-      approvals: formattedApprovals
+      approvalChain: formattedApprovals
     };
 
     return res.status(200).json({ 

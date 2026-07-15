@@ -6,7 +6,7 @@ import { logger } from '../utils/logger.js';
  */
 class NotificationService {
   constructor() {
-    this.emailProvider = process.env.EMAIL_PROVIDER || 'console'; // 'console', 'sendgrid', 'ses'
+    this.emailProvider = process.env.EMAIL_PROVIDER || 'console'; // 'console', 'sendgrid', 'ses', 'smtp'
     this.smsProvider = process.env.SMS_PROVIDER || 'console'; // 'console', 'twilio', 'wa'
   }
 
@@ -23,6 +23,8 @@ class NotificationService {
           return await this.sendSendGridEmail(email, subject, htmlContent);
         case 'ses':
           return await this.sendSESEmail(email, subject, htmlContent);
+        case 'smtp':
+          return await this.sendSMTPEmail(email, subject, htmlContent);
         case 'console':
         default:
           return this.logEmail(email, subject, otpCode, expiryMinutes);
@@ -31,6 +33,31 @@ class NotificationService {
       logger.error('Error sending email OTP:', error);
       throw new Error('Failed to send email OTP');
     }
+  }
+
+  /**
+   * Send email using standard SMTP via nodemailer
+   */
+  async sendSMTPEmail(email, subject, htmlContent) {
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"Koperasi PUS" <noreply@kkpus.id>',
+      to: email,
+      subject: subject,
+      html: htmlContent,
+    });
+    logger.info(`SMTP email sent successfully to ${email}`);
+    return true;
   }
 
   /**

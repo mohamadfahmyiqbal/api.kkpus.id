@@ -20,6 +20,11 @@ export const getWithdrawalHistory = async (req, res) => {
           where: category ? { product_code: category } : {},
           required: true
         }]
+      },
+      {
+        model: db.Approval,
+        as: 'approvals',
+        attributes: ['note', 'decision', 'created_at']
       }],
       attributes: ["withdrawal_id", "amount", "status", "method", "created_at"],
       order: [["created_at", "DESC"]]

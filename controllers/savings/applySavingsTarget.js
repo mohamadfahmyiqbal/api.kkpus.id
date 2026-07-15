@@ -7,28 +7,21 @@ export const applySavingsTarget = async (req, res) => {
 
   try {
     const memberId = req.userId;
-    const { productType, nominalTarget, tenor, setoranAwal } = req.body;
+    const { saving_target_id, monthly_deposit, term_months } = req.body;
 
-    if (!productType || !nominalTarget || !tenor || !setoranAwal) {
-      throw new Error("Semua field harus diisi (productType, nominalTarget, tenor, setoranAwal)");
+    if (!saving_target_id || !monthly_deposit || !term_months) {
+      throw new Error("Data pengajuan tidak lengkap");
     }
 
-    // Capitalize product type for naming
-    const productName = productType.charAt(0).toUpperCase() + productType.slice(1);
-    const targetName = `Tabungan ${productName}`;
+    // Find the Master Program
+    const newTarget = await db.SavingTarget.findByPk(saving_target_id, { transaction: t });
+    if (!newTarget) {
+      throw new Error("Program tabungan tidak ditemukan");
+    }
 
-    // Calculate min monthly deposit
-    const minMonthlyDeposit = Math.ceil((nominalTarget - setoranAwal) / tenor);
-
-    // Create the Saving Target catalog entry (since it's custom per member request)
-    const newTarget = await db.SavingTarget.create({
-      target_name: targetName,
-      category: productType,
-      target_amount: nominalTarget,
-      term_months: tenor,
-      min_monthly_deposit: minMonthlyDeposit,
-      akad_type: 'WADIAH' // default akad
-    }, { transaction: t });
+    const targetName = newTarget.target_name;
+    const targetAmount = monthly_deposit * term_months;
+    const setoranAwal = monthly_deposit; // Default setoran awal is the first month's deposit
 
     // Handle Approval Flow
     const flow = await db.ApprovalFlow.findOne({
@@ -60,7 +53,10 @@ export const applySavingsTarget = async (req, res) => {
       current_balance: 0,
       approval_flow_id: flowId,
       current_step_id: initialStepId,
-      status: 'PENDING'
+      status: 'PENDING',
+      target_amount: targetAmount,
+      term_months: term_months,
+      monthly_deposit: monthly_deposit
     }, { transaction: t });
 
     // Generate Setoran Awal bill
@@ -102,7 +98,7 @@ export const applySavingsTarget = async (req, res) => {
         await sendGlobalNotification({
           memberId: memberId,
           title: "Pengajuan Tabungan Berhasil",
-          content: `Pengajuan ${targetName} senilai Rp ${Number(nominalTarget).toLocaleString('id-ID')} telah diproses.`,
+          content: `Pengajuan ${targetName} senilai Rp ${Number(targetAmount).toLocaleString('id-ID')} telah diproses.`,
           type: "SAVINGS",
           url: "/tabungan"
         });
@@ -117,7 +113,7 @@ export const applySavingsTarget = async (req, res) => {
       data: {
         saving_target_id: newTarget.saving_target_id,
         target_name: newTarget.target_name,
-        target_amount: newTarget.target_amount,
+        target_amount: targetAmount,
         member_saving_target_id: newMemberTarget.member_saving_target_id
       }
     });

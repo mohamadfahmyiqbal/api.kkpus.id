@@ -79,8 +79,21 @@ const getPendingBills = async (req, res) => {
 
                     if (isPaid && tx.bill_id) {
                       await db.Bill.update({ status: "paid" }, { where: { bill_id: tx.bill_id }, transaction: dbTx });
-                      await db.BillItem.update({ status: "PAID" }, { where: { bill_id: tx.bill_id }, transaction: dbTx });
+                      await db.BillItem.update(
+                        { status: "PAID" }, 
+                        { 
+                          where: { bill_id: tx.bill_id }, 
+                          transaction: dbTx,
+                          individualHooks: true
+                        }
+                      );
                       await processLedgerRecording(tx, dbTx);
+                      
+                      // Import sync services dynamically or use db.sequelize.models if available
+                      const { syncFinancialSummary } = await import("../../../services/financialSummarySyncService.js");
+                      const { syncJualBeliReport } = await import("../../../services/jualBeliReportSyncService.js");
+                      await syncFinancialSummary(db.sequelize, tx.member_id);
+                      await syncJualBeliReport(db.sequelize, tx.member_id);
                     }
                     await dbTx.commit();
 

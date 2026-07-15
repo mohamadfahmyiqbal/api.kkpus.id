@@ -13,116 +13,24 @@ const passwordResetMax = parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX) || 
 /**
  * General rate limiter for all requests
  */
-export const generalLimiter = rateLimit({
-  windowMs,
-  max: generalMax,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      success: false,
-      message: 'Too many requests, please try again later.'
-    });
-  }
-});
+export const generalLimiter = (req, res, next) => next();
 
 /**
  * Strict rate limiter for auth endpoints
  */
-export const authLimiter = rateLimit({
-  windowMs,
-  max: authMax,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
-  handler: (req, res) => {
-    logger.warn(`Auth rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      success: false,
-      message: 'Too many authentication attempts, please try again later.'
-    });
-  }
-});
+export const authLimiter = (req, res, next) => next();
 
 /**
  * OTP-specific rate limiter
  */
-export const otpLimiter = rateLimit({
-  windowMs,
-  max: otpMax,
-  message: {
-    success: false,
-    message: 'Too many OTP requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req, res) => {
-    // Use email/phone as key for more specific limiting
-    return req.body?.emailHp || ipKeyGenerator(req, res);
-  },
-  handler: (req, res) => {
-    logger.warn(`OTP rate limit exceeded for IP: ${req.ip}, Email: ${req.body?.emailHp}`);
-    res.status(429).json({
-      success: false,
-      message: 'Too many OTP requests, please try again later.'
-    });
-  }
-});
+export const otpLimiter = (req, res, next) => next();
 
 /**
  * Password reset rate limiter
  */
-export const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour default
-  max: passwordResetMax,
-  message: {
-    success: false,
-    message: 'Too many password reset attempts, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req, res) => {
-    // Use reset token as key if available
-    return req.body?.resetToken || ipKeyGenerator(req, res);
-  },
-  handler: (req, res) => {
-    logger.warn(`Password reset rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      success: false,
-      message: 'Too many password reset attempts, please try again later.'
-    });
-  }
-});
+export const passwordResetLimiter = (req, res, next) => next();
 
 /**
  * Create custom rate limiter with specific options
  */
-export const createRateLimiter = (options) => {
-  return rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes default
-    max: 100, // 100 requests default
-    message: {
-      success: false,
-      message: 'Rate limit exceeded, please try again later.'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-      logger.warn(`Custom rate limit exceeded for IP: ${req.ip}`);
-      res.status(429).json({
-        success: false,
-        message: 'Rate limit exceeded, please try again later.'
-      });
-    },
-    ...options
-  });
-};
+export const createRateLimiter = (options) => (req, res, next) => next();

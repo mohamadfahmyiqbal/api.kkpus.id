@@ -1,8 +1,10 @@
 // src/models/savings/member_savings_accounts.js
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
+
 export default (sequelize) => {
   const { DataTypes } = sequelize.Sequelize;
 
-  return sequelize.define("member_savings_accounts", {
+  const MemberSavingsAccountModel = sequelize.define("member_savings_accounts", {
     savings_account_id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -23,4 +25,14 @@ export default (sequelize) => {
     createdAt: 'created_at', 
     updatedAt: 'updated_at'
   });
+
+  MemberSavingsAccountModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  MemberSavingsAccountModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  return MemberSavingsAccountModel;
 };

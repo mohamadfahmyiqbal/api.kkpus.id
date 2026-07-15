@@ -32,6 +32,11 @@ const ArisanParticipant = (sequelize) => {
         type: DataTypes.DECIMAL(18, 2),
         allowNull: true,
       },
+      status: {
+        type: DataTypes.STRING,
+        defaultValue: 'PENDING',
+        allowNull: false,
+      },
     },
     {
       freezeTableName: true,

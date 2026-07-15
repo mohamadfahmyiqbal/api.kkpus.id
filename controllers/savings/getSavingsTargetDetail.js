@@ -81,9 +81,9 @@ export const getSavingsTargetDetail = async (req, res) => {
         catalog: catalog ? {
           target_name: catalog.target_name,
           category: catalog.category,
-          target_amount: catalog.target_amount,
-          term_months: catalog.term_months,
-          min_monthly_deposit: catalog.min_monthly_deposit
+          target_amount: target.target_amount,
+          term_months: target.term_months,
+          min_monthly_deposit: target.monthly_deposit
         } : null,
         member: member,
         approval_status: {

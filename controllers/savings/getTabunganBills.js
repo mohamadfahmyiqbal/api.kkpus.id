@@ -66,8 +66,18 @@ const getTabunganBills = async (req, res) => {
                 if (isPaid) {
                   const targetBillId = localTx.bill_id;
                   await db.Bill.update({ status: "paid" }, { where: { bill_id: targetBillId }, transaction: dbTransaction });
-                  await db.BillItem.update({ status: "PAID" }, { where: { bill_id: targetBillId }, transaction: dbTransaction });
+                  await db.BillItem.update(
+                    { status: "PAID" }, 
+                    { 
+                      where: { bill_id: targetBillId }, 
+                      transaction: dbTransaction,
+                      individualHooks: true
+                    }
+                  );
                   await processLedgerRecording(localTx, dbTransaction);
+                  
+                  const { syncFinancialSummary } = await import("../../services/financialSummarySyncService.js");
+                  await syncFinancialSummary(db.sequelize, localTx.member_id);
                   
                   // Update bills in memory
                   bills = bills.map(b => b.bill_id === targetBillId ? { ...b.toJSON(), status: "PAID" } : b);

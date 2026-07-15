@@ -62,6 +62,11 @@ export const getPendingMemberApprovals = async (req, res) => {
               include: [{ model: db.UserRole, as: 'verifierRole' }]
             }
           ]
+        },
+        {
+          model: db.Approval,
+          as: 'approvals',
+          required: false
         }
       ],
       order: [['registered_at', 'ASC']]

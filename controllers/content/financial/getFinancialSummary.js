@@ -1,190 +1,266 @@
 import db from "../../../models/index.js";
 
-const { Account, BillItem, FinancingApplication, Sequelize } = db;
+const { Account, BillItem, FinancingApplication, Sequelize, Savings, MemberSavingsAccount, MemberSavingTarget, SavingTarget, SukukOrder, LoanProduct } = db;
+const Op = Sequelize.Op;
 
 export const getFinancialSummary = async (req, res) => {
   try {
-    const memberId = req.userId; // Diambil dari middleware autentikasi
+    const memberId = req.userId;
 
-    // Ambil akun yang relevan dengan simpanan pokok, wajib, sukarela, dan tabungan
+    // Get valid loan product names to distinguish Jual Beli from Pinjaman/Program
+    const loanProducts = await LoanProduct.findAll({ attributes: ['product_name'] });
+    const loanProductNames = loanProducts.map(p => p.product_name) || [];
+
+    // 1. Simpanan & Tabungan Reguler from Accounts (Main Ledger)
     const savingsAccounts = await Account.findAll({
       where: {
         member_id: memberId,
         account_type: {
-          [db.Sequelize.Op.or]: [
+          [Op.or]: [
             "SW_POKOK", "SW_WAJIB", "SS_SUKARELA", "TABUNGAN_DEPOSIT",
-            { [db.Sequelize.Op.like]: 'TABUNGAN_%' }
+            { [Op.like]: 'TABUNGAN_%' }
           ]
         }
       },
     });
 
-    const detailsMap = {};
-    let totalSavings = 0;
-
-    const nameMap = {
-      "SW_POKOK": "Simpanan Pokok",
-      "SW_WAJIB": "Simpanan Wajib",
-      "SS_SUKARELA": "Simpanan Sukarela",
-      "TABUNGAN_DEPOSIT": "Tabungan Reguler"
-    };
+    let simpanan_pokok = 0;
+    let simpanan_wajib = 0;
+    let simpanan_sukarela = 0;
+    let tabungan_reguler = 0;
+    const tabungan_details_map = {};
 
     savingsAccounts.forEach(acc => {
       const balance = parseFloat(acc.current_balance || 0);
-      let accName = nameMap[acc.account_type];
-      
-      if (!accName && acc.account_type.startsWith("TABUNGAN_")) {
-        const typePart = acc.account_type.replace("TABUNGAN_", "");
-        accName = "Tabungan " + typePart.charAt(0).toUpperCase() + typePart.slice(1).toLowerCase();
-      }
-
-      const type = acc.account_type;
-      detailsMap[type] = {
-        type: type,
-        name: accName || type,
-        balance: balance
-      };
-
-      if (["SW_POKOK", "SW_WAJIB", "SS_SUKARELA"].includes(acc.account_type)) {
-        totalSavings += balance;
+      if (acc.account_type === "SW_POKOK") simpanan_pokok = balance;
+      else if (acc.account_type === "SW_WAJIB") simpanan_wajib = balance;
+      else if (acc.account_type === "SS_SUKARELA") simpanan_sukarela = balance;
+      else if (acc.account_type === "TABUNGAN_DEPOSIT") tabungan_reguler = balance;
+      else if (acc.account_type.startsWith("TABUNGAN_")) {
+        const type = acc.account_type.replace("TABUNGAN_", "").toLowerCase();
+        tabungan_details_map[type] = (tabungan_details_map[type] || 0) + balance;
       }
     });
 
-    // Ambil target tabungan (termasuk yang PENDING jika sudah ada saldonya)
-    const memberSavingTargets = await db.MemberSavingTarget.findAll({
+    // 2. Add Simpanan from Savings table
+    const completedSavings = await Savings.findAll({
+      where: { member_id: memberId, status: "COMPLETED" }
+    });
+    completedSavings.forEach(s => {
+      const amt = parseFloat(s.amount || 0);
+      if (s.savings_type === 'POKOK' && simpanan_pokok === 0) simpanan_pokok += amt;
+      else if (s.savings_type === 'WAJIB' && simpanan_wajib === 0) simpanan_wajib += amt;
+      else if (s.savings_type === 'SUKARELA' && simpanan_sukarela === 0) simpanan_sukarela += amt;
+    });
+
+    // 3. Tabungan from MemberSavingsAccount
+    const msAccounts = await MemberSavingsAccount.findAll({
+      where: { member_id: memberId }
+    });
+    msAccounts.forEach(msa => {
+      const balance = parseFloat(msa.current_balance || 0);
+      if (balance > 0) {
+        const type = (msa.account_type || "Tabungan").toLowerCase();
+        if (["simpanan pokok", "simpanan wajib", "simpanan sukarela"].includes(type)) return;
+        tabungan_details_map[type] = (tabungan_details_map[type] || 0) + balance;
+      }
+    });
+
+    // 4. Tabungan Targets
+    const memberSavingTargets = await MemberSavingTarget.findAll({
       where: { 
         member_id: memberId,
-        [db.Sequelize.Op.or]: [
+        [Op.or]: [
           { status: "APPROVED" },
-          { current_balance: { [db.Sequelize.Op.gt]: 0 } }
+          { current_balance: { [Op.gt]: 0 } }
         ]
       },
-      include: [{ model: db.SavingTarget, as: "savingTarget" }]
+      include: [{ model: SavingTarget, as: "savingTarget" }]
     });
 
     memberSavingTargets.forEach(mst => {
       const balance = parseFloat(mst.current_balance || 0);
-      const name = mst.savingTarget ? mst.savingTarget.target_name : "Tabungan";
-      
-      // Gunakan nama target sebagai key untuk konsolidasi jika perlu, 
-      // tapi biasanya kita ingin menampilkannya sebagai item terpisah jika tipenya unik.
-      const type = `TABUNGAN_TARGET_${mst.member_saving_target_id}`;
-      
-      // Jika sudah ada entri dengan nama yang sama persis, kita bisa pilih untuk menggabung 
-      // atau membiarkannya jika memang tujuannya berbeda.
-      // Di sini kita masukkan sebagai entri unik agar semua target muncul di detail.
-      detailsMap[type] = {
-        type: type,
-        name: name,
-        balance: balance
-      };
+      const name = (mst.savingTarget ? mst.savingTarget.target_name : "Tabungan").toLowerCase();
+      tabungan_details_map[name] = (tabungan_details_map[name] || 0) + balance;
     });
 
-    const details = Object.values(detailsMap);
-
-    const financingApps = await db.FinancingApplication.findAll({
-      where: { member_id: memberId, status: "APPROVED" }
-    });
-
-    let totalJualBeli = 0;
-    let totalTagihanPinjaman = 0;
-    let totalNominalPinjaman = 0;
-    let totalNominalCicilanPinjaman = 0;
-    
-    let totalArisanTagihan = 0;
-    let arisanDiikutiCount = 0;
-
-    const pinjamanIds = [];
-    const jualBeliIds = [];
-
-    financingApps.forEach(f => {
-      const purpose = (f.purpose || '').toLowerCase();
-      const itemName = (f.item_name || '').toLowerCase();
-      
-      if (purpose.startsWith('pinjaman')) {
-        totalTagihanPinjaman += parseFloat(f.total_tagihan || 0);
-        totalNominalPinjaman += parseFloat(f.amount_requested || f.nominal_kredit || 0);
-        totalNominalCicilanPinjaman += parseFloat(f.monthly_installment || f.angsuran || 0);
-        pinjamanIds.push(f.financing_id);
-      } else if (itemName.includes('arisan') || purpose.includes('arisan')) {
-        totalArisanTagihan += parseFloat(f.total_tagihan || f.amount_requested || f.item_price || 0);
-        arisanDiikutiCount++;
-      } else {
-        totalJualBeli += parseFloat(f.total_tagihan || 0);
-        jualBeliIds.push(f.financing_id);
+    // 5. Financing Applications
+    const financingApps = await FinancingApplication.findAll({
+      where: { 
+        member_id: memberId, 
+        status: { [Op.in]: ['APPROVED', 'ACTIVE'] } 
       }
     });
 
+    let jual_beli_total = 0;
+    const jualBeliApps = [];
+    let pinjaman_total_tagihan = 0;
+    let pinjaman_nominal_kredit = 0;
+    let pinjaman_nominal_cicilan = 0;
+    let arisan_total_tagihan = 0;
+    let arisan_diikuti_count = 0;
+    let total_pendanaan_syariah = 0;
+
+    financingApps.forEach(f => {
+      const category = (f.category || '').toLowerCase();
+      
+      const isPinjaman = loanProductNames.some(p => p.toLowerCase() === category);
+      const isArisan = category === 'arisan';
+      const isPelunasan = category.includes('pelunasan');
+      
+      if (isPinjaman) {
+        if (!isPelunasan) {
+          const tagihan = parseFloat(f.total_tagihan || 0);
+          const fallbackTagihan = parseFloat(f.amount_requested || 0) + parseFloat(f.margin_amount || 0);
+          pinjaman_total_tagihan += tagihan > 0 ? tagihan : fallbackTagihan;
+          pinjaman_nominal_kredit += parseFloat(f.amount_requested || 0);
+        }
+        pinjaman_nominal_cicilan += parseFloat(f.monthly_installment || 0);
+      } else if (isArisan) {
+        arisan_total_tagihan += parseFloat(f.total_tagihan || f.amount_requested || 0);
+        arisan_diikuti_count++;
+      } else if (category === 'pendanaan syariah umkm') {
+        if (!isPelunasan) {
+          const tagihanJB = parseFloat(f.total_tagihan || 0);
+          const fallbackJB = parseFloat(f.amount_requested || 0) + parseFloat(f.margin_amount || 0);
+          total_pendanaan_syariah += (tagihanJB > 0 ? tagihanJB : fallbackJB) + parseFloat(f.down_payment || 0);
+        }
+      } else {
+        if (!isPelunasan) {
+          const tagihanJB = parseFloat(f.total_tagihan || 0);
+          const fallbackJB = parseFloat(f.amount_requested || 0) + parseFloat(f.margin_amount || 0);
+          jual_beli_total += (tagihanJB > 0 ? tagihanJB : fallbackJB) + parseFloat(f.down_payment || 0);
+        }
+        jualBeliApps.push(f);
+      }
+    });
+
+    // 6. Bill Items
     const allInstallments = await BillItem.findAll({
       where: {
         member_id: memberId,
         category_code: {
-          [db.Sequelize.Op.in]: ['TRANSACTION_INSTALLMENT', 'TRANSACTION_DOWN_PAYMENT']
+          [Op.in]: ['TRANSACTION_INSTALLMENT', 'TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN']
         }
-      }
+      },
+      include: [
+        {
+          model: FinancingApplication,
+          as: 'financingApplication',
+          required: true,
+          where: {
+            status: { [Op.in]: ['APPROVED', 'ACTIVE'] }
+          },
+          attributes: ['financing_id', 'category']
+        }
+      ]
     });
 
-    let sisaCicilanJualBeli = 0;
-    let sisaCicilanPinjaman = 0;
-    let jumlahCicilanBelumDibayarJualBeli = 0;
-    let terbayarPinjaman = 0;
-    
-    let sisaCicilanArisan = 0;
-    let terbayarArisan = 0;
+    let jual_beli_sisa_cicilan = 0;
+    let jual_beli_terbayar = 0;
+    let jual_beli_belum_dibayar_count = 0;
+    let pinjaman_sisa_cicilan = 0;
+    let pinjaman_terbayar = 0;
+    let arisan_sisa_cicilan = 0;
+    let arisan_terbayar = 0;
+
+    const appsWithDpBillItem = new Set();
 
     allInstallments.forEach(item => {
-      const desc = (item.description || '').toLowerCase();
-      const isPinjaman = desc.includes('pinjaman');
-      const isArisan = desc.includes('arisan');
+      const category = (item.financingApplication?.category || '').toLowerCase();
+      const isPinjaman = loanProductNames.some(p => p.toLowerCase() === category);
+      const isArisan = category === 'arisan';
+      
+      if (['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code)) {
+        const appId = item.financing_application_id || item.financingApplication?.financing_id;
+        if (appId) appsWithDpBillItem.add(appId);
+      }
+
       const amt = parseFloat(item.amount || 0);
       
       if (item.status === 'UNPAID') {
-        if (isPinjaman) {
-          sisaCicilanPinjaman += amt;
-        } else if (isArisan) {
-          sisaCicilanArisan += amt;
+        if (isPinjaman) pinjaman_sisa_cicilan += amt;
+        else if (isArisan) arisan_sisa_cicilan += amt;
+        else if (category === 'pendanaan syariah umkm') {
         } else {
-          sisaCicilanJualBeli += amt;
-          jumlahCicilanBelumDibayarJualBeli++;
+          if (!category.includes('pelunasan')) {
+            jual_beli_sisa_cicilan += amt;
+            jual_beli_belum_dibayar_count++;
+          }
         }
       } else if (item.status === 'PAID') {
-        if (isPinjaman) {
-          terbayarPinjaman += amt;
-        } else if (isArisan) {
-          terbayarArisan += amt;
-        }
+        if (isPinjaman) pinjaman_terbayar += amt;
+        else if (isArisan) arisan_terbayar += amt;
+        else if (category === 'pendanaan syariah umkm') {
+        } else jual_beli_terbayar += amt;
       }
     });
 
-    let totalLoanDebt = 0; // Sementara 0 jika modul pinjaman belum ada
-    let totalSHU = 0; // Sementara 0 jika modul SHU belum ada
+    jualBeliApps.forEach(f => {
+      if (!appsWithDpBillItem.has(f.financing_id) && parseFloat(f.down_payment || 0) > 0) {
+        jual_beli_terbayar += parseFloat(f.down_payment);
+      }
+    });
+
+    // 7. Investasi from SukukOrder
+    const activeInvestments = await SukukOrder.findAll({
+      where: { 
+        member_id: memberId,
+        status: { [Op.notIn]: ['REJECTED', 'CANCELLED'] }
+      }
+    });
+    let total_investasi = 0;
+    activeInvestments.forEach(inv => {
+      total_investasi += parseFloat(inv.amount || 0);
+    });
+
+    const details = [
+      { type: "SW_POKOK", name: "Simpanan Pokok", balance: simpanan_pokok },
+      { type: "SW_WAJIB", name: "Simpanan Wajib", balance: simpanan_wajib },
+      { type: "SS_SUKARELA", name: "Simpanan Sukarela", balance: simpanan_sukarela },
+      { type: "TABUNGAN_DEPOSIT", name: "Tabungan Reguler", balance: tabungan_reguler }
+    ];
+
+    Object.entries(tabungan_details_map).forEach(([name, balance]) => {
+      details.push({
+        type: `TABUNGAN_EXT_${name}`,
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        balance: balance
+      });
+    });
+
+    const totalSavings = simpanan_pokok + simpanan_wajib + simpanan_sukarela;
 
     return res.status(200).json({
       success: true,
-      message: "Data ringkasan keuangan berhasil diambil",
+      message: "Data ringkasan keuangan berhasil dihitung secara manual",
       data: {
         totalSavings: totalSavings,
-        totalLoanDebt: totalTagihanPinjaman,
-        totalSHU: totalSHU,
-        totalJualBeli: totalJualBeli,
-        sisaCicilanJualBeli: sisaCicilanJualBeli,
-        jumlahCicilanBelumDibayar: jumlahCicilanBelumDibayarJualBeli,
-        totalNominalPinjaman: totalNominalPinjaman,
-        totalNominalCicilanPinjaman: totalNominalCicilanPinjaman,
-        sisaCicilanPinjaman: sisaCicilanPinjaman,
-        terbayarPinjaman: terbayarPinjaman,
-        totalArisanTagihan: totalArisanTagihan,
-        arisanDiikutiCount: arisanDiikutiCount,
-        sisaCicilanArisan: sisaCicilanArisan,
-        terbayarArisan: terbayarArisan,
+        totalLoanDebt: pinjaman_total_tagihan,
+        totalSHU: 0,
+        totalJualBeli: jual_beli_total,
+        sisaCicilanJualBeli: jual_beli_sisa_cicilan,
+        jumlahCicilanBelumDibayar: jual_beli_belum_dibayar_count,
+        terbayarJualBeli: jual_beli_terbayar,
+        totalNominalPinjaman: pinjaman_nominal_kredit,
+        totalNominalCicilanPinjaman: pinjaman_nominal_cicilan,
+        sisaCicilanPinjaman: pinjaman_sisa_cicilan,
+        terbayarPinjaman: pinjaman_terbayar,
+        totalArisanTagihan: arisan_total_tagihan,
+        arisanDiikutiCount: arisan_diikuti_count,
+        sisaCicilanArisan: arisan_sisa_cicilan,
+        terbayarArisan: arisan_terbayar,
+        totalInvestasi: total_investasi,
+        totalPendanaanSyariah: total_pendanaan_syariah,
         details: details
       },
     });
+
   } catch (error) {
     console.error("Financial Summary Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Terjadi kesalahan saat mengambil ringkasan keuangan.",
+      message: "Terjadi kesalahan saat menghitung ringkasan keuangan.",
       error: error.message,
     });
   }

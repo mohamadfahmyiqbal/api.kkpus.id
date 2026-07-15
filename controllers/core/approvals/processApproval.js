@@ -34,43 +34,49 @@ const { Approval, ApprovalStep, ApprovalFlow, EntityStepApproval, ApprovalStatus
 
 const EntityConfigs = {
   members: { 
-    model: db.MemberRegistration, 
+    modelName: "MemberRegistration", 
     pk: "registration_id", 
     memberField: "member_id", 
     statusField: "final_status" 
   },
   financing_applications: { 
-    model: db.FinancingApplication, 
+    modelName: "FinancingApplication", 
     pk: "financing_id", 
     memberField: "member_id", 
     statusField: "status" 
   },
   savings_withdrawal: { 
-    model: db.SavingsWithdrawal, 
+    modelName: "SavingsWithdrawal", 
     pk: "withdrawal_id", 
     memberField: "member_id", 
     statusField: "status" 
   },
   exit_requests: { 
-    model: db.MembershipTermination, 
+    modelName: "MembershipTermination", 
     pk: "termination_id", 
     memberField: "member_id", 
     statusField: "status" 
   },
+  tabungan_withdrawals: { 
+    modelName: "SavingsWithdrawal", 
+    pk: "withdrawal_id", 
+    memberField: "member_id", 
+    statusField: "status" 
+  },
   transactions: { 
-    model: db.Transaction, 
+    modelName: "Transaction", 
     pk: "transaction_id", 
     memberField: "member_id", 
     statusField: "status" 
   },
   investments: { 
-    model: db.SukukOrder, 
+    modelName: "SukukOrder", 
     pk: "order_id", 
     memberField: "member_id", 
     statusField: "status" 
   },
   member_saving_targets: { 
-    model: db.MemberSavingTarget, 
+    modelName: "MemberSavingTarget", 
     pk: "member_saving_target_id", 
     memberField: "member_id", 
     statusField: "status" 
@@ -85,7 +91,7 @@ const logDebug = (label, data = {}) => {
 
 export const processApproval = (entityRef) => async (req, res) => {
   const entityId = req.params.entityId; 
-  const { action, notes, amount, transfer_proof } = req.body;
+  const { action, notes, amount, transfer_proof, operational_cost } = req.body;
   const approverId = req.userId;
   
   console.log("[DEBUG] processApproval called - entityRef:", entityRef, "entityId:", entityId);
@@ -112,7 +118,10 @@ export const processApproval = (entityRef) => async (req, res) => {
     transaction = await sequelize.transaction();
     logDebug("TX_START");
 
-    const entity = await config.model.findByPk(entityId, {
+    const model = db[config.modelName];
+    if (!model) throw new Error(`Model ${config.modelName} tidak ditemukan di database`);
+    
+    const entity = await model.findByPk(entityId, {
       include: [{
         model: ApprovalFlow,
         as: "flow",
@@ -219,6 +228,77 @@ export const processApproval = (entityRef) => async (req, res) => {
     let finalStatusValue = null;
 
     if (action === "approve") {
+      if (transfer_proof && (entityRef === "savings_withdrawal" || entityRef === "tabungan_withdrawals" || entityRef === "financing_applications")) {
+        try {
+          const prefix = (entityRef === "savings_withdrawal" || entityRef === "tabungan_withdrawals") ? "wd" : "fin";
+          const savedPath = saveBase64File(transfer_proof, entityId, prefix);
+          updateData.transfer_proof_path = savedPath;
+          entity.transfer_proof_path = savedPath;
+        } catch (e) {
+          console.error("Failed to save transfer proof", e);
+          throw new Error("Gagal menyimpan bukti transfer: " + e.message);
+        }
+      }
+
+      // Khusus untuk withdrawal
+      if (entityRef === "savings_withdrawal" || entityRef === "tabungan_withdrawals") {
+        if (amount !== undefined) {
+          updateData.amount = amount;
+          entity.amount = amount;
+        }
+      }
+      
+      // Khusus untuk financing_applications
+      if (entityRef === "financing_applications" && (operational_cost !== undefined || req.body.discount !== undefined)) {
+        const opCost = Number(operational_cost) || 0;
+        const discountAmount = Number(req.body.discount) || 0;
+        const itemPrice = Number(entity.item_price) || 0;
+        const marginPercent = Number(entity.margin_percent) || 0;
+        const dp = Number(entity.down_payment) || 0;
+        const tenor = parseInt(entity.cooperation_months) || 1;
+
+        // (harga barang + operasional - dp)
+        const newPokok = Math.max(0, itemPrice + opCost - dp);
+        
+        // * margin
+        const newKeuntungan = newPokok * (marginPercent / 100);
+        
+        // Total Hutang
+        let newTotalTagihan = newPokok + newKeuntungan;
+        if (discountAmount > 0) {
+           newTotalTagihan = Math.max(0, newTotalTagihan - discountAmount);
+        }
+        
+        // / tenor
+        const newCicilan = Math.ceil(newTotalTagihan / tenor);
+
+        updateData.operational_cost = opCost;
+        updateData.amount_requested = newPokok;
+        updateData.margin_amount = newKeuntungan;
+        updateData.total_tagihan = newTotalTagihan;
+        updateData.monthly_installment = newCicilan;
+        updateData.discount = discountAmount;
+
+        
+        entity.operational_cost = opCost;
+        entity.amount_requested = newPokok;
+        entity.margin_amount = newKeuntungan;
+        entity.total_tagihan = newTotalTagihan;
+        entity.monthly_installment = newCicilan;
+        entity.discount = discountAmount;
+
+        // Apply discount to original transaction if this is a Pelunasan
+        if (entity.keterangan && entity.keterangan.startsWith('PELUNASAN_REF:')) {
+          const originalId = entity.keterangan.split(':')[1];
+          if (originalId) {
+            await db.FinancingApplication.update(
+              { discount: discountAmount },
+              { where: { financing_id: originalId }, transaction }
+            );
+          }
+        }
+      }
+
       if (isLastStep) {
         logDebug("FINAL_STEP_APPROVED", { entity: entity.toJSON() });
         try {
@@ -230,27 +310,12 @@ export const processApproval = (entityRef) => async (req, res) => {
         }
         updateData.current_step_id = null;
         // Don't overwrite if performFinalAction already set a more specific status (like READY_TO_PAY)
-        if (entityRef !== "savings_withdrawal") {
+        if (entityRef !== "savings_withdrawal" && entityRef !== "tabungan_withdrawals") {
           finalStatusValue = "APPROVED";
         }
       } else {
         updateData.current_step_id = nextStep.approval_step_id;
         finalStatusValue = "PENDING";
-      }
-      
-      // Khusus untuk savings_withdrawal
-      if (entityRef === "savings_withdrawal") {
-        if (amount !== undefined) {
-          updateData.amount = amount;
-        }
-        if (transfer_proof) {
-          try {
-            updateData.transfer_proof_path = saveBase64File(transfer_proof, entityId, "wd");
-          } catch (e) {
-            console.error("Failed to save transfer proof", e);
-            throw new Error("Gagal menyimpan bukti transfer: " + e.message);
-          }
-        }
       }
     } else {
       updateData.current_step_id = null;
@@ -291,7 +356,7 @@ export const processApproval = (entityRef) => async (req, res) => {
       isLastStep
     });
 
-    await config.model.update(updateData, {
+    await model.update(updateData, {
       where: { [config.pk]: entityId },
       transaction,
     });
@@ -333,7 +398,7 @@ export const processApproval = (entityRef) => async (req, res) => {
         // 1. Kirim Socket.io (Real-time UI Update)
         const socketEvent = entityRef === "members"
           ? "member_registration:update"
-          : entityRef === "savings_withdrawal"
+          : (entityRef === "savings_withdrawal" || entityRef === "tabungan_withdrawals")
           ? "withdrawals:update"
           : `${entityRef}:update`;
 
@@ -344,6 +409,10 @@ export const processApproval = (entityRef) => async (req, res) => {
           current_step_id: updateData.current_step_id,
           step_name: stepLabel,
           trigger: true,
+          approval_step_id: currentStep.approval_step_id,
+          step_order: currentStep.step_order,
+          role_name: currentStep.verifierRole?.role_name || "",
+          note: notes,
           ...(entityRef === "members" && {
             final_status: finalStatusValue === "APPROVED" ? "APPROVED" :
                          finalStatusValue === "REJECTED" ? "REJECTED" : "PENDING",

@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import db from "../models/index.js";
+import fs from "fs";
 
 let io = null;
 const users = new Map();
@@ -32,14 +33,16 @@ export const initSocket = (server) => {
     socket.on("register", (memberId) => {
       if (!memberId) return;
       
-      const targetId = String(memberId);
-      if (!users.has(targetId)) {
-        users.set(targetId, new Set());
+      const idStr = String(memberId).toLowerCase();
+      if (!users.has(idStr)) {
+        users.set(idStr, new Set());
       }
-      users.get(targetId).add(socket.id);
+      users.get(idStr).add(socket.id);
+      
+      try { fs.appendFileSync('socket.log', `--- SOCKET REGISTER ---\nMember: ${idStr}\nSocket ID: ${socket.id}\n`); } catch(e) {}
       
       console.log("--- SOCKET REGISTER ---");
-      console.log(`👤 Member: ${targetId}`);
+      console.log(`👤 Member: ${idStr}`);
       console.log(`🆔 Socket ID: ${socket.id}`);
       console.log(`📊 Total Users Online: ${users.size}`);
       console.log("-----------------------");
@@ -108,6 +111,22 @@ export const initSocket = (server) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
         const memberId = decoded.member_id;
 
+        if (category.startsWith('TAB_DEP_')) {
+          const tabunganId = category.replace('TAB_DEP_', '');
+          const withdrawals = await db.SavingsWithdrawal.findAll({
+            where: { member_saving_target_id: tabunganId, member_id: memberId },
+            attributes: ['withdrawal_id', 'member_saving_target_id', 'member_id', 'amount', 'method', 'bank_name', 'bank_account_no', 'request_datetime', 'status', 'approval_flow_id', 'current_step_id', 'invoice_id', 'midtrans_transaction_id', 'created_at', 'updated_at'],
+            order: [['created_at', 'DESC']]
+          });
+          
+          socket.emit("withdrawals:update", {
+            category,
+            withdrawals: withdrawals.map(w => w.toJSON()),
+            balance: 0
+          });
+          return;
+        }
+
         // Find savings product
         const product = await db.SavingsProduct.findOne({
           where: { product_code: category }
@@ -173,15 +192,21 @@ export const sendToUser = (memberId, event, data) => {
     return false;
   }
 
-  const targetId = String(memberId);
+  const targetId = String(memberId).toLowerCase();
   const socketSet = users.get(targetId);
+
+  const logMsg = `[SOCKET DEBUG] Attempting to send event '${event}' to Member: ${targetId}. Online users: ${Array.from(users.keys()).join(', ')}\n`;
+  try { fs.appendFileSync('socket.log', logMsg); } catch(e) {}
 
   if (socketSet && socketSet.size > 0) {
     socketSet.forEach(socketId => {
+      try { fs.appendFileSync('socket.log', `[SOCKET DEBUG] Sending event '${event}' to Socket ID: ${socketId}\n`); } catch(e) {}
       io.to(socketId).emit(event, data);
     });
     return true;
   } else {
+    try { fs.appendFileSync('socket.log', `[SOCKET DEBUG] Failed to send: Member ${targetId} is NOT online.\n`); } catch(e) {}
+    console.warn(`[SOCKET DEBUG] Failed to send: Member ${targetId} is NOT online or has no active sockets.`);
     return false;
   }
 };

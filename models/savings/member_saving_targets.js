@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
 const MemberSavingTarget = (sequelize) => {
   const { DataTypes } = Sequelize;
@@ -44,11 +45,31 @@ const MemberSavingTarget = (sequelize) => {
       allowNull: true,
       defaultValue: 'PENDING',
     },
+    target_amount: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+    },
+    term_months: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    monthly_deposit: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+    },
   }, { 
     freezeTableName: true, 
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
+  });
+
+  MemberSavingTargetModel.addHook('afterSave', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
+  });
+
+  MemberSavingTargetModel.addHook('afterDestroy', async (instance, options) => {
+    setImmediate(() => syncFinancialSummary(sequelize, instance.member_id));
   });
 
   return MemberSavingTargetModel;

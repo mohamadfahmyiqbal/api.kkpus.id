@@ -10,6 +10,7 @@ import {
 import { validatePassword } from "../../../utils/passwordValidator.js";
 import forgotPasswordService from "../../../services/forgotPasswordService.js";
 import { logger } from "../../../utils/logger.js";
+import bcrypt from "bcrypt";
 
 /**
  * Send OTP for password reset
@@ -21,7 +22,7 @@ export const sendOTP = async (req, res) => {
   if (!emailHp) {
     return res.status(400).json({
       success: false,
-      message: "Email atau nomor handphone wajib diisi."
+      message: "Email wajib diisi."
     });
   }
 
@@ -213,7 +214,6 @@ export const resetPassword = async (req, res) => {
     }
 
     // Hash new password
-    const bcrypt = require('bcrypt');
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(newPassword, salt);
 

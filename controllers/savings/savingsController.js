@@ -1,5 +1,6 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
 const createSavingsApplication = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -42,6 +43,9 @@ const createSavingsApplication = async (req, res) => {
       }, { transaction: t });
 
       await t.commit();
+
+      // Sync report list
+      await syncSavingsReportList(db.sequelize);
 
       // Kirim notifikasi
       setImmediate(async () => {

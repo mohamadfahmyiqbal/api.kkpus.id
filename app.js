@@ -1,7 +1,7 @@
 // app.js
 
 import "dotenv/config";
-import express from "express";
+import express from "express"; 
 import http from "http";
 import https from "https";
 import fs from "fs";
@@ -27,11 +27,12 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://*.googleapis.com", "https://*.mozilla.com", "https://*.push.apple.com"],
+        defaultSrc: ["'self'", "https://*.midtrans.com", "https://*.veritrans.co.id"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://*.midtrans.com", "https://*.googleapis.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.midtrans.com", "https://*.veritrans.co.id"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: ["'self'", "https://*.googleapis.com", "https://*.mozilla.com", "https://*.push.apple.com", "https://*.midtrans.com", "https://*.veritrans.co.id"],
+        frameSrc: ["'self'", "https://*.midtrans.com", "https://*.veritrans.co.id"],
       },
     },
   }),
@@ -106,7 +107,7 @@ app.use(
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
-app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use((req, res, next) => {
   if (io) req.io = io;

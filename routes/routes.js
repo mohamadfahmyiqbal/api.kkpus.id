@@ -40,8 +40,8 @@ const router = express.Router();
 
 router.use("/webhooks", webhookRoute);
 router.use("/api/approvals", approvalsRoute);
-router.use("/api/auth", authRoute);
 router.use("/api/auth/forgot-password", forgotPasswordRoute);
+router.use("/api/auth", authRoute);
 router.use("/api/anggota", anggotaRoute);
 router.use("/api/notifikasi", notificationRoute);
 router.use("/api/billing", billingRoute);

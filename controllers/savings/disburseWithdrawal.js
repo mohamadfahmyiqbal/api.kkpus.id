@@ -1,5 +1,7 @@
 import db from "../../models/index.js";
 import { initiateMidtransDisbursement } from "../../services/midtransDisbursement.js";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
+import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
 export const processMidtransDisbursement = async (withdrawal_id) => {
   const t = await db.sequelize.transaction();
@@ -94,6 +96,12 @@ export const disburseWithdrawal = async (req, res) => {
     }
 
     await t.commit();
+
+    if (wd.method === "TUNAI") {
+      await syncFinancialSummary(db.sequelize, wd.member_id);
+      await syncSavingsReportList(db.sequelize);
+    }
+
     res.json({
       success: true,
       message: wd.method === "TUNAI" ? "Pembayaran tunai berhasil dikonfirmasi." : "Disbursement diproses, menunggu konfirmasi bank.",

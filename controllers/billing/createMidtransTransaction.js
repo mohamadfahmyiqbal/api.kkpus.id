@@ -6,8 +6,8 @@ import { jwtEncode } from "../../utils/jwtHelpers.js";
 
 const { Bill, BillItem, BillType, Transaction, Member } = db;
 
-const snap = new midtransClient.Snap({
-  isProduction: false,
+const core = new midtransClient.CoreApi({
+  isProduction: process.env.NODE_ENV === "production",
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
@@ -19,7 +19,11 @@ export const createMidtransTransaction = async (req, res) => {
       return res.status(401).json({ status: false, message: "Autentikasi gagal." });
     }
 
-    const { bill_item_ids, tx_category, amount } = req.body;
+    const { bill_item_ids, tx_category, amount, payment_type } = req.body;
+    
+    if (!payment_type) {
+      return res.status(400).json({ status: false, message: "Metode pembayaran harus dipilih." });
+    }
     dbTransaction = await db.sequelize.transaction();
 
     // 1. Validasi Profil Anggota (Gunakan lock untuk konsistensi saldo nantinya)
@@ -106,25 +110,38 @@ export const createMidtransTransaction = async (req, res) => {
         .filter(id => id && String(id).trim() !== '');
 
       const isDP = sanitizedIds.length > 0 && String(sanitizedIds[0]).startsWith('dp-');
+      const { financing_id } = req.body;
 
       if (isDP || sanitizedIds.length === 0) {
-        // Buat BillItem baru untuk DP secara on-the-fly
+        // Buat BillItem baru untuk DP atau Pelunasan secara on-the-fly
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-          throw new Error("Nominal down payment tidak valid.");
+          throw new Error("Nominal pembayaran tidak valid.");
         }
         
         total_gross = parsedAmount;
-        const typeDP = await BillType.findOne({ where: { type_code: "TRANSACTION_DOWN_PAYMENT" }, transaction: dbTransaction });
+        
+        // Cek apakah ini pelunasan berdasarkan financing_id
+        let isPelunasan = false;
+        if (financing_id) {
+          const app = await db.FinancingApplication.findByPk(financing_id, { transaction: dbTransaction });
+          if (app && app.category && app.category.toLowerCase().includes('pelunasan')) {
+            isPelunasan = true;
+          }
+        }
+
+        const typeCode = isPelunasan ? "TRANSACTION_INSTALLMENT" : "TRANSACTION_DOWN_PAYMENT";
+        const typeDP = await BillType.findOne({ where: { type_code: typeCode }, transaction: dbTransaction });
         bill_type_id = typeDP?.bill_type_id || 99; 
 
         const newItem = await BillItem.create({
           member_id: member.member_id,
           bill_type_id: bill_type_id,
+          financing_application_id: financing_id || null, // Link ke aplikasi jika ada
           amount: total_gross,
           status: "UNPAID",
-          description: "Down Payment Pembiayaan",
-          category_code: "TRANSACTION_DOWN_PAYMENT",
+          description: isPelunasan ? "Pembayaran Pelunasan Pembiayaan" : "Down Payment Pembiayaan",
+          category_code: typeCode,
           due_date: new Date()
         }, { transaction: dbTransaction });
 
@@ -133,7 +150,7 @@ export const createMidtransTransaction = async (req, res) => {
           id: `ITEM-${newItem.bill_item_id}`, 
           price: total_gross, 
           quantity: 1, 
-          name: "Down Payment Pembiayaan" 
+          name: isPelunasan ? "Pelunasan Pembiayaan" : "Down Payment Pembiayaan"
         }];
       } else {
         if (sanitizedIds.length === 0) throw new Error("Item tagihan tidak dipilih.");
@@ -236,7 +253,7 @@ export const createMidtransTransaction = async (req, res) => {
       is_ledger_recorded: false
     }, { transaction: dbTransaction });
 
-    // 5. REQUEST KE MIDTRANS SNAP
+    // 5. REQUEST KE MIDTRANS CORE API
     const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
     const pageName = "invoicePage";
     const returnPage = tx_category === "MEMBER_REGISTRATION" ? "registrationPage" : "billingPage";
@@ -250,25 +267,102 @@ export const createMidtransTransaction = async (req, res) => {
     const successToken = jwtEncode({ ...basePayload, status: "success" });
     const errorToken = jwtEncode({ ...basePayload, status: "error" });
 
-    const midtransTx = await snap.createTransaction({
+    let midtrans_payment_type = "";
+    let payment_params = {};
+    let fee = 0;
+
+    switch (payment_type.toLowerCase()) {
+      case 'bca':
+      case 'bni':
+      case 'bri':
+      case 'cimb':
+      case 'permata':
+        midtrans_payment_type = "bank_transfer";
+        fee = 4440;
+        payment_params = {
+          bank_transfer: {
+            bank: payment_type.toLowerCase()
+          }
+        };
+        break;
+      case 'mandiri':
+        midtrans_payment_type = "echannel";
+        fee = 4440;
+        payment_params = {
+          echannel: {
+            bill_info1: "Pembayaran",
+            bill_info2: "Tagihan Koperasi"
+          }
+        };
+        break;
+      case 'gopay':
+        midtrans_payment_type = "gopay";
+        fee = Math.round(total_gross * 0.02);
+        payment_params = {
+          gopay: {
+            enable_callback: true,
+            callback_url: `${FRONTEND_URL}/${successToken}`
+          }
+        };
+        break;
+      case 'shopeepay':
+        midtrans_payment_type = "shopeepay";
+        fee = Math.round(total_gross * 0.02);
+        payment_params = {
+          shopeepay: {
+            callback_url: `${FRONTEND_URL}/${successToken}`
+          }
+        };
+        break;
+      case 'qris':
+        midtrans_payment_type = "qris";
+        fee = Math.round(total_gross * 0.007);
+        break;
+      case 'indomaret':
+      case 'alfamart':
+        midtrans_payment_type = "cstore";
+        fee = 5550;
+        payment_params = {
+          cstore: {
+            store: payment_type.toLowerCase(),
+            message: "Tagihan Koperasi"
+          }
+        };
+        break;
+      case 'credit_card':
+        midtrans_payment_type = "credit_card";
+        fee = Math.round(total_gross * 0.029) + 2000;
+        payment_params = {
+          credit_card: {
+            secure: true
+          }
+        };
+        break;
+      default:
+        throw new Error("Metode pembayaran tidak didukung.");
+    }
+
+    // Add fee to gross and items
+    if (fee > 0) {
+      total_gross += fee;
+      item_details.push({
+        id: 'FEE-1',
+        price: fee,
+        quantity: 1,
+        name: 'Biaya Transaksi / Layanan'
+      });
+    }
+
+    const midtransTx = await core.charge({
+      payment_type: midtrans_payment_type,
       transaction_details: { order_id, gross_amount: total_gross },
       item_details: item_details,
       customer_details: { 
         first_name: member.full_name, 
-        email: member.email || "" 
+        email: member.email || "no-email@example.com"
       },
-      gopay: {
-        enable_callback: true,
-        callback_url: `${FRONTEND_URL}/${successToken}`
-      },
-      shopeepay: {
-        callback_url: `${FRONTEND_URL}/${successToken}`
-      },
-      callbacks: {
-        finish: `${FRONTEND_URL}/${successToken}`,
-        error: `${FRONTEND_URL}/${errorToken}`,
-      },
-      expiry: { unit: "hours", duration: 24 }
+      ...payment_params,
+      custom_field1: "koperasi_digital"
     });
 
     // 6. COMMIT SEMUA PERUBAHAN
@@ -277,7 +371,7 @@ export const createMidtransTransaction = async (req, res) => {
     return res.status(200).json({
       status: true,
       data: {
-        snapToken: midtransTx.token,
+        midtransResponse: midtransTx,
         billId: generatedBillId,
         orderId: order_id
       }

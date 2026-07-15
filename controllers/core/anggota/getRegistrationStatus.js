@@ -45,6 +45,11 @@ export const getRegistrationStatus = async (req, res) => {
               ]
             }
           ]
+        },
+        {
+          model: db.Approval,
+          as: 'approvals',
+          required: false
         }
       ],
       // Berdasarkan log error Anda, gunakan createdAt (CamelCase)
