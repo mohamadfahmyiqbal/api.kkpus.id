@@ -1,0 +1,38 @@
+name: Deploy API to VPS
+
+on:
+  push:
+    branches: [ "master" ] # Disesuaikan karena branch Anda 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Wajib ada karena secret Anda tersimpan di Environments GitHub
+    environment: 
+      name: production 
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up SSH Key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add VPS to Known Hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to VPS via SSH
+      run: |
+        ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd /var/www/api.kkpus.id
+          git pull origin master
+          
+          # Hapus tanda pagar (#) di bawah ini jika aplikasi Anda Node.js/PM2:
+          # npm install
+          # pm2 restart api-kkpus  # Ganti dengan nama app PM2 Anda di VPS (jika ada)
+        EOF
