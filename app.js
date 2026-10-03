@@ -116,7 +116,7 @@ try {
 
 let serverInstance, io;
 const PORT = process.env.HTTP_PORT || 3000;
-const HTTPS_PORT = process.env.HTTPS_PORT || 3001;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3445;
 const portToUse = sslOptions ? HTTPS_PORT : PORT;
 
 if (sslOptions) {
