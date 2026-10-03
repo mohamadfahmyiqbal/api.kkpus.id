@@ -2,13 +2,12 @@ name: Deploy API to VPS
 
 on:
   push:
-    branches: [ "master" ] # Disesuaikan karena branch Anda 'master'
+    branches: [ "master" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
-    # Wajib ada karena secret Anda tersimpan di Environments GitHub
     environment: 
       name: production 
 
@@ -24,7 +23,7 @@ jobs:
     - name: Add VPS to Known Hosts
       run: |
         mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
     - name: Deploy to VPS via SSH
       run: |
@@ -32,7 +31,6 @@ jobs:
           cd /var/www/api.kkpus.id
           git pull origin master
           
-          # Hapus tanda pagar (#) di bawah ini jika aplikasi Anda Node.js/PM2:
           # npm install
-          # pm2 restart api-kkpus  # Ganti dengan nama app PM2 Anda di VPS (jika ada)
+          # pm2 restart api-kkpus
         EOF
