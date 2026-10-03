@@ -28,5 +28,6 @@ jobs:
         
         ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
           cd /var/www/api.kkpus.id
-          git pull origin master
+          git fetch origin master
+          git reset --hard origin/master
         EOF
