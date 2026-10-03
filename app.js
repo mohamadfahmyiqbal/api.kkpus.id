@@ -90,9 +90,21 @@ try {
     return path.isAbsolute(p) ? p : path.resolve(__dirname, p);
   };
 
-  const keyPath = resolvePath(process.env.SSL_KEY_PATH, path.resolve(__dirname, "../server.key"));
-  const certPath = resolvePath(process.env.SSL_CERT_PATH, path.resolve(__dirname, "../server.crt"));
+  const isProduction = process.env.NODE_ENV === "production";
+  const defaultProdKey = path.resolve(__dirname, "config/certs/production/kkpusid.key");
+  const defaultProdCert = path.resolve(__dirname, "config/certs/production/kkpus_id.crt");
+
+  let keyPath = resolvePath(process.env.SSL_KEY_PATH, isProduction ? defaultProdKey : path.resolve(__dirname, "../server.key"));
+  let certPath = resolvePath(process.env.SSL_CERT_PATH, isProduction ? defaultProdCert : path.resolve(__dirname, "../server.crt"));
   const caPath = resolvePath(process.env.SSL_CA_PATH, path.resolve(__dirname, "../myCA.crt"));
+
+  // Fallback ke config/certs/production jika file default sebelumnya tidak ditemukan
+  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+    if (fs.existsSync(defaultProdKey) && fs.existsSync(defaultProdCert)) {
+      keyPath = defaultProdKey;
+      certPath = defaultProdCert;
+    }
+  }
 
   if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     sslOptions = {
