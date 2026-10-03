@@ -23,7 +23,7 @@ jobs:
     - name: Add VPS to Known Hosts
       run: |
         mkdir -p ~/.ssh
-        ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
     - name: Deploy to VPS via SSH
       run: |
