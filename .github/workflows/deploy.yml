@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     
     environment: 
-      name: production 
+      name: VPS HOST 
 
     steps:
     - name: Checkout Code
@@ -25,7 +25,4 @@ jobs:
         ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
           cd /var/www/api.kkpus.id
           git pull origin master
-          
-          # npm install
-          # pm2 restart api-kkpus
         EOF
