@@ -63,7 +63,7 @@ const SavingsWithdrawal = (sequelize) => {
         type: DataTypes.UUID,
       },
       midtrans_transaction_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(255),
       },
       transfer_proof_path: {
         type: DataTypes.STRING(255),

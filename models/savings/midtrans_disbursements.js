@@ -45,7 +45,7 @@ const MidtransDisbursement = (sequelize) => {
         defaultValue: "PENDING",
       },
       midtrans_transaction_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(255),
       },
       created_at: {
         type: DataTypes.DATE,
