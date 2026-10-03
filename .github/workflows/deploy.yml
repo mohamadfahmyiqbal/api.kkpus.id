@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     
     environment: 
-      name: VPS HOST 
+      name: VPS_HOST 
 
     steps:
     - name: Checkout Code
