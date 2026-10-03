@@ -86,33 +86,59 @@ export const disburseWithdrawal = async (req, res) => {
     // Jangan kurangi lagi di sini untuk menghindari double deduction
 
     let result;
-    if (wd.method === "TUNAI") {
-      // For cash disbursement, just update status
+    const isManualTransfer = req.body?.manual === true || req.body?.mode === "MANUAL";
+
+    if (wd.method === "TUNAI" || isManualTransfer) {
+      // For cash disbursement or confirmed manual bank transfer
       await wd.update(
         {
           status: "DISBURSED",
           disbursed_at: new Date(),
+          transfer_proof_path: req.body?.transfer_proof_path || wd.transfer_proof_path || null,
         },
         { transaction: t }
       );
-      result = { success: true, message: "Pembayaran tunai berhasil dikonfirmasi." };
+      result = {
+        success: true,
+        message: wd.method === "TUNAI" ? "Pembayaran tunai berhasil dikonfirmasi." : "Transfer manual berhasil dikonfirmasi.",
+      };
     } else if (wd.method === "TRANSFER") {
-      // For bank transfer, use DOKU Cash Out / Disbursement (reuse same transaction)
-      result = await processDokuDisbursement(entityId, t);
+      // For automated bank transfer via DOKU
+      try {
+        result = await processDokuDisbursement(entityId, t);
+      } catch (disburseError) {
+        // Jika parameter allow_manual_fallback dikirim atau diminta fallback
+        if (req.body?.allow_fallback === true) {
+          console.warn("[disburseWithdrawal] DOKU disbursement gagal, beralih ke manual transfer:", disburseError.message);
+          await wd.update(
+            {
+              status: "DISBURSED",
+              disbursed_at: new Date(),
+              transfer_proof_path: req.body?.transfer_proof_path || null,
+            },
+            { transaction: t }
+          );
+          result = {
+            success: true,
+            message: `Disbursement otomatis DOKU gagal (${disburseError.message}), pencairan diselesaikan sebagai transfer manual.`,
+          };
+        } else {
+          throw disburseError;
+        }
+      }
     } else {
       throw new Error("Metode pembayaran tidak valid.");
     }
 
     await t.commit();
 
-    if (wd.method === "TUNAI") {
-      await syncFinancialSummary(db.sequelize, wd.member_id);
-      await syncSavingsReportList(db.sequelize);
-    }
+    // Trigger laporan sinkronisasi untuk semua pencairan yang berstatus DISBURSED
+    await syncFinancialSummary(db.sequelize, wd.member_id);
+    await syncSavingsReportList(db.sequelize);
 
     res.json({
       success: true,
-      message: wd.method === "TUNAI" ? "Pembayaran tunai berhasil dikonfirmasi." : "Disbursement via DOKU berhasil diproses ke rekening anggota.",
+      message: result.message || (wd.method === "TUNAI" ? "Pembayaran tunai berhasil dikonfirmasi." : "Disbursement berhasil diproses ke rekening anggota."),
       data: result,
     });
   } catch (error) {

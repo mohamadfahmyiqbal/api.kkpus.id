@@ -136,10 +136,19 @@ export const dokuRequest = async ({ endpoint, method = "POST", data = null }) =>
   } catch (error) {
     const errData = error.response?.data || error.message;
     console.error(`[DOKU API Error] ${method} ${endpoint}:`, errData);
-    throw new Error(
-      (errData?.error?.message || errData?.message || typeof errData === "string" ? errData : null) ||
-      `DOKU API Error (${error.response?.status || 500})`
-    );
+
+    let errorMsg = "";
+    if (typeof errData === "string") {
+      errorMsg = errData;
+    } else if (errData && typeof errData === "object") {
+      errorMsg =
+        errData.error?.message ||
+        errData.message ||
+        (Array.isArray(errData.errors) ? errData.errors.map(e => e.message || JSON.stringify(e)).join(", ") : null) ||
+        JSON.stringify(errData);
+    }
+
+    throw new Error(errorMsg || `DOKU API Error (${error.response?.status || 500})`);
   }
 };
 
