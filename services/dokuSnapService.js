@@ -171,10 +171,11 @@ export const transferBankSnap = async ({
   const accessToken = await getDokuSnapAccessToken();
   const timestamp = getSnapTimestamp();
   const endpoint = "/snap/v1.1/emoney/transfer-bank";
-  const externalId = `EXT-${partnerReferenceNo}`;
+  const uniqueRef = `${partnerReferenceNo}-${Date.now().toString().slice(-6)}`;
+  const externalId = `EXT-${uniqueRef}`;
 
   const payload = {
-    partnerReferenceNo: String(partnerReferenceNo).slice(0, 64),
+    partnerReferenceNo: String(uniqueRef).slice(0, 64),
     customerNumber: String(beneficiaryAccountNumber).slice(0, 32),
     beneficiaryAccountNumber: String(beneficiaryAccountNumber).slice(0, 32),
     beneficiaryBankCode: String(beneficiaryBankCode),
