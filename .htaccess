@@ -1,0 +1,13 @@
+DirectoryIndex disabled
+RewriteEngine On
+
+# Enforce HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Proxy requests to Node.js backend server
+RewriteCond %{HTTP_HOST} ^api\.kkpus\.id$ [NC]
+RewriteRule ^(.*)$ http://202.52.146.217:5010/$1 [P,L]
+
+# Prevent directory listing
+Options -Indexes
