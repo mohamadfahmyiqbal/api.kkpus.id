@@ -1,0 +1,68 @@
+import db from "../../models/index.js";
+
+export const createVoluntaryBill = async (req, res) => {
+  try {
+    const { category, amount, tabungan_id } = req.body;
+    const memberId = req.userId; 
+
+    const parsedAmount = parseFloat(amount);
+
+    // 1. Validasi Input
+    if (!parsedAmount || parsedAmount < 1000) {
+      return res.status(400).json({
+        status: false,
+        message: "Nominal setoran minimal Rp 1.000",
+      });
+    }
+
+    // 2. Cari Tipe Tagihan (untuk mendapatkan bill_type_id)
+    const billType = await db.BillType.findOne({
+      where: { type_code: category }
+    });
+    
+    if (!billType) {
+      return res.status(404).json({
+        status: false,
+        message: `Kategori '${category}' tidak ditemukan.`,
+      });
+    }
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    // 3. Buat BillItem Baru
+    const newItem = await db.BillItem.create({
+      member_id: memberId,
+      bill_type_id: billType.bill_type_id,
+      category_code: tabungan_id ? `TAB_DEP_${tabungan_id}` : category,
+      amount: parsedAmount,
+      description: tabungan_id ? `Setoran Manual Tabungan` : `Setoran ${billType.type_name}`,
+      due_date: dueDate,
+      status: "UNPAID",
+    });
+
+    // 4. Ambil bill_item_id dari item yang BARU SAJA dibuat
+    // Masukkan ke dalam array agar konsisten dengan kebutuhan InvoicePage
+    const billItemIds = [newItem.bill_item_id];
+
+    console.log("ID Tagihan baru saja dibuat:", billItemIds);
+
+    return res.status(201).json({
+      status: true,
+      message: "Tagihan baru berhasil dibuat",
+      data: {
+        bill_item_ids: billItemIds, // Mengembalikan [ID_BARU]
+        category: category,
+        amount: newItem.amount
+      },
+    });
+
+  } catch (error) {
+    console.error("Error Create Voluntary Bill:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Gagal memproses data simpanan.",
+      error: error.message
+    });
+  }
+};
