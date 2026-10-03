@@ -65,13 +65,26 @@ export const disburseWithdrawal = async (req, res) => {
     const { entityId } = req.params;
     if (!entityId) throw new Error("ID Penarikan diperlukan.");
 
-    const wd = await db.SavingsWithdrawal.findByPk(entityId, {
+    const { Op } = db.Sequelize || {};
+    let wd = await db.SavingsWithdrawal.findByPk(entityId, {
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
 
+    // Support pencarian menggunakan prefix short-id (e.g. 8 karakter pertama yang tampil di UI)
+    if (!wd && Op && entityId.length >= 6 && entityId.length < 36) {
+      wd = await db.SavingsWithdrawal.findOne({
+        where: db.Sequelize.where(
+          db.Sequelize.cast(db.Sequelize.col("withdrawal_id"), "CHAR"),
+          { [Op.like]: `${entityId}%` }
+        ),
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+    }
+
     if (!wd) {
-      throw new Error("Penarikan tidak ditemukan.");
+      throw new Error(`Penarikan dengan ID '${entityId}' tidak ditemukan.`);
     }
 
     if (wd.status === "DISBURSED") {

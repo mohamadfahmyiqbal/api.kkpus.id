@@ -2,6 +2,7 @@
 import axios from "axios";
 import db from "../models/index.js";
 import { dokuRequest, getDokuConfig } from "./dokuService.js";
+import { transferBankSnap } from "./dokuSnapService.js";
 
 /**
  * Normalisasi kode bank lokal ke format standar DOKU Cash Out / Transfer Bank
@@ -79,29 +80,32 @@ export const initiateDokuDisbursement = async (data, transaction) => {
   try {
     console.log(`[DOKU Disbursement] Mengirim transfer WD-${withdrawalId} sebesar Rp ${amount} ke ${formattedBankCode} ${targetAccountNumber}`);
 
-    // Endpoint transfer dana keluar DOKU (Cash Out / Payouts)
-    const endpoint = "/cash-out/v1/transfer";
-    const response = await dokuRequest({
-      endpoint,
-      method: "POST",
-      data: payload,
+    // Eksekusi via modul resmi SNAP Kirim DOKU
+    const snapResult = await transferBankSnap({
+      partnerReferenceNo: `WD-${withdrawalId}`,
+      beneficiaryBankCode: formattedBankCode,
+      beneficiaryAccountNumber: targetAccountNumber,
+      beneficiaryName: bankAccount.accountHolder || memberName || "Anggota Koperasi",
+      amount,
+      notes: `Pencairan Simpanan KKPUS - WD-${withdrawalId}`,
     });
 
     const isSuccess =
-      response?.status === "SUCCESS" ||
-      response?.transaction?.status === "SUCCESS" ||
-      response?.order?.status === "SUCCESS";
+      snapResult?.responseCode === "2000000" ||
+      snapResult?.responseCode === "2005400" ||
+      snapResult?.status === "SUCCESS" ||
+      !snapResult?.responseCode;
 
     const transactionId =
-      response?.transaction_id ||
-      response?.transaction?.id ||
-      response?.order?.invoice_number ||
+      snapResult?.referenceNo ||
+      snapResult?.partnerReferenceNo ||
+      snapResult?.transaction_id ||
       `DOKU-WD-${withdrawalId}`;
 
     if (log) {
       await log.update(
         {
-          response_data: response,
+          response_data: snapResult,
           status: isSuccess ? "SUCCESS" : "PENDING",
           midtrans_transaction_id: transactionId,
         },
@@ -112,7 +116,7 @@ export const initiateDokuDisbursement = async (data, transaction) => {
     return {
       status: "success",
       transaction_id: transactionId,
-      raw: response,
+      raw: snapResult,
     };
   } catch (error) {
     console.error("[DOKU Disbursement Error]:", error.message);
