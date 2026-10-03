@@ -20,9 +20,13 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy to VPS via SSH
+    - name: Debug and Deploy to VPS
       run: |
-        ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+        echo "Port: '${{ secrets.VPS_PORT }}'"
+        echo "Username: '${{ secrets.VPS_USERNAME }}'"
+        echo "Host: '${{ secrets.VPS_HOST }}'"
+        
+        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
           cd /var/www/api.kkpus.id
           git pull origin master
         EOF
