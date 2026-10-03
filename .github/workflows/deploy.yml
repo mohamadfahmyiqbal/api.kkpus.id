@@ -27,7 +27,7 @@ jobs:
 
     - name: Deploy to VPS via SSH
       run: |
-        ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+        ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
           cd /var/www/api.kkpus.id
           git pull origin master
           
