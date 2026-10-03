@@ -3,8 +3,8 @@ import { initiateDokuDisbursement } from "../../services/dokuDisbursementService
 import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
-export const processDokuDisbursement = async (withdrawal_id) => {
-  const t = await db.sequelize.transaction();
+export const processDokuDisbursement = async (withdrawal_id, existingTransaction = null) => {
+  const t = existingTransaction || (await db.sequelize.transaction());
 
   try {
     const wd = await db.SavingsWithdrawal.findByPk(withdrawal_id, {
@@ -13,7 +13,7 @@ export const processDokuDisbursement = async (withdrawal_id) => {
     });
 
     if (!wd || (wd.status !== "READY_TO_PAY" && wd.status !== "APPROVED")) {
-      throw new Error("Penarikan tidak ditemukan atau belum siap untuk pencairan.");
+      throw new Error(`Penarikan tidak ditemukan atau status tidak sesuai (${wd?.status || "tidak ditemukan"}).`);
     }
 
     const member = await db.Member.findByPk(wd.member_id, { transaction: t });
@@ -43,10 +43,14 @@ export const processDokuDisbursement = async (withdrawal_id) => {
       { transaction: t }
     );
 
-    await t.commit();
+    if (!existingTransaction) {
+      await t.commit();
+    }
     return { success: true, dokuResult };
   } catch (error) {
-    if (t) await t.rollback();
+    if (!existingTransaction && t && !t.finished) {
+      await t.rollback();
+    }
     throw error;
   }
 };
@@ -93,8 +97,8 @@ export const disburseWithdrawal = async (req, res) => {
       );
       result = { success: true, message: "Pembayaran tunai berhasil dikonfirmasi." };
     } else if (wd.method === "TRANSFER") {
-      // For bank transfer, use DOKU Cash Out / Disbursement
-      result = await processDokuDisbursement(entityId);
+      // For bank transfer, use DOKU Cash Out / Disbursement (reuse same transaction)
+      result = await processDokuDisbursement(entityId, t);
     } else {
       throw new Error("Metode pembayaran tidak valid.");
     }
@@ -112,7 +116,14 @@ export const disburseWithdrawal = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (t) await t.rollback();
+    console.error("[disburseWithdrawal Error]:", error);
+    if (t && !t.finished) {
+      try {
+        await t.rollback();
+      } catch (rbErr) {
+        console.warn("[disburseWithdrawal] Rollback error:", rbErr.message);
+      }
+    }
     res.status(400).json({
       success: false,
       message: error.message,
