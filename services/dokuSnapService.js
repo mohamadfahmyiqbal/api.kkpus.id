@@ -164,6 +164,7 @@ export const transferBankSnap = async ({
   beneficiaryBankCode,
   beneficiaryAccountNumber,
   beneficiaryName,
+  beneficiaryPhone,
   amount,
   notes,
 }) => {
@@ -173,6 +174,19 @@ export const transferBankSnap = async ({
   const endpoint = "/snap/v1.1/emoney/transfer-bank";
   const uniqueRef = `${partnerReferenceNo}-${Date.now().toString().slice(-6)}`;
   const externalId = `EXT-${uniqueRef}`;
+
+  // Format nomor HP standar internasional DOKU (misal: 628xxx)
+  let cleanPhone = String(beneficiaryPhone || "").replace(/\D/g, "");
+  if (cleanPhone.startsWith("0")) {
+    cleanPhone = "62" + cleanPhone.slice(1);
+  } else if (!cleanPhone.startsWith("62")) {
+    cleanPhone = cleanPhone ? "62" + cleanPhone : "6281234567890";
+  }
+
+  // Pecah nama depan & belakang untuk kelengkapan standar Remit DOKU
+  const nameParts = String(beneficiaryName || "Anggota Koperasi").trim().split(/\s+/);
+  const firstName = nameParts[0] || "Anggota";
+  const lastName = nameParts.slice(1).join(" ") || firstName;
 
   const payload = {
     partnerReferenceNo: String(uniqueRef).slice(0, 64),
@@ -184,9 +198,13 @@ export const transferBankSnap = async ({
       currency: "IDR",
     },
     additionalInfo: {
+      channelCode: "07",
       beneficiaryBankCode: String(beneficiaryBankCode),
       beneficiaryAccountName: beneficiaryName || "Anggota Koperasi",
       beneficiaryName: beneficiaryName || "Anggota Koperasi",
+      beneficiaryFirstName: firstName,
+      beneficiaryLastName: lastName,
+      beneficiaryPhoneNumber: cleanPhone,
       senderCountryCode: "ID",
       notes: notes || `Pencairan Simpanan KKPUS - ${partnerReferenceNo}`,
     },
