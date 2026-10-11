@@ -24,6 +24,7 @@ export const processDokuDisbursement = async (withdrawal_id, existingTransaction
         amount: parseFloat(wd.amount),
         memberId: wd.member_id,
         memberName: member?.full_name || member?.name || "Member",
+        memberPhone: member?.phone_number || "",
         bankAccount: {
           bank: wd.bank_name,
           accountNumber: wd.bank_account_no,

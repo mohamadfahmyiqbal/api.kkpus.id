@@ -139,6 +139,7 @@ export const initiateDokuDisbursement = async (data, transaction) => {
       beneficiaryBankCode: formattedBankCode,
       beneficiaryAccountNumber: targetAccountNumber,
       beneficiaryName: bankAccount.accountHolder || memberName || "Anggota Koperasi",
+      beneficiaryPhone: data.memberPhone || data.phone || "",
       amount,
       notes: `Pencairan Simpanan KKPUS - WD-${withdrawalId}`,
     });
