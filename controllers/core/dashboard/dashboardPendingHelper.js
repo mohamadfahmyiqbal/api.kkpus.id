@@ -3,8 +3,15 @@
 import db from "../../../models/index.js";
 import { Op } from "sequelize";
 import { formatRp } from "./dashboardStatsHelper.js";
+import {
+  getApprovalIncludes,
+  normalizeApprovals,
+  buildSukukApprovalProgress,
+} from "./pendingApprovalFormatters.js";
 
 export const fetchPendingApprovals = async (programCategories) => {
+  const approvalIncludes = getApprovalIncludes(true);
+
   // A. Simpanan (Pencairan)
   const pendingWithdrawals = await db.SavingsWithdrawal.findAll({
     where: {
@@ -12,38 +19,22 @@ export const fetchPendingApprovals = async (programCategories) => {
       member_saving_target_id: { [Op.is]: null },
     },
     include: [
-      { model: db.MemberSavingsAccount, as: "savingsAccount", include: [{ model: db.Member, as: "member" }] },
       {
-        model: db.ApprovalFlow,
-        as: "flow",
-        include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
+        model: db.MemberSavingsAccount,
+        as: "savingsAccount",
+        include: [{ model: db.Member, as: "member" }],
       },
-      {
-        model: db.ApprovalStep,
-        as: "currentStep",
-        include: [{ model: db.UserRole, as: "verifierRole" }],
-      },
-      {
-        model: db.Approval,
-        as: "approvals",
-        required: false,
-        include: [
-          {
-            model: db.ApprovalStep,
-            as: "step",
-            include: [{ model: db.UserRole, as: "verifierRole", attributes: ["role_name"] }],
-          },
-        ],
-      },
+      ...approvalIncludes,
     ],
     limit: 10,
     order: [["created_at", "DESC"]],
   });
 
   // B. Jual Beli
-  const jualBeliCategoryCondition = programCategories.length > 0
-    ? { [Op.notIn]: [...programCategories, "Pendanaan Syariah UMKM"] }
-    : { [Op.ne]: "Pendanaan Syariah UMKM" };
+  const jualBeliCategoryCondition =
+    programCategories.length > 0
+      ? { [Op.notIn]: [...programCategories, "Pendanaan Syariah UMKM"] }
+      : { [Op.ne]: "Pendanaan Syariah UMKM" };
 
   const pendingJualBeli = await db.FinancingApplication.findAll({
     where: {
@@ -52,17 +43,7 @@ export const fetchPendingApprovals = async (programCategories) => {
     },
     include: [
       { model: db.Member, as: "member", attributes: ["full_name"] },
-      {
-        model: db.ApprovalFlow,
-        as: "flow",
-        include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-      },
-      { model: db.ApprovalStep, as: "currentStep", include: [{ model: db.UserRole, as: "verifierRole" }] },
-      {
-        model: db.Approval,
-        as: "approvals",
-        include: [{ model: db.ApprovalStep, as: "step", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-      },
+      ...approvalIncludes,
     ],
     limit: 10,
     order: [["created_at", "DESC"]],
@@ -78,17 +59,7 @@ export const fetchPendingApprovals = async (programCategories) => {
       },
       include: [
         { model: db.Member, as: "member", attributes: ["full_name"] },
-        {
-          model: db.ApprovalFlow,
-          as: "flow",
-          include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-        },
-        { model: db.ApprovalStep, as: "currentStep", include: [{ model: db.UserRole, as: "verifierRole" }] },
-        {
-          model: db.Approval,
-          as: "approvals",
-          include: [{ model: db.ApprovalStep, as: "step", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-        },
+        ...approvalIncludes,
       ],
       limit: 10,
       order: [["created_at", "DESC"]],
@@ -103,12 +74,7 @@ export const fetchPendingApprovals = async (programCategories) => {
     },
     include: [
       { model: db.Member, as: "member", attributes: ["full_name"] },
-      {
-        model: db.ApprovalFlow,
-        as: "flow",
-        include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-      },
-      { model: db.ApprovalStep, as: "currentStep", include: [{ model: db.UserRole, as: "verifierRole" }] },
+      ...getApprovalIncludes(false),
     ],
     limit: 10,
     order: [["created_at", "DESC"]],
@@ -120,24 +86,7 @@ export const fetchPendingApprovals = async (programCategories) => {
     include: [
       { model: db.Member, as: "member", attributes: ["full_name"] },
       { model: db.SavingTarget, as: "savingTarget" },
-      {
-        model: db.ApprovalFlow,
-        as: "flow",
-        include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-      },
-      { model: db.ApprovalStep, as: "currentStep", include: [{ model: db.UserRole, as: "verifierRole" }] },
-      {
-        model: db.Approval,
-        as: "approvals",
-        required: false,
-        include: [
-          {
-            model: db.ApprovalStep,
-            as: "step",
-            include: [{ model: db.UserRole, as: "verifierRole", attributes: ["role_name"] }],
-          },
-        ],
-      },
+      ...approvalIncludes,
     ],
     limit: 10,
     order: [["created_at", "DESC"]],
@@ -151,24 +100,7 @@ export const fetchPendingApprovals = async (programCategories) => {
     include: [
       { model: db.Member, as: "member", attributes: ["full_name"] },
       { model: db.MemberSavingTarget, as: "savingTarget" },
-      {
-        model: db.ApprovalFlow,
-        as: "flow",
-        include: [{ model: db.ApprovalStep, as: "steps", include: [{ model: db.UserRole, as: "verifierRole" }] }],
-      },
-      { model: db.ApprovalStep, as: "currentStep", include: [{ model: db.UserRole, as: "verifierRole" }] },
-      {
-        model: db.Approval,
-        as: "approvals",
-        required: false,
-        include: [
-          {
-            model: db.ApprovalStep,
-            as: "step",
-            include: [{ model: db.UserRole, as: "verifierRole", attributes: ["role_name"] }],
-          },
-        ],
-      },
+      ...approvalIncludes,
     ],
     limit: 10,
     order: [["created_at", "DESC"]],
@@ -196,8 +128,9 @@ export const fetchPendingApprovals = async (programCategories) => {
       flow: w.flow,
       currentStep: w.currentStep,
       final_status: w.status,
-      approvals: w.approvals?.map((a) => (typeof a.toJSON === "function" ? a.toJSON() : a)),
+      approvals: normalizeApprovals(w.approvals),
     })),
+
     jualBeli: pendingJualBeli.map((j) => ({
       id: j.financing_id,
       name: j.member?.full_name || "Unknown",
@@ -215,6 +148,7 @@ export const fetchPendingApprovals = async (programCategories) => {
       total_tagihan: j.total_tagihan || 0,
       approvals: j.approvals,
     })),
+
     program: pendingFinancings.map((f) => ({
       id: f.financing_id,
       member_id: f.member_id,
@@ -234,6 +168,7 @@ export const fetchPendingApprovals = async (programCategories) => {
       bank_account_no: f.no_rekening || f.bank_account_no || "",
       approvals: f.approvals,
     })),
+
     tabungan: [
       ...pendingTabungan.map((t) => {
         const targetAmount = t.target_amount || t.savingTarget?.target_amount || 0;
@@ -269,47 +204,13 @@ export const fetchPendingApprovals = async (programCategories) => {
         flow: w.flow,
         currentStep: w.currentStep,
         final_status: w.status,
-        approvals: w.approvals?.map((a) => (typeof a.toJSON === "function" ? a.toJSON() : a)),
+        approvals: normalizeApprovals(w.approvals),
       })),
     ],
+
     investasi: [
       ...pendingInvestasi.map((i) => {
-        const isPengawasDone = i.is_approved_pengawas;
-        const isKetuaDone = i.is_approved_ketua;
-        const isBendaharaDone = i.is_approved_bendahara;
-
-        let currentStepOrder = 1;
-        let currentStepName = "Persetujuan Pengawas";
-        let currentRoleName = "Pengawas";
-
-        if (isPengawasDone && !isKetuaDone) {
-          currentStepOrder = 2;
-          currentStepName = "Persetujuan Ketua";
-          currentRoleName = "Ketua";
-        } else if (isKetuaDone && !isBendaharaDone) {
-          currentStepOrder = 3;
-          currentStepName = "Persetujuan Bendahara";
-          currentRoleName = "Bendahara";
-        } else if (isBendaharaDone) {
-          currentStepOrder = 4;
-          currentStepName = "Selesai";
-          currentRoleName = "Selesai";
-        }
-
-        const mockFlow = {
-          steps: [
-            { id: 1, step_order: 1, step_name: "Persetujuan Pengawas", verifierRole: { role_name: "Pengawas" } },
-            { id: 2, step_order: 2, step_name: "Persetujuan Ketua", verifierRole: { role_name: "Ketua" } },
-            { id: 3, step_order: 3, step_name: "Persetujuan Bendahara", verifierRole: { role_name: "Bendahara" } },
-          ],
-        };
-
-        const mockCurrentStep = {
-          step_order: currentStepOrder,
-          step_name: currentStepName,
-          verifierRole: { role_name: currentRoleName },
-        };
-
+        const { mockFlow, mockCurrentStep } = buildSukukApprovalProgress(i);
         return {
           id: i.order_id,
           member_id: i.member_id,

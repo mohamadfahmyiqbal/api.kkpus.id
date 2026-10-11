@@ -184,7 +184,10 @@ export const transferBankSnap = async ({
       currency: "IDR",
     },
     additionalInfo: {
+      beneficiaryBankCode: String(beneficiaryBankCode),
+      beneficiaryAccountName: beneficiaryName || "Anggota Koperasi",
       beneficiaryName: beneficiaryName || "Anggota Koperasi",
+      senderCountryCode: "ID",
       notes: notes || `Pencairan Simpanan KKPUS - ${partnerReferenceNo}`,
     },
   };
