@@ -163,6 +163,7 @@ export const bankAccountInquirySnap = async ({
   partnerReferenceNo,
   beneficiaryBankCode,
   beneficiaryAccountNumber,
+  beneficiaryName,
   amount,
   phone,
 }) => {
@@ -182,7 +183,10 @@ export const bankAccountInquirySnap = async ({
       currency: "IDR",
     },
     additionalInfo: {
+      channelCode: "07",
       beneficiaryBankCode: String(beneficiaryBankCode),
+      beneficiaryAccountName: beneficiaryName || "Anggota Koperasi",
+      beneficiaryName: beneficiaryName || "Anggota Koperasi",
       senderCountryCode: "ID",
     },
   };
@@ -256,6 +260,7 @@ export const transferBankSnap = async ({
     partnerReferenceNo,
     beneficiaryBankCode,
     beneficiaryAccountNumber,
+    beneficiaryName,
     amount,
     phone: cleanPhone,
   });
