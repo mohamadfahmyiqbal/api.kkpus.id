@@ -156,6 +156,74 @@ export const getDokuSnapAccessToken = async () => {
 };
 
 /**
+ * 3. Inquiry Rekening Bank via SNAP Kirim DOKU untuk mendapatkan sessionId
+ * Endpoint: POST /snap/v1.1/emoney/bank-account-inquiry
+ */
+export const bankAccountInquirySnap = async ({
+  partnerReferenceNo,
+  beneficiaryBankCode,
+  beneficiaryAccountNumber,
+  amount,
+  phone,
+}) => {
+  const config = getDokuConfig();
+  const accessToken = await getDokuSnapAccessToken();
+  const timestamp = getSnapTimestamp();
+  const endpoint = "/snap/v1.1/emoney/bank-account-inquiry";
+  const uniqueRef = `INQ-${partnerReferenceNo}-${Date.now().toString().slice(-4)}`;
+  const externalId = `EXT-${uniqueRef}`;
+
+  const payload = {
+    partnerReferenceNo: String(uniqueRef).slice(0, 64),
+    customerNumber: String(phone || "6281234567890").slice(0, 32),
+    beneficiaryAccountNumber: String(beneficiaryAccountNumber).slice(0, 32),
+    amount: {
+      value: `${parseFloat(amount).toFixed(2)}`,
+      currency: "IDR",
+    },
+    additionalInfo: {
+      beneficiaryBankCode: String(beneficiaryBankCode),
+      senderCountryCode: "ID",
+    },
+  };
+
+  const signature = generateSnapSymmetricSignature({
+    httpMethod: "POST",
+    endpointUrl: endpoint,
+    accessToken,
+    body: payload,
+    timestamp,
+    secretKey: config.secretKey,
+  });
+
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+    "X-TIMESTAMP": timestamp,
+    "X-SIGNATURE": signature,
+    "X-PARTNER-ID": config.clientId,
+    "X-EXTERNAL-ID": externalId,
+    "CHANNEL-ID": "95221",
+  };
+
+  console.log(`[DOKU SNAP] Menjalankan Bank Account Inquiry ke ${beneficiaryBankCode} ${beneficiaryAccountNumber}...`);
+
+  try {
+    const response = await axios.post(`${config.baseUrl}${endpoint}`, payload, {
+      headers,
+      timeout: 30000,
+    });
+    console.log(`[DOKU SNAP Inquiry Success]:`, response.data);
+    return response.data;
+  } catch (error) {
+    const errData = error.response?.data || error.message;
+    console.error(`[DOKU SNAP Inquiry Error]:`, errData);
+    const msg = errData?.responseMessage || errData?.message || JSON.stringify(errData);
+    throw new Error(`Inquiry Rekening SNAP DOKU gagal: ${msg}`);
+  }
+};
+
+/**
  * Eksekusi Transfer Bank via SNAP Kirim DOKU
  * Endpoint: POST /snap/v1.1/emoney/transfer-bank
  */
@@ -183,25 +251,43 @@ export const transferBankSnap = async ({
     cleanPhone = cleanPhone ? "62" + cleanPhone : "6281234567890";
   }
 
+  // 1. Eksekusi Inquiry terlebih dahulu untuk mendapatkan sessionId resmi dari DOKU
+  const inquiryRes = await bankAccountInquirySnap({
+    partnerReferenceNo,
+    beneficiaryBankCode,
+    beneficiaryAccountNumber,
+    amount,
+    phone: cleanPhone,
+  });
+
+  const sessionId = inquiryRes?.sessionId || inquiryRes?.referenceNo;
+  if (!sessionId) {
+    throw new Error(`Gagal mendapatkan sessionId dari respon inquiry DOKU: ${JSON.stringify(inquiryRes)}`);
+  }
+
+  // Ambil nama terverifikasi dari inquiry jika tersedia
+  const verifiedAccountName = inquiryRes?.beneficiaryAccountName || beneficiaryName || "Anggota Koperasi";
+
   // Pecah nama depan & belakang untuk kelengkapan standar Remit DOKU
-  const nameParts = String(beneficiaryName || "Anggota Koperasi").trim().split(/\s+/);
+  const nameParts = String(verifiedAccountName).trim().split(/\s+/);
   const firstName = nameParts[0] || "Anggota";
   const lastName = nameParts.slice(1).join(" ") || firstName;
 
   const payload = {
     partnerReferenceNo: String(uniqueRef).slice(0, 64),
-    customerNumber: String(beneficiaryAccountNumber).slice(0, 32),
+    customerNumber: String(cleanPhone).slice(0, 32),
     beneficiaryAccountNumber: String(beneficiaryAccountNumber).slice(0, 32),
     beneficiaryBankCode: String(beneficiaryBankCode),
     amount: {
       value: `${parseFloat(amount).toFixed(2)}`,
       currency: "IDR",
     },
+    sessionId: String(sessionId).slice(0, 25),
     additionalInfo: {
       channelCode: "07",
       beneficiaryBankCode: String(beneficiaryBankCode),
-      beneficiaryAccountName: beneficiaryName || "Anggota Koperasi",
-      beneficiaryName: beneficiaryName || "Anggota Koperasi",
+      beneficiaryAccountName: verifiedAccountName,
+      beneficiaryName: verifiedAccountName,
       beneficiaryFirstName: firstName,
       beneficiaryLastName: lastName,
       beneficiaryPhoneNumber: cleanPhone,
@@ -229,7 +315,7 @@ export const transferBankSnap = async ({
     "CHANNEL-ID": "95221",
   };
 
-  console.log(`[DOKU SNAP] Mengirim transfer bank ke ${beneficiaryBankCode} ${beneficiaryAccountNumber} sebesar Rp ${amount}`);
+  console.log(`[DOKU SNAP] Mengirim transfer bank ke ${beneficiaryBankCode} ${beneficiaryAccountNumber} sebesar Rp ${amount} (Session: ${sessionId})`);
 
   try {
     const response = await axios.post(`${config.baseUrl}${endpoint}`, payload, {
