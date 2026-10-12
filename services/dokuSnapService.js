@@ -207,7 +207,7 @@ export const bankAccountInquirySnap = async ({
     "X-SIGNATURE": signature,
     "X-PARTNER-ID": config.clientId,
     "X-EXTERNAL-ID": externalId,
-    "CHANNEL-ID": "95221",
+    "CHANNEL-ID": process.env.DOKU_CHANNEL_ID || "H2H",
   };
 
   console.log(`[DOKU SNAP] Menjalankan Bank Account Inquiry ke ${beneficiaryBankCode} ${beneficiaryAccountNumber}...`);
@@ -317,7 +317,7 @@ export const transferBankSnap = async ({
     "X-SIGNATURE": signature,
     "X-PARTNER-ID": config.clientId,
     "X-EXTERNAL-ID": externalId,
-    "CHANNEL-ID": "95221",
+    "CHANNEL-ID": process.env.DOKU_CHANNEL_ID || "H2H",
   };
 
   console.log(`[DOKU SNAP] Mengirim transfer bank ke ${beneficiaryBankCode} ${beneficiaryAccountNumber} sebesar Rp ${amount} (Session: ${sessionId})`);
