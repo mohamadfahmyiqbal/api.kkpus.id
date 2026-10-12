@@ -291,13 +291,20 @@ export const transferBankSnap = async ({
     additionalInfo: {
       channelCode: "07",
       beneficiaryBankCode: String(beneficiaryBankCode),
+      beneficiaryBankName: inquiryRes?.beneficiaryBankName || inquiryRes?.beneficiaryBankShortName || "Bank",
       beneficiaryAccountName: verifiedAccountName,
       beneficiaryName: verifiedAccountName,
       beneficiaryFirstName: firstName,
       beneficiaryLastName: lastName,
       beneficiaryPhoneNumber: cleanPhone,
       senderCountryCode: "ID",
+      senderFirstName: process.env.DOKU_SENDER_FIRST_NAME || "Koperasi",
+      senderLastName: process.env.DOKU_SENDER_LAST_NAME || "KKPUS",
+      senderPhoneNumber: process.env.DOKU_SENDER_PHONE || "6281234567890",
+      senderPersonalId: process.env.DOKU_SENDER_PERSONAL_ID || "3171012345670001",
+      senderPersonalIdType: process.env.DOKU_SENDER_PERSONAL_ID_TYPE || "KTP",
       notes: notes || `Pencairan Simpanan KKPUS - ${partnerReferenceNo}`,
+      remark: notes || `Pencairan Simpanan KKPUS - ${partnerReferenceNo}`,
     },
   };
 
