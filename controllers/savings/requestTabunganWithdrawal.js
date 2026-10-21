@@ -1,5 +1,5 @@
-// 📁 controllers/savings/requestTabunganWithdrawal.js
 import db from "../../models/index.js";
+import { broadcastApprovalNotification } from "../../utils/socket.js";
 
 export const requestTabunganWithdrawal = async (req, res) => {
     const memberId = req.userId;
@@ -100,6 +100,13 @@ export const requestTabunganWithdrawal = async (req, res) => {
         }, { transaction: t });
 
         await t.commit();
+
+        broadcastApprovalNotification({
+            type: "TABUNGAN_WITHDRAWAL",
+            title: "Pengajuan Pencairan Tabungan",
+            message: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(amount).toLocaleString("id-ID")}.`,
+            data: { withdrawal_id: newRequest.withdrawal_id, member_id: memberId, amount }
+        });
 
         return res.status(200).json({
             status: true,

@@ -14,7 +14,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
     if (tx_category !== "PENCAIRAN") {
       const { count: tCount, rows: transactions } = await db.Transaction.findAndCountAll({
         where: {
-          status: "PAID",
+          status: { [Op.in]: ["PAID", "PENDING_VERIFICATION", "PENDING"] },
         },
         include: [
           {
@@ -59,6 +59,8 @@ export const getAdminSavingsTransactions = async (req, res) => {
             itemAmount = t.bill.items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
           }
           
+          const isPending = t.status === "PENDING_VERIFICATION";
+
           return {
             id: t.transaction_id,
             date: t.created_at,
@@ -67,7 +69,12 @@ export const getAdminSavingsTransactions = async (req, res) => {
             type: "Setoran",
             amount: itemAmount,
             balance: "-", 
-            status: "Selesai",
+            status: isPending ? "Menunggu Verifikasi" : "Selesai",
+            raw_status: t.status,
+            proof_of_transfer: t.proof_of_transfer,
+            sender_name: t.sender_name,
+            sender_bank: t.sender_bank,
+            is_manual_payment: isPending,
             product_name: t.bill?.items?.[0]?.description || type
           };
         });

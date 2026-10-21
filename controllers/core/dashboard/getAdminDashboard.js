@@ -48,6 +48,15 @@ export const getAdminDashboard = async (req, res) => {
             },
           ];
 
+    console.log("[getAdminDashboard] pendingCategorized counts:", {
+      registration: pendingCategorized.registration?.length,
+      simpanan: pendingCategorized.simpanan?.length,
+      jualBeli: pendingCategorized.jualBeli?.length,
+      program: pendingCategorized.program?.length,
+      tabungan: pendingCategorized.tabungan?.length,
+      investasi: pendingCategorized.investasi?.length,
+    });
+
     return res.status(200).json({
       success: true,
       data: {

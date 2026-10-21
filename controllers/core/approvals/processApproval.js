@@ -1,11 +1,14 @@
 // PATH: controllers/core/approvals/processApproval.js
 
 import db from "../../../models/index.js";
+import { Op } from "sequelize";
+
 import { performFinalAction } from "./performFinalAction.js";
 import { EntityConfigs } from "./approvalEntityConfigs.js";
 import { prepareEntityUpdateData } from "./approvalMutationHelper.js";
 import { notifyApprovalResult } from "./approvalNotificationHelper.js";
 import { resolveStatusValue } from "./approvalStatusHelper.js";
+import { createInitialBills } from "../../billing/createInitialBills.js";
 
 const { Approval, ApprovalStep, ApprovalFlow, EntityStepApproval, UserRole, sequelize } = db;
 
@@ -72,6 +75,70 @@ export const processApproval = (entityRef) => async (req, res) => {
     if (!currentStep) throw new Error("INVALID_CURRENT_STEP");
     if (currentStep.role_id && !req.userRoleIds.includes(String(currentStep.role_id))) {
       throw new Error("FORBIDDEN");
+    }
+
+    // Jika pada pendaftaran anggota tahap verifikasi adalah Bendahara, pastikan bukti pembayaran sudah diunggah
+    const currentRoleName = (currentStep.verifierRole?.role_name || currentStep.step_name || "").toLowerCase();
+    if (activeEntityRef === "members" && currentRoleName.includes("bendahara")) {
+      const pendingTx = await db.Transaction.findOne({
+        where: {
+          member_id: entity.member_id || entityId,
+          payment_type: "manual_transfer",
+          [Op.or]: [
+            { status: "PENDING_VERIFICATION" },
+            { status: "PENDING" }
+          ],
+        },
+        transaction,
+      });
+
+      if (!pendingTx) {
+        throw new Error("Anggota belum melakukan konfirmasi dan upload bukti pembayaran simpanan pokok/wajib.");
+      }
+    }
+
+    // Jika pada pembiayaan / jual beli tahap verifikasi adalah Bendahara, pastikan bukti pembayaran DP sudah diunggah jika ada DP
+    if (activeEntityRef === "financing_applications" && currentRoleName.includes("bendahara")) {
+      const downPayment = parseFloat(entity.down_payment) || 0;
+      if (downPayment > 0) {
+        const dpBillItem = await db.BillItem.findOne({
+          where: {
+            financing_application_id: entityId,
+            category_code: "TRANSACTION_DOWN_PAYMENT",
+          },
+          include: [
+            {
+              model: db.Bill,
+              as: "bill",
+              include: [
+                {
+                  model: db.Transaction,
+                  as: "payments",
+                  where: { proof_of_transfer: { [Op.ne]: null } },
+                  required: false,
+                },
+              ],
+            },
+          ],
+          transaction,
+        });
+
+        const hasUploadedProof =
+          dpBillItem?.bill?.payments?.length > 0 ||
+          dpBillItem?.status === "PAID" ||
+          (await db.Transaction.findOne({
+            where: {
+              member_id: entity.member_id,
+              proof_of_transfer: { [Op.ne]: null },
+              created_at: { [Op.gte]: entity.createdAt || entity.created_at },
+            },
+            transaction,
+          }));
+
+        if (!hasUploadedProof) {
+          throw new Error("Anggota belum melakukan konfirmasi dan upload bukti pembayaran Uang Tanda Keseriusan (DP).");
+        }
+      }
     }
 
     logDebug("CURRENT_STEP", { stepId: currentStep.approval_step_id, stepName: currentStep.step_name });
@@ -155,8 +222,52 @@ export const processApproval = (entityRef) => async (req, res) => {
     }
 
     if (activeEntityRef === "members") {
-      if (currentStep.step_order === 1) updateData.is_approved_pengawas = action === "approve";
-      else if (currentStep.step_order === 2) updateData.is_approved_ketua = action === "approve";
+      if (currentStep.step_order === 2 && action === "approve") {
+        // Ketika Ketua menyetujui, terbitkan tagihan awal Simpanan Pokok & Wajib (12 bulan)
+        // agar calon anggota dapat melakukan pembayaran dan mengunggah bukti transfer untuk Bendahara
+        const targetMemberId = entity.member_id;
+        console.log(`[APPROVAL] Generating initial bills for member: ${targetMemberId}`);
+        await createInitialBills(targetMemberId, ["SW_POKOK", "SW_WAJIB"], transaction, 12);
+      }
+    }
+
+    if (activeEntityRef === "financing_applications") {
+      if (currentStep.step_order === 2 && action === "approve") {
+        // Ketika Ketua menyetujui, terbitkan tagihan Uang Tanda Keseriusan (DP) jika ada,
+        // agar anggota dapat mengunggah bukti transfer sebelum Bendahara melakukan approval
+        const downPayment = parseFloat(entity.down_payment) || 0;
+        if (downPayment > 0) {
+          const existingDP = await db.BillItem.findOne({
+            where: {
+              financing_application_id: entityId,
+              category_code: "TRANSACTION_DOWN_PAYMENT",
+            },
+            transaction,
+          });
+
+          if (!existingDP) {
+            const downPaymentBillType = await db.BillType.findByPk(7, { transaction });
+            const isArisan = entity.category === "Arisan";
+            console.log(`[APPROVAL] Generating DP bill item for financing: ${entityId}, amount: ${downPayment}`);
+            await db.BillItem.create(
+              {
+                bill_type_id: 7,
+                category_code: downPaymentBillType?.type_code || "TRANSACTION_DOWN_PAYMENT",
+                bill_id: null,
+                member_id: entity.member_id,
+                financing_application_id: entity.financing_id,
+                description: isArisan
+                  ? "Uang Pangkal/DP Arisan"
+                  : `Uang Tanda Keseriusan (DP) ${entity.category || "Jual Beli"}`,
+                amount: downPayment,
+                due_date: new Date(),
+                status: "UNPAID",
+              },
+              { transaction }
+            );
+          }
+        }
+      }
     }
 
     logDebug("UPDATE_DATA", { ...updateData, statusField, isLastStep });

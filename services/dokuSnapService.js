@@ -287,6 +287,7 @@ export const transferBankSnap = async ({
       value: `${parseFloat(amount).toFixed(2)}`,
       currency: "IDR",
     },
+    feeType: process.env.DOKU_FEE_TYPE || "OUR",
     sessionId: String(sessionId).slice(0, 25),
     additionalInfo: {
       channelCode: "07",

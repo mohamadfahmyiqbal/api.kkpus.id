@@ -82,14 +82,12 @@ export const syncJualBeliReport = async (sequelize, member_id) => {
       const totalPaidForApp = appPaidItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
       const hasPaidDPInApp = appPaidItems.some(item => ['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code));
 
-      // Calculate paid cicilan for this app
-      // Fallback: If DP wasn't in bill items but app is approved/active/completed, we assume DP was paid separately
-      const effectivePaidAmount = totalPaidForApp + (!hasPaidDPInApp && dp > 0 ? dp : 0);
-      const cicilan = Math.max(0, effectivePaidAmount - dp);
+      const dpPaid = hasPaidDPInApp ? dp : 0;
+      const cicilan = Math.max(0, totalPaidForApp - dpPaid);
 
       aggregates[year].pokok += pokok;
       aggregates[year].margin += margin;
-      aggregates[year].dp += dp;
+      aggregates[year].dp += dpPaid;
       aggregates[year].cicilan += cicilan;
     });
 

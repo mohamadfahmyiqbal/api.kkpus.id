@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import db from "../../../models/index.js";
 import { sendGlobalNotification } from "../../../services/notificationHelper.js";
+import { broadcastApprovalNotification } from "../../../utils/socket.js";
 
 const {
   MemberRegistration,
@@ -170,6 +171,13 @@ export const submitRegistration = async (req, res) => {
             });
           }
         }
+
+        broadcastApprovalNotification({
+          type: "REGISTRATION",
+          title: "Pendaftaran Anggota Baru",
+          message: `${req.body.full_name || "Calon anggota"} telah mengirimkan berkas pendaftaran baru.`,
+          data: { member_id }
+        });
       } catch (err) { console.error("Notification Error:", err); }
     });
 

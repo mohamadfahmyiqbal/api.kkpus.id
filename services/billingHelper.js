@@ -96,10 +96,20 @@ export const prepareBillItems = async ({
     ];
   }
 
-  // --- 3. FINANCING_PAYMENT ---
-  else if (tx_category === "FINANCING_PAYMENT") {
+  // --- 3. FINANCING_PAYMENT / FINANCING / DP ---
+  else if (
+    tx_category === "FINANCING_PAYMENT" ||
+    tx_category === "FINANCING" ||
+    tx_category === "TRANSACTION_DOWN_PAYMENT" ||
+    (Array.isArray(bill_item_ids) &&
+      bill_item_ids.some(
+        (id) => typeof id === "string" && id.startsWith("dp-")
+      ))
+  ) {
     const sanitizedIds = sanitizeIds(bill_item_ids);
-    const isDP = sanitizedIds.length > 0 && String(sanitizedIds[0]).startsWith("dp-");
+    const isDP =
+      tx_category === "TRANSACTION_DOWN_PAYMENT" ||
+      (sanitizedIds.length > 0 && String(sanitizedIds[0]).startsWith("dp-"));
 
     if (isDP || sanitizedIds.length === 0) {
       const parsedAmount = parseFloat(amount);
@@ -110,8 +120,12 @@ export const prepareBillItems = async ({
       total_gross = parsedAmount;
 
       let isPelunasan = false;
-      if (financing_id) {
-        const app = await db.FinancingApplication.findByPk(financing_id, {
+      const targetFinancingId =
+        financing_id ||
+        (isDP && sanitizedIds[0] ? String(sanitizedIds[0]).replace(/^dp-/, "") : null);
+
+      if (targetFinancingId) {
+        const app = await db.FinancingApplication.findByPk(targetFinancingId, {
           transaction: dbTransaction,
         });
         if (app && app.category && app.category.toLowerCase().includes("pelunasan")) {
@@ -126,21 +140,40 @@ export const prepareBillItems = async ({
       });
       bill_type_id = typeDP?.bill_type_id || 99;
 
-      const newItem = await BillItem.create(
-        {
-          member_id: member.member_id,
-          bill_type_id: bill_type_id,
-          financing_application_id: financing_id || null,
-          amount: total_gross,
-          status: "UNPAID",
-          description: isPelunasan
-            ? "Pembayaran Pelunasan Pembiayaan"
-            : "Down Payment Pembiayaan",
-          category_code: typeCode,
-          due_date: new Date(),
-        },
-        { transaction: dbTransaction }
-      );
+      // Cari BillItem UNPAID eksisting agar tidak terjadi duplikasi
+      let newItem = targetFinancingId
+        ? await BillItem.findOne({
+            where: {
+              member_id: member.member_id,
+              financing_application_id: targetFinancingId,
+              category_code: typeCode,
+              status: "UNPAID",
+            },
+            transaction: dbTransaction,
+          })
+        : null;
+
+      if (!newItem) {
+        newItem = await BillItem.create(
+          {
+            member_id: member.member_id,
+            bill_type_id: bill_type_id,
+            financing_application_id: targetFinancingId || null,
+            amount: total_gross,
+            status: "UNPAID",
+            description: isPelunasan
+              ? "Pembayaran Pelunasan Pembiayaan"
+              : "Down Payment Pembiayaan",
+            category_code: typeCode,
+            due_date: new Date(),
+          },
+          { transaction: dbTransaction }
+        );
+      } else {
+        if (parseFloat(newItem.amount) !== total_gross) {
+          await newItem.update({ amount: total_gross }, { transaction: dbTransaction });
+        }
+      }
 
       final_bill_item_ids = [newItem.bill_item_id];
       item_details = [

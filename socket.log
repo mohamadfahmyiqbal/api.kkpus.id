@@ -1026,3 +1026,940 @@ Socket ID: Z5gC8Cr6gwcO4youAAAO
 --- SOCKET REGISTER ---
 Member: df603033-5528-4dde-885f-407c1015e488
 Socket ID: EEPhd9ddo9zz8G1NAAAQ
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: 1Wu2t6x6QL3hG0nVAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: L0IKkRSKsgrwmOQSAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: mPhVCrknRQ_kD61RAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: pzeXW13hF11gj2OkAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: hWr0ZEOEAQrwsqwWAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: C2SI8bV_mFNEp5PBAAAB
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: wO0N34nJA-M23SKiAAAD
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: 8pv14bMGQka1jeakAAAF
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: hyg7kGtv5_-ZtiKJAAAH
+--- SOCKET REGISTER ---
+Member: df603033-5528-4dde-885f-407c1015e488
+Socket ID: -MoOdDe48kQg4zi9AAAJ
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: df603033-5528-4dde-885f-407c1015e488
+[SOCKET DEBUG] Failed to send: Member 10678069-f8e9-460b-8f7e-08808bf4e9f6 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: df603033-5528-4dde-885f-407c1015e488
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: df603033-5528-4dde-885f-407c1015e488
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: df603033-5528-4dde-885f-407c1015e488
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: tL62bvx7fOh_zhaBAAAL
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: tL62bvx7fOh_zhaBAAAL
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: v-eb5r3CzXMtfnBTAAAO
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: NVBJ2kf5iW0aluEMAAAP
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: IKluz6Owz8K9_LoaAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: XsqHvOUHo7CdMHSBAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Nt0vrh_ALA4Qk2ytAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 5cLVT6-xh6pE5vH0AAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: N_0mr0ZLWd5q-nNJAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: dZqCOJibahJl6LsHAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 1twQCKtm8OjssGGCAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: ZmFXjR1sidL3OC7AAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wbiDKn0SwfEI5Z6gAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: CJ0ZbtOMfExHkGtGAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: doJupTXvNlYwGN08AAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: SWWT9x8AWAL227qlAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 8CixJotDE3F2f52KAAAG
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: gw1VoNK0WCjBxzjnAAAH
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wwo4wcf6ZUhCHGD8AAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: L2cVCBmi05fteP99AAAL
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: DhHYcZ-8U-hgIwCBAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: M2gr7dZ6CDgbc-1rAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: w7F9dIhSMqOrDkXdAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: luC_U5W5OTHe4UMXAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: YgZI9kjTzmeDwDuXAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: WuRHFGdIsr4PogVkAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 70MoZ80zxSuasIKKAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: JzVG896dbggYbub5AAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: h8afvx7G5nRJlInaAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: v2IN0bdWND91Fii2AAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wjZhvJ-CoO03qL2NAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: YAFBesl4aGpsZpKfAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: R3MpYmX5J0friA6cAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: JUHfBnJSbzMeClK2AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: X9hM2NEUx4ye5JImAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 6JFMUOAsJ5jaCpjXAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: kyGT5gDF6efpAvPfAAAH
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: KaiO9w7GUPns117CAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: diV9_7cki-a1uwn2AAAG
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: NKRVaZuMjxOKAXF5AAAH
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _5T6aceM4EtfnkBGAAAK
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: gGhR7s31TzZFFzmzAAAL
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 3htXkCLUV5tB3YH5AAAN
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: HMqnaOd6Pf2DuvJkAAAP
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: P748soGWu99vi144AAAS
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: azyIEQp8kNPk--RxAAAT
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: DPwC3tN_CHcH7aTKAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: -wAdAMPTLB0jKplpAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _VoI9ZCk6W4WwiBlAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: ZfY96fAhSJtg37xYAAAG
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: olOaDzBD48kHxH4VAAAH
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: NPSIuYX2f-5ZebUUAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: iscRcxmdkwnhNoffAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _nscgwS1qpZfWCNCAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: lbua5C3_oGNB83gcAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: MOVl7nVucEfKIYYpAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: zRTo4_kuxA7ZhpIZAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: GiBl6wHgJiC-j5uoAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: COPr5gPJ50hHlkaKAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 1_qhdHP8fAsZOuxDAAAD
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: 1_qhdHP8fAsZOuxDAAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 1_qhdHP8fAsZOuxDAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Il9ILYQmRCtiMi1YAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wPNC8S50mKFgrPoTAAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: e7a0vxfSTRIFhBzmAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: lLRrRA_ehMxg01KUAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _SqBHD7B0kxiGsNtAAAF
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: _SqBHD7B0kxiGsNtAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: _SqBHD7B0kxiGsNtAAAF
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: _SqBHD7B0kxiGsNtAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: _SqBHD7B0kxiGsNtAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 2ZqvedX7rsiTbOgFAAAO
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 2ZqvedX7rsiTbOgFAAAO
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: p2umFlAcdPpqMeWCAAAP
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 2-LtkmVOVStJbqaOAAAV
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: sbJII-B-v4ppcsdvAAAW
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: vWbTR_HtPVU9Um5LAAAZ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 5DEtNMobb0d13PXBAAAa
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: vWbTR_HtPVU9Um5LAAAZ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 5DEtNMobb0d13PXBAAAa
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: HG1mPJGYIBlrv9nnAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: k5FMoijDQEjrLyc5AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: LisQRSkxcfsHsMSkAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: JzoXmIkPo4fxVNl9AAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: iVP8kiZgU0wId0kIAAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: SEgnY4nNgSW814mdAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: GRYoVe7Cd1DrNWe-AAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 6dQ1diyK-PDYM4mHAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: c3Vitt0FdavYgSdmAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _rwwZFWRd0RjCU9fAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: fuWY-xVd-mXBsAccAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: d_4HSnCphovwuQFJAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Qs9NAKxbqcWGpI83AAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: NEYAyzvIp-D3OfIPAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: lQQvGAyvfMm5hVzgAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 43Q-u88oJclDsSSTAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: So7JJlPqfMCx0grUAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: VOT8pYA4CtVYlLWxAAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: cCrICAeEr_iG7nm3AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: oip-Lk8UhMSVu2rPAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wCm3XBSmQ2tEQwoMAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: pNn_M6vpIP3oIa2AAAAH
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: Cnueknht-SLhDEX8AAAJ
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+--- SOCKET REGISTER ---
+Member: 84f975b8-ed21-4021-b1c6-4f16933c3373
+Socket ID: MRCi0Y9W9eS3EyvxAAAM
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+--- SOCKET REGISTER ---
+Member: b0024d1f-0605-47fe-891e-156ca72ddefc
+Socket ID: rxo-oxo3eGXSXKWdAAAP
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 499vFeveYwM2OFZKAAAD
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: wCm3XBSmQ2tEQwoMAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: 8Ih1eXO_X4ISJ_vmAAAS
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Cg314jAnAIDagHtaAAAV
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: URm0NcxTxZREI8eZAAAW
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: NCqaWGRaiHPBIOrBAAAE
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 3pW7Qpkijh85KcKeAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: D-KTlYAESmNLfk45AAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: WhgTC06Tr_UjUbI3AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: -qbP-7ZoPtgK0yVyAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: ZboBVsFmUGl7QC6DAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: o4_ETCunURyyJ4GPAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: cMW8IsO8L0aHT1pjAAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: y9DzGBR6jonScN4xAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: DAp5dbVw_2u5JSA5AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: _r6IbSUyHlxJecpNAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: XtAKKFplH2edBdZHAAAJ
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: SXJcKHxni4yZbeMbAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 2x-QUbiHPTM7hbg_AAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Rwk0V6OiVBIi9MRvAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: x1pk5B9H7SRLYlYxAAAJ
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: FffSkQpcNP4RpMfmAAAM
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: Rwk0V6OiVBIi9MRvAAAI
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: x1pk5B9H7SRLYlYxAAAJ
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Rwk0V6OiVBIi9MRvAAAI
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: x1pk5B9H7SRLYlYxAAAJ
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: Rwk0V6OiVBIi9MRvAAAI
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: x1pk5B9H7SRLYlYxAAAJ
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: FffSkQpcNP4RpMfmAAAM
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: Rwk0V6OiVBIi9MRvAAAI
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: x1pk5B9H7SRLYlYxAAAJ
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: FffSkQpcNP4RpMfmAAAM
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Rwk0V6OiVBIi9MRvAAAI
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: x1pk5B9H7SRLYlYxAAAJ
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: qNEtfctxWztQykT7AAAP
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 3IMgzyO6hfYPQP9zAAAS
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: R9IA8zuaS7szvAmpAAAT
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: lUQVhA12ebUg21RpAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 82QmqRxnGrHoHbxUAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: ZqklaNlX6h2VL82lAAAE
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: qoMxJk7fO89_GU64AAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 0ahYXTuuNJB0n3xhAAAC
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: D6Rep_E3LLNwkCPbAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: C8B9twwTEYdfqC0FAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: TttwUZC4m6Q9FG96AAAE
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: LtZ-qqlKBNCZYC5fAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: qCRsaP_sHmauT8uhAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: -8Amz5c1vFRLPECSAAAE
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: PEGDfGRc9uE9E3yhAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: uQCdprqnrkgxS2CHAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: ltIi_yS4vXZ2wdR4AAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: HH0aigGsFIGuFc3DAAAC
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: 0My_dy2tNas1mFMzAAAD
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: _wtKVTeWNvT347boAAAC
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: rrvE8FSvk-0yqUtPAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: SRtCC8NZsx7GeyP_AAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: uVd0jtlTxewOhM_jAAAE
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: 7mi0-5JoX6M0tNFTAAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: x93Dzgr7ipAHcyrVAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: baOfY5OIa1Y_lEEjAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: KpQgmHN8Ad6GP1gyAAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 0Dn6amiiRjFWZY6pAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: QABvlnz8ied0q2teAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: qGarIL2jSMz1X9vZAAAI
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: EzCTfKhgO1AcPu0bAAAL
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: 0Dn6amiiRjFWZY6pAAAB
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: OZ3A8zlFz72RxMFyAAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 0Dn6amiiRjFWZY6pAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: OZ3A8zlFz72RxMFyAAAD
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 0Dn6amiiRjFWZY6pAAAB
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: OZ3A8zlFz72RxMFyAAAD
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: EzCTfKhgO1AcPu0bAAAL
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 0Dn6amiiRjFWZY6pAAAB
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: OZ3A8zlFz72RxMFyAAAD
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: EzCTfKhgO1AcPu0bAAAL
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 0Dn6amiiRjFWZY6pAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: OZ3A8zlFz72RxMFyAAAD
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: jHjmzH6oJJ9RmzDSAAAO
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: IMEyUAUrWmguOxNcAAAR
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: PqssO8wqNG9tOgwtAAAS
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: -4JPRYIa-MrueCXqAAAV
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: nGJXp18xT0q4eZQfAAAC
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: B-cgQga6PMq8A_xBAAAD
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: a6LZO3DlzGpJ6bGwAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: dZRakU0MagcN8TvkAAAF
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: aOxDaDvorFJYPGc3AAAI
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: HCkiySDIprzm_fN_AAAD
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: dZRakU0MagcN8TvkAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: HCkiySDIprzm_fN_AAAD
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: dZRakU0MagcN8TvkAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: Y5z5I-qgEn5-0RKQAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'withdrawals:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'withdrawals:update' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'SAVINGS_WITHDRAWAL_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'SAVINGS_WITHDRAWAL_UPDATED' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 4c61332f-0d6f-4155-84e8-6ac24c64b783. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 4c61332f-0d6f-4155-84e8-6ac24c64b783 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: mLnrAOK2FuxqnBuDAAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: _aRLiXufYKOhBvzOAAAG
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Y5z5I-qgEn5-0RKQAAAB
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: GZ8zYP1LatlLPgN8AAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: XBdG4LLSxCx12ExHAAAK
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: dr3LnWwtKHhn4fhZAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: Q5drjvLhIUcy7NthAAAF
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: wASJmrA_ON33c0wIAAAI
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: TVlRyCk4jwTod8xZAAAJ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: S3KOzWKSDSJIY6wVAAAM
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 5rDeMxfoCFM4Gc_OAAAN
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: gX9fiGFclPPtUpscAAAQ
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: Q5drjvLhIUcy7NthAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'financing_applications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'financing_applications:update' to Socket ID: Q5drjvLhIUcy7NthAAAF
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+[SOCKET DEBUG] Attempting to send event 'FINANCING_APPLICATIONS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'FINANCING_APPLICATIONS_UPDATED' to Socket ID: Q5drjvLhIUcy7NthAAAF
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 46b677e9-84bf-4bfa-b940-998d004882a1, 10678069-f8e9-460b-8f7e-08808bf4e9f6
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: gX9fiGFclPPtUpscAAAQ
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 8yVWlfG2OhVmeWnUAAAR
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: uO4d1hdZfjQRI6_aAAAT
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: fnv2BAsq7th_G4efAAAV
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 6xDHw7oe6E6reRbvAAAB
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: NwH3vVag2mIHY0G2AAAF
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: 84f975b8-ed21-4021-b1c6-4f16933c3373. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member 84f975b8-ed21-4021-b1c6-4f16933c3373 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+--- SOCKET REGISTER ---
+Member: 84f975b8-ed21-4021-b1c6-4f16933c3373
+Socket ID: FYcIBgTcuociZHPXAAAI
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: b0024d1f-0605-47fe-891e-156ca72ddefc. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member b0024d1f-0605-47fe-891e-156ca72ddefc is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 84f975b8-ed21-4021-b1c6-4f16933c3373
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+--- SOCKET REGISTER ---
+Member: b0024d1f-0605-47fe-891e-156ca72ddefc
+Socket ID: SjKS1HniB4OJU9eOAAAL
+[SOCKET DEBUG] Attempting to send event 'savings:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'savings:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'savings:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'bills:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'bills:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'member_saving_targets:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'member_saving_targets:update' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'MEMBER_SAVING_TARGETS_UPDATED' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'MEMBER_SAVING_TARGETS_UPDATED' to Member: 46b677e9-84bf-4bfa-b940-998d004882a1. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Failed to send: Member 46b677e9-84bf-4bfa-b940-998d004882a1 is NOT online.
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, b0024d1f-0605-47fe-891e-156ca72ddefc
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: nyiyB3fOfxySYzCvAAAO
+[SOCKET DEBUG] Attempting to send event 'new_notification' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'new_notification' to Socket ID: csuebgqhnUMDski6AAAD
+[SOCKET DEBUG] Attempting to send event 'notifications:update' to Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6. Online users: 10678069-f8e9-460b-8f7e-08808bf4e9f6, 46b677e9-84bf-4bfa-b940-998d004882a1
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: 6xDHw7oe6E6reRbvAAAB
+[SOCKET DEBUG] Sending event 'notifications:update' to Socket ID: csuebgqhnUMDski6AAAD
+--- SOCKET REGISTER ---
+Member: 10678069-f8e9-460b-8f7e-08808bf4e9f6
+Socket ID: 0mqb2J7FLIilq1jJAAAS
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: 1eH0sBtc6KuBKXmAAAAU
+--- SOCKET REGISTER ---
+Member: 46b677e9-84bf-4bfa-b940-998d004882a1
+Socket ID: r8VkepayjYxsOp8kAAAX

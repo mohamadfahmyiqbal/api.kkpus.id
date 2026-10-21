@@ -2,7 +2,7 @@
 
 import db from "../../../models/index.js";
 import { sendGlobalNotification } from "../../../services/notificationHelper.js";
-import { sendToUser } from "../../../utils/socket.js";
+import { sendToUser, broadcastApprovalNotification } from "../../../utils/socket.js";
 
 const logDebug = (label, data = {}) => {
   if (process.env.NODE_ENV !== "production") {
@@ -81,6 +81,9 @@ export const notifyApprovalResult = async ({
                      finalStatusValue === "REJECTED" ? "REJECTED" : "PENDING",
         is_approved_pengawas: currentStep?.step_order === 1 ? action === "approve" : entity.is_approved_pengawas,
         is_approved_ketua: currentStep?.step_order === 2 ? action === "approve" : entity.is_approved_ketua,
+        is_approved_bendahara: (currentStep?.step_order === 3 || (currentStep?.verifierRole?.role_name || "").toLowerCase().includes("bendahara"))
+          ? action === "approve"
+          : entity.is_approved_bendahara,
       }),
     };
 
@@ -100,6 +103,14 @@ export const notifyApprovalResult = async ({
       sendToUser(targetMemberId, `${entityRef.toUpperCase()}_UPDATED`, socketPayload);
       if (approverId && approverId !== targetMemberId) sendToUser(approverId, `${entityRef.toUpperCase()}_UPDATED`, socketPayload);
     }
+
+    // Broadcast ke seluruh admin agar antrian persetujuan & notifikasi terupdate otomatis
+    broadcastApprovalNotification({
+      type: entityRef.toUpperCase(),
+      title: title || "Pembaruan Persetujuan",
+      message: content || `Pengajuan ${entityLabel} telah diperbarui.`,
+      data: socketPayload,
+    });
 
     // 2. Kirim Global Notification (Simpan ke DB + Push + Socket Bell - Non-blocking)
     sendGlobalNotification({

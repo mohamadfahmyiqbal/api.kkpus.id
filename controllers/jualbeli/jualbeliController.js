@@ -265,12 +265,12 @@ const getJualBeliReport = async (req, res) => {
         const totalPaidForApp = appPaidItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         const hasPaidDPInApp = appPaidItems.some(item => ['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code));
         
-        const effectivePaidAmount = totalPaidForApp + (!hasPaidDPInApp && dp > 0 ? dp : 0);
-        const cicilan = Math.max(0, effectivePaidAmount - dp);
+        const dpPaid = hasPaidDPInApp ? dp : 0;
+        const cicilan = Math.max(0, totalPaidForApp - dpPaid);
 
         dataByMember[memberId][targetYear].pokok += pokok;
         dataByMember[memberId][targetYear].margin += margin;
-        dataByMember[memberId][targetYear].dp += dp;
+        dataByMember[memberId][targetYear].dp += dpPaid;
         dataByMember[memberId][targetYear].cicilan += cicilan;
         dataByMember[memberId][targetYear].total += pokok + margin;
       }

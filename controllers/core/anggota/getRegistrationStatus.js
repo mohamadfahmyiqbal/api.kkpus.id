@@ -102,6 +102,7 @@ export const getRegistrationStatus = async (req, res) => {
     // Gunakan dari DB jika sudah ada, atau evaluasi dari ApprovalStep
     responseData.is_approved_pengawas = responseData.is_approved_pengawas || isStepApprovedByOrder(1);
     responseData.is_approved_ketua = responseData.is_approved_ketua || isStepApprovedByOrder(2);
+    responseData.is_approved_bendahara = responseData.is_approved_bendahara || isStepApprovedByOrder(3);
 
     return res.status(200).json({
       status: true,
