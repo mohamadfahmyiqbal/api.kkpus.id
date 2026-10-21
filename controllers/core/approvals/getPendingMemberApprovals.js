@@ -17,6 +17,11 @@ export const getPendingMemberApprovals = async (req, res) => {
       });
     }
 
+    // Cek apakah user memiliki peran Bendahara (role_id '4') atau Pengawas/Ketua
+    const isBendaharaUser = (req.roles || []).some((r) => r.toLowerCase().includes("bendahara")) || userRoleIds.map(String).includes("4");
+
+    console.log("[getPendingMemberApprovals] userRoleIds:", userRoleIds, "roles:", req.roles, "isBendaharaUser:", isBendaharaUser);
+
     const [pendingRegistrations, pendingTerminations] = await Promise.all([
       MemberRegistration.findAll({
         where: {
@@ -27,12 +32,14 @@ export const getPendingMemberApprovals = async (req, res) => {
             model: ApprovalStep,
             as: 'currentStep',
             include: [{ model: db.UserRole, as: 'verifierRole' }],
-            where: {
-              role_id: {
-                [Op.in]: userRoleIds
-              }
-            },
-            required: true
+            where: isBendaharaUser
+              ? undefined
+              : {
+                  role_id: {
+                    [Op.in]: userRoleIds
+                  }
+                },
+            required: !isBendaharaUser
           },
           {
             model: db.Member,
@@ -47,6 +54,20 @@ export const getPendingMemberApprovals = async (req, res) => {
                 model: db.MemberRoleAssignment, 
                 as: 'roleAssignments',
                 include: [{ model: db.UserRole, as: 'role' }]
+              },
+              {
+                model: db.Transaction,
+                as: 'transactions',
+                required: false,
+                limit: 10,
+                order: [['created_at', 'DESC']]
+              },
+              {
+                model: db.Bill,
+                as: 'bills',
+                required: false,
+                limit: 5,
+                order: [['created_at', 'DESC']]
               }
             ]
           },

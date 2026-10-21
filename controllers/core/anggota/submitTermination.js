@@ -1,4 +1,5 @@
 import db from "../../../models/index.js";
+import { broadcastApprovalNotification } from "../../../utils/socket.js";
 
 const submitTermination = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -68,6 +69,13 @@ const submitTermination = async (req, res) => {
     const termination = await db.MembershipTermination.create(terminationData, { transaction: t });
 
     await t.commit();
+
+    broadcastApprovalNotification({
+      type: "TERMINATION",
+      title: "Pengajuan Berhenti Keanggotaan",
+      message: `Terdapat pengajuan penutupan keanggotaan baru dari anggota #${memberId}.`,
+      data: { termination_id: termination.termination_id, member_id: memberId }
+    });
 
     return res.status(201).json({
       status: true,

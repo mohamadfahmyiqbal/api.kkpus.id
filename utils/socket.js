@@ -49,6 +49,27 @@ export const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log(`🔌 New Connection: ${socket.id}`);
 
+    // Auto-register via auth token if provided
+    const authToken = socket.handshake.auth?.token;
+    if (authToken) {
+      try {
+        const decoded = jwt.verify(authToken, process.env.JWT_SECRET || "secret");
+        const mId = decoded.member_id || decoded.id || decoded.userId;
+        if (mId) {
+          const idStr = String(mId).toLowerCase();
+          if (!users.has(idStr)) {
+            users.set(idStr, new Set());
+          }
+          users.get(idStr).add(socket.id);
+          socket.memberId = idStr;
+          console.log(`🔑 Socket ${socket.id} auto-registered for Member ${idStr} via token`);
+        }
+        if (decoded.role || decoded.roles || decoded.is_admin) {
+          socket.join("admins");
+        }
+      } catch (e) {}
+    }
+
     socket.on("heartbeat", () => {
       socket.emit("heartbeat:ack", { timestamp: new Date().getTime() });
     });
@@ -61,6 +82,7 @@ export const initSocket = (server) => {
         users.set(idStr, new Set());
       }
       users.get(idStr).add(socket.id);
+      socket.memberId = idStr;
       
       try { fs.appendFileSync('socket.log', `--- SOCKET REGISTER ---\nMember: ${idStr}\nSocket ID: ${socket.id}\n`); } catch(e) {}
       
@@ -247,6 +269,40 @@ export const sendToUser = (memberId, event, data) => {
   } else {
     try { fs.appendFileSync('socket.log', `[SOCKET DEBUG] Failed to send: Member ${targetId} is NOT online.\n`); } catch(e) {}
     console.warn(`[SOCKET DEBUG] Failed to send: Member ${targetId} is NOT online or has no active sockets.`);
+    return false;
+  }
+};
+
+export const broadcastApprovalNotification = ({
+  type = "GENERAL",
+  title = "Pembaruan Persetujuan",
+  message = "Terdapat pengajuan baru di antrian persetujuan.",
+  data = {},
+}) => {
+  if (!global.io) {
+    console.warn("⚠️ [SOCKET] Gagal broadcast: IO belum diinisialisasi");
+    return false;
+  }
+
+  const payload = {
+    type,
+    title,
+    message,
+    data,
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    global.io.emit("APPROVAL_UPDATE", payload);
+    global.io.emit("notifications:update", payload);
+    global.io.emit("TRANSACTION_UPDATED", payload);
+    if (type === "REGISTRATION") {
+      global.io.emit("REGISTRATION_UPDATED", payload);
+    }
+    console.log(`📢 [SOCKET BROADCAST] ${type}: ${title} - ${message}`);
+    return true;
+  } catch (err) {
+    console.error("❌ [SOCKET BROADCAST ERROR]:", err.message);
     return false;
   }
 };

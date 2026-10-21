@@ -76,12 +76,42 @@ const Transaction = (sequelize) => {
       status: {
         type: DataTypes.ENUM(
           "PENDING",
+          "PENDING_VERIFICATION",
           "PAID",
           "EXPIRED",
           "CANCELED",
-          "FAILED"
+          "FAILED",
+          "REJECTED"
         ),
         defaultValue: "PENDING",
+      },
+      proof_of_transfer: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      sender_name: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      sender_bank: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      sender_account_no: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      admin_note: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      verified_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
       fraud_status: {
         type: DataTypes.STRING(50),

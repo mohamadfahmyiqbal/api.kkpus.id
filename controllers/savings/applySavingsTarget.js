@@ -1,5 +1,6 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { broadcastApprovalNotification } from "../../utils/socket.js";
 import moment from "moment";
 
 export const applySavingsTarget = async (req, res) => {
@@ -101,6 +102,13 @@ export const applySavingsTarget = async (req, res) => {
           content: `Pengajuan ${targetName} senilai Rp ${Number(targetAmount).toLocaleString('id-ID')} telah diproses.`,
           type: "SAVINGS",
           url: "/tabungan"
+        });
+
+        broadcastApprovalNotification({
+          type: "SAVINGS_TARGET",
+          title: "Pengajuan Tabungan Baru",
+          message: `Pengajuan ${targetName} senilai Rp ${Number(targetAmount).toLocaleString('id-ID')} dari anggota #${memberId}.`,
+          data: { saving_target_id: newTarget.saving_target_id, member_id: memberId }
         });
       } catch (err) {
         console.error("Notification Error:", err.message);

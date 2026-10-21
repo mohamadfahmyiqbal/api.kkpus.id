@@ -83,12 +83,42 @@ const getFinancingDetail = async (req, res) => {
       order: [['created_at', 'DESC']]
     });
 
+    const pendingDPTx = await db.Transaction.findOne({
+      where: {
+        member_id: detail.member_id,
+        [db.Sequelize.Op.or]: [
+          { tx_category: 'FINANCING_PAYMENT' },
+          { tx_category: 'TRANSACTION_DOWN_PAYMENT' }
+        ],
+        proof_of_transfer: { [db.Sequelize.Op.ne]: null },
+        created_at: {
+          [db.Sequelize.Op.gte]: detail.createdAt || detail.created_at
+        }
+      },
+      order: [['created_at', 'DESC']]
+    });
+
+    const billItemIncludes = [
+      {
+        model: db.Bill,
+        as: "bill",
+        include: [
+          {
+            model: db.Transaction,
+            as: "payments",
+            required: false,
+          },
+        ],
+      },
+    ];
+
     const unpaidItems = await db.BillItem.findAll({
       where: {
         financing_application_id: detail.financing_id,
         category_code: 'TRANSACTION_INSTALLMENT',
         status: 'UNPAID'
-      }
+      },
+      include: billItemIncludes,
     });
     const unpaid_amount_raw = unpaidItems.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
     const unpaid_term_count_raw = unpaidItems.length;
@@ -98,7 +128,8 @@ const getFinancingDetail = async (req, res) => {
         financing_application_id: detail.financing_id,
         category_code: 'TRANSACTION_INSTALLMENT',
         status: 'PAID'
-      }
+      },
+      include: billItemIncludes,
     });
 
     const paid_installment_amount = paidInstallmentItems.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
@@ -107,14 +138,33 @@ const getFinancingDetail = async (req, res) => {
     const allInstallmentsRaw = [...paidInstallmentItems, ...unpaidItems];
     allInstallmentsRaw.sort((a, b) => new Date(a.created_at || a.createdAt || 0) - new Date(b.created_at || b.createdAt || 0));
 
-    const installments = allInstallmentsRaw.map((item, idx) => ({
-      id: item.bill_item_id || item.id,
-      installment_number: item.term_sequence || (idx + 1),
-      payment_date: item.status === 'PAID' ? (item.updated_at || item.updatedAt) : null,
-      description: item.item_name || item.description || `Setoran ${idx + 1}`,
-      amount: item.amount,
-      status: item.status
-    }));
+    const installments = allInstallmentsRaw.map((item, idx) => {
+      const latestPayment = item.bill?.payments && item.bill.payments.length > 0
+        ? [...item.bill.payments].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        : null;
+
+      let displayStatus = item.status;
+      if (item.status === 'UNPAID') {
+        if (latestPayment && latestPayment.status === 'PENDING_VERIFICATION') {
+          displayStatus = 'PENDING_VERIFICATION';
+        } else if (item.bill && item.bill.status === 'pending_verification') {
+          displayStatus = 'PENDING_VERIFICATION';
+        }
+      }
+
+      return {
+        id: item.bill_item_id || item.id,
+        installment_number: item.term_sequence || (idx + 1),
+        payment_date: item.status === 'PAID' ? (item.updated_at || item.updatedAt) : null,
+        description: item.item_name || item.description || `Setoran ${idx + 1}`,
+        amount: item.amount,
+        status: displayStatus,
+        transaction_id: latestPayment?.transaction_id || null,
+        proof_of_transfer: latestPayment?.proof_of_transfer || null,
+        sender_name: latestPayment?.sender_name || null,
+        sender_bank: latestPayment?.sender_bank || null,
+      };
+    });
 
     const expectedTotalInstallment = (parseFloat(detail.item_price || detail.amount_requested || 0) - parseFloat(detail.down_payment || 0));
     
@@ -126,7 +176,21 @@ const getFinancingDetail = async (req, res) => {
       unpaid_term_count = 0;
     }
 
-    const isDPPaid = !!latestPaidTx || !!paidDPItem;
+    const dpBillItem = await db.BillItem.findOne({
+      where: {
+        financing_application_id: detail.financing_id,
+        category_code: 'TRANSACTION_DOWN_PAYMENT'
+      },
+      include: billItemIncludes,
+      order: [['created_at', 'DESC']]
+    });
+
+    const dpPayment = dpBillItem?.bill?.payments?.find(p => p.proof_of_transfer) || pendingDPTx || null;
+    const hasPaidDP = !!latestPaidTx || !!paidDPItem || dpBillItem?.status === 'PAID';
+    const hasUploadedDP = hasPaidDP || !!dpPayment?.proof_of_transfer || !!detail.transfer_proof_path;
+    const dpProofUrl = dpPayment?.proof_of_transfer || detail.transfer_proof_path || null;
+
+    const isDPPaid = hasPaidDP;
     const eligibleForPaidStatus = ["WAITING_PAYMENT", "READY_TO_PAY", "PAID", "APPROVED"].includes(detail.status);
     
     let finalStatus = detail.status;
@@ -196,6 +260,12 @@ const getFinancingDetail = async (req, res) => {
         contract_proof: detail.contract_proof,
         additional_documents: detail.additional_documents,
         
+        // DP / Uang Tanda Keseriusan
+        has_paid_dp: hasPaidDP,
+        has_uploaded_dp: hasUploadedDP,
+        dp_proof_url: dpProofUrl,
+        dp_payment: dpPayment,
+
         // Status Approval
         is_approved_pengawas: existingApprovals.some(a => 
           a.step?.verifierRole?.role_name?.toUpperCase() === 'PENGAWAS' && a.decision === 'APPROVED'

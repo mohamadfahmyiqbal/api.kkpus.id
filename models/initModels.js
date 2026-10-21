@@ -64,6 +64,7 @@ import LandingContact from "./landing/landing_contact.js";
 import ContactForm from "./landing/contact_forms.js";
 import FeatureConfig from "./core/feature_configs.js";
 import PaymentFeeConfig from "./billing/payment_fee_configs.js";
+import CooperativeBankAccount from "./billing/cooperative_bank_accounts.js";
 
 export default function initModels(db, sequelizeInstance, DataTypes) {
   db.MemberStatus = MemberStatus(sequelizeInstance, DataTypes);
@@ -140,4 +141,5 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.ContactForm = ContactForm(sequelizeInstance, DataTypes);
   db.FeatureConfig = FeatureConfig(sequelizeInstance, DataTypes);
   db.PaymentFeeConfig = PaymentFeeConfig(sequelizeInstance, DataTypes);
+  db.CooperativeBankAccount = CooperativeBankAccount(sequelizeInstance, DataTypes);
 }

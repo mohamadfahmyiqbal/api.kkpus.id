@@ -55,6 +55,20 @@ const getFinancingHistory = async (req, res) => {
           model: db.Approval,
           as: 'approvals',
           attributes: ['note', 'decision', 'created_at']
+        },
+        {
+          model: db.ApprovalFlow,
+          as: 'flow',
+          include: [{
+            model: db.ApprovalStep,
+            as: 'steps',
+            include: [{ model: db.UserRole, as: 'verifierRole' }]
+          }]
+        },
+        {
+          model: db.ApprovalStep,
+          as: 'currentStep',
+          include: [{ model: db.UserRole, as: 'verifierRole' }]
         }
       ],
       limit: 50,
@@ -117,6 +131,8 @@ const getFinancingHistory = async (req, res) => {
       
       const appPayments = paidByApp[data.financing_id] || { total: 0, items: [], installment_amount: 0, installment_count: 0 };
       const appUnpaid = unpaidByApp[data.financing_id] || { total: 0, count: 0, items: [] };
+      const allAppItems = (appPayments.items || []).concat(appUnpaid.items || []);
+      const hasDPBill = allAppItems.some(item => ['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code));
       const hasPaidDP = appPayments.items.some(item => item.category_code === 'TRANSACTION_DOWN_PAYMENT' || item.category_code === 'DP_PEMBIAYAAN');
       
       const expectedTotalInstallment = (parseFloat(data.item_price || data.amount_requested || 0) - parseFloat(data.down_payment || 0));
@@ -128,7 +144,10 @@ const getFinancingHistory = async (req, res) => {
         calculatedUnpaidCount = 0;
       }
 
-      data.paid_amount = appPayments.total + (!hasPaidDP ? parseFloat(data.down_payment || 0) : 0);
+      // Hanya tambahkan DP jika memang TIDAK ADA tagihan DP di sistem (legacy/offline fallback).
+      // Jika tagihan DP ada di sistem (baik PAID atau UNPAID), gunakan appPayments.total yang sebenarnya.
+      const legacyDPOffline = !hasDPBill && parseFloat(data.down_payment || 0) > 0;
+      data.paid_amount = appPayments.total + (legacyDPOffline ? parseFloat(data.down_payment || 0) : 0);
       data.unpaid_amount = calculatedUnpaid;
       data.unpaid_term_count = calculatedUnpaidCount;
       data.paid_term_count = appPayments.installment_count;

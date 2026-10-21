@@ -72,21 +72,43 @@ export const handleFinancingFinalAction = async ({ entity, transaction: t }) => 
 
   if (!isPelunasan) {
     if (downPayment > 0) {
-      await BillItem.create(
-        {
-          bill_type_id: 7,
-          category_code: downPaymentBillType?.type_code || "TRANSACTION_DOWN_PAYMENT",
-          bill_id: null,
-          member_id: memberId,
+      const existingDPItem = await BillItem.findOne({
+        where: {
           financing_application_id: entity.financing_id,
-          description: isArisan ? "Uang Pangkal/DP Arisan" : `DP / Uang Muka ${entity.category || "Pinjaman"}`,
-          amount: downPayment,
-          due_date: new Date(),
-          status: "UNPAID",
+          category_code: "TRANSACTION_DOWN_PAYMENT",
         },
-        { transaction: t }
-      );
-      billsCreated++;
+        transaction: t,
+      });
+
+      if (existingDPItem) {
+        await existingDPItem.update({ status: "PAID" }, { transaction: t });
+        if (existingDPItem.bill_id) {
+          await db.Bill.update(
+            { status: "paid" },
+            { where: { bill_id: existingDPItem.bill_id }, transaction: t }
+          );
+          await db.Transaction.update(
+            { status: "PAID" },
+            { where: { bill_id: existingDPItem.bill_id }, transaction: t }
+          );
+        }
+      } else {
+        await BillItem.create(
+          {
+            bill_type_id: 7,
+            category_code: downPaymentBillType?.type_code || "TRANSACTION_DOWN_PAYMENT",
+            bill_id: null,
+            member_id: memberId,
+            financing_application_id: entity.financing_id,
+            description: isArisan ? "Uang Pangkal/DP Arisan" : `DP / Uang Muka ${entity.category || "Pinjaman"}`,
+            amount: downPayment,
+            due_date: new Date(),
+            status: "PAID",
+          },
+          { transaction: t }
+        );
+        billsCreated++;
+      }
     }
 
     for (let i = 1; i <= months; i++) {

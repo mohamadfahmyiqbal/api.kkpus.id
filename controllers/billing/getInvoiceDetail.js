@@ -38,7 +38,7 @@ export const getInvoiceDetail = async (req, res) => {
       ? { bill_item_id: { [Op.in]: bill_item_ids } }
       : { bill_id };
 
-    const items = await BillItem.findAll({
+    let items = await BillItem.findAll({
       where: whereClause,
       include: [
         {
@@ -54,6 +54,90 @@ export const getInvoiceDetail = async (req, res) => {
       ],
       order: [["createdAt", "ASC"]]
     });
+
+    // Cek jika data belum ditemukan, periksa apakah ini tagihan DP sintetis ("dp-<financing_id>")
+    if (!items || items.length === 0) {
+      const dpId = Array.isArray(bill_item_ids)
+        ? bill_item_ids.find(id => typeof id === "string" && id.startsWith("dp-"))
+        : null;
+
+      if (dpId) {
+        const financingId = dpId.replace(/^dp-/, "");
+
+        // 1. Cek apakah sudah ada BillItem untuk DP pembiayaan ini
+        let existingDP = await BillItem.findOne({
+          where: {
+            financing_application_id: financingId,
+            category_code: { [Op.in]: ["TRANSACTION_DOWN_PAYMENT", "DP_PEMBIAYAAN"] },
+            status: { [Op.ne]: "CANCELLED" }
+          },
+          include: [
+            {
+              model: BillType,
+              as: "type",
+              attributes: ["type_name", "type_code"]
+            },
+            {
+              model: Member,
+              as: "member",
+              attributes: ["full_name", "member_no"]
+            }
+          ],
+          order: [["createdAt", "DESC"]]
+        });
+
+        // 2. Jika belum ada, ambil dari FinancingApplication dan buat BillItem DP
+        if (!existingDP) {
+          const financingApp = await db.FinancingApplication.findByPk(financingId, {
+            include: [
+              {
+                model: Member,
+                as: "member",
+                attributes: ["full_name", "member_no"]
+              }
+            ]
+          });
+
+          if (financingApp) {
+            const typeDP = await BillType.findOne({
+              where: { type_code: "TRANSACTION_DOWN_PAYMENT" }
+            });
+            const billTypeId = typeDP?.bill_type_id || 7;
+            const dpAmount = parseFloat(financingApp.down_payment || 0);
+
+            const createdItem = await BillItem.create({
+              member_id: financingApp.member_id,
+              bill_type_id: billTypeId,
+              financing_application_id: financingId,
+              amount: dpAmount,
+              status: "UNPAID",
+              description: "Uang Tanda Keseriusan (DP)",
+              category_code: "TRANSACTION_DOWN_PAYMENT",
+              due_date: new Date(),
+            });
+
+            existingDP = await BillItem.findByPk(createdItem.bill_item_id, {
+              include: [
+                {
+                  model: BillType,
+                  as: "type",
+                  attributes: ["type_name", "type_code"]
+                },
+                {
+                  model: Member,
+                  as: "member",
+                  attributes: ["full_name", "member_no"]
+                }
+              ]
+            });
+          }
+        }
+
+        if (existingDP) {
+          items = [existingDP];
+        }
+      }
+    }
 
     // Cek jika data ditemukan
     if (!items || items.length === 0) {
@@ -209,12 +293,48 @@ export const getInvoiceDetail = async (req, res) => {
 
     // Agregasi Data Response
     const firstItem = items[0];
+    const targetBillId = bill_id || firstItem.bill_id;
+
+    // Ambil header bill dan transaksi terbaru untuk verifikasi manual
+    let billHeader = null;
+    let latestTx = null;
+    if (targetBillId) {
+      billHeader = await db.Bill.findByPk(targetBillId);
+      latestTx = await db.Transaction.findOne({
+        where: { bill_id: targetBillId },
+        order: [["created_at", "DESC"]],
+      });
+    }
+
+    // Status prioritas: jika bill atau transaksi PENDING_VERIFICATION / pending_verification
+    let invoiceStatus = items.some(i => i.status === "UNPAID") ? "UNPAID" : "PAID";
+    if (billHeader?.status?.toLowerCase() === "pending_verification" || latestTx?.status === "PENDING_VERIFICATION") {
+      invoiceStatus = "PENDING_VERIFICATION";
+    } else if (billHeader?.status?.toLowerCase() === "rejected" || latestTx?.status === "REJECTED") {
+      invoiceStatus = "REJECTED";
+    }
+
     const responseData = {
+      bill_id: targetBillId,
       full_name: firstItem.member?.full_name || "N/A",
       member_no: firstItem.member?.member_no || "-",
       createdAt: firstItem.createdAt,
-      // Status Invoice Gabungan: Jika ada 1 saja yang UNPAID, maka dianggap UNPAID
-      status: items.some(i => i.status === "UNPAID") ? "UNPAID" : "PAID",
+      status: invoiceStatus,
+      bill_status: billHeader?.status || invoiceStatus,
+      transaction: latestTx ? {
+        transaction_id: latestTx.transaction_id,
+        order_id: latestTx.midtrans_order_id,
+        status: latestTx.status,
+        amount: parseFloat(latestTx.amount),
+        proof_of_transfer: latestTx.proof_of_transfer,
+        sender_name: latestTx.sender_name,
+        sender_bank: latestTx.sender_bank,
+        sender_account_no: latestTx.sender_account_no,
+        bank_name: latestTx.bank_name,
+        admin_note: latestTx.admin_note,
+        created_at: latestTx.created_at,
+        verified_at: latestTx.verified_at,
+      } : null,
       details: items.map(item => ({
         bill_item_id: item.bill_item_id,
         description: item.description || item.type?.type_name || "Tagihan",

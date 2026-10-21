@@ -27,7 +27,7 @@ router.post("/process/:entityRef/:entityId",
 // Get pending approvals for members
 router.get("/pendaftaran/pending", MidAnggota, MidRole(), getPendingMemberApprovals);
 
-router.put("/pendaftaran/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA"]), processApproval(REG));
+router.put("/pendaftaran/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), processApproval(REG));
 router.put("/penarikan/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), verifyApprovalChain(WD), processApproval(WD));
 router.post("/penarikan/pembayaran/:entityId", MidAnggota, MidRole(["BENDAHARA"]), disburseWithdrawal);
 router.put("/tabungan_penarikan/approve/:entityId", MidAnggota, MidRole(["PENGAWAS", "KETUA", "BENDAHARA"]), verifyApprovalChain("tabungan_withdrawals"), processApproval("tabungan_withdrawals"));

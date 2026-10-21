@@ -13,7 +13,7 @@ import router from "./routes/routes.js";
 import { initSocket, users } from "./utils/socket.js";
 import ErrorHandler from "./middleware/ErrorHandler.js";
 import { initCronJobs } from "./services/cron.js";
-// Trigger restart for CORS config
+// Trigger restart for CORS config and dashboard update: 2026-10-18T09:07:00
 console.log("✅ App starting...");
 console.log("✅ Router imported:", typeof router);
 
@@ -33,9 +33,7 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
-    frameguard: {
-      action: "sameorigin",
-    },
+    frameguard: false,
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
@@ -45,6 +43,7 @@ app.use(
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         connectSrc: ["'self'", "https://*.googleapis.com", "https://*.mozilla.com", "https://*.push.apple.com", "https://*.midtrans.com", "https://*.veritrans.co.id"],
         frameSrc: ["'self'", "https://*.midtrans.com", "https://*.veritrans.co.id"],
+        frameAncestors: ["'self'", "https://admin.kkpus.id", "https://kkpus.id", "https://localhost:*", "http://localhost:*"],
       },
     },
   }),
@@ -56,15 +55,14 @@ app.use((req, res, next) => {
   if (!res.getHeader("Content-Security-Policy")) {
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self' https://*.midtrans.com https://*.veritrans.co.id; style-src 'self' 'unsafe-inline' https://*.midtrans.com https://*.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.midtrans.com https://*.veritrans.co.id; img-src 'self' data: https: blob:; connect-src 'self' https://*.googleapis.com https://*.mozilla.com https://*.push.apple.com https://*.midtrans.com https://*.veritrans.co.id; frame-src 'self' https://*.midtrans.com https://*.veritrans.co.id"
+      "default-src 'self' https://*.midtrans.com https://*.veritrans.co.id; style-src 'self' 'unsafe-inline' https://*.midtrans.com https://*.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.midtrans.com https://*.veritrans.co.id; img-src 'self' data: https: blob:; connect-src 'self' https://*.googleapis.com https://*.mozilla.com https://*.push.apple.com https://*.midtrans.com https://*.veritrans.co.id; frame-src 'self' https://*.midtrans.com https://*.veritrans.co.id; frame-ancestors 'self' https://admin.kkpus.id https://kkpus.id https://localhost:* http://localhost:*"
     );
   }
   if (!res.getHeader("Strict-Transport-Security")) {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
-  if (!res.getHeader("X-Frame-Options")) {
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  }
+  // Jangan set X-Frame-Options: SAMEORIGIN jika request berasal dari frontend admin / localhost agar iframe PDF bisa dibuka
+  // CSP frame-ancestors di atas sudah menangani proteksi clickjacking secara modern & aman.
   if (!res.getHeader("X-Content-Type-Options")) {
     res.setHeader("X-Content-Type-Options", "nosniff");
   }

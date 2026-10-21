@@ -1,5 +1,6 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { broadcastApprovalNotification } from "../../utils/socket.js";
 
 const createFinancingApplication = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -158,6 +159,13 @@ const createFinancingApplication = async (req, res) => {
           content: `Pengajuan ${category} (${item_name}) senilai Rp ${Number(principal_amount).toLocaleString('id-ID')} telah berhasil dikirim.`,
           type: "FINANCING",
           url: "/transaksi"
+        });
+
+        broadcastApprovalNotification({
+          type: "FINANCING",
+          title: `Pengajuan Pembiayaan: ${category || "Baru"}`,
+          message: `Pengajuan ${item_name || category} senilai Rp ${Number(principal_amount).toLocaleString('id-ID')} dari anggota #${memberId}.`,
+          data: { financing_id: newApplication.financing_id, member_id: memberId }
         });
       } catch (err) {
         console.error("Notification Error:", err.message);

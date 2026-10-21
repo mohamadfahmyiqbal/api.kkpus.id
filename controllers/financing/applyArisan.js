@@ -2,6 +2,7 @@
 
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { broadcastApprovalNotification } from "../../utils/socket.js";
 
 const { ArisanBatch, ArisanProgram, ArisanParticipant, FinancingApplication, ApprovalFlow, ApprovalStep } = db;
 
@@ -112,6 +113,13 @@ const applyArisan = async (req, res) => {
           content: `Pengajuan bergabung grup arisan ${batch.program?.program_name || 'Arisan'} (${batch.batch_name}) berhasil dikirim dan sedang menunggu persetujuan.`,
           type: "FINANCING",
           url: "/transaksi"
+        });
+
+        broadcastApprovalNotification({
+          type: "FINANCING",
+          title: "Pengajuan Arisan Baru",
+          message: `Pengajuan arisan ${batch.program?.program_name || 'Arisan'} (${batch.batch_name}) dari anggota #${memberId}.`,
+          data: { financing_id: application.financing_id, member_id: memberId }
         });
       } catch (err) {
         console.error("Notification Error:", err.message);
