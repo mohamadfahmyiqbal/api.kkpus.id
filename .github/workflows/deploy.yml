@@ -26,10 +26,23 @@ jobs:
         echo "Username: '${{ secrets.VPS_USERNAME }}'"
         echo "Host: '${{ secrets.VPS_HOST }}'"
         
-        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" 'bash -l' << 'EOF'
+        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
+          # Load NVM and user profile paths
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$HOME/.profile" ] && \. "$HOME/.profile"
+          [ -s "$HOME/.bashrc" ] && \. "$HOME/.bashrc"
+          export PATH="$PATH:/usr/local/bin:$HOME/.npm-global/bin"
+
           cd /var/www/api.kkpus.id
           git fetch origin master
           git reset --hard origin/master
           npm install --production
-          pm2 reload app || pm2 restart app
+
+          # Restart PM2 using direct command or npx fallback
+          if command -v pm2 &> /dev/null; then
+            pm2 reload app || pm2 restart app
+          else
+            npx pm2 reload app || npx pm2 restart app
+          fi
         EOF
