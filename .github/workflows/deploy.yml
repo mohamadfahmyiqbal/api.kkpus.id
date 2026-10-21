@@ -26,8 +26,10 @@ jobs:
         echo "Username: '${{ secrets.VPS_USERNAME }}'"
         echo "Host: '${{ secrets.VPS_HOST }}'"
         
-        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
+        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" 'bash -l' << 'EOF'
           cd /var/www/api.kkpus.id
           git fetch origin master
           git reset --hard origin/master
+          npm install --production
+          pm2 reload app || pm2 restart app
         EOF
