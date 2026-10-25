@@ -17,7 +17,10 @@ export const getAllMembers = async (req, res) => {
     if (search) {
       whereClause[Op.or] = [
         { full_name: { [Op.like]: `%${search}%` } },
-        { member_no: { [Op.like]: `%${search}%` } }
+        { member_no: { [Op.like]: `%${search}%` } },
+        { nik_ktp: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+        { phone_number: { [Op.like]: `%${search}%` } }
       ];
     }
     
@@ -43,6 +46,36 @@ export const getAllMembers = async (req, res) => {
             as: 'role',
             attributes: ['role_name']
           }]
+        },
+        {
+          model: db.MemberBankAccount,
+          as: 'bankAccounts',
+          required: false
+        },
+        {
+          model: db.MemberEmployment,
+          as: 'employments',
+          required: false
+        },
+        {
+          model: db.MemberEmergencyContact,
+          as: 'emergencyContacts',
+          required: false
+        },
+        {
+          model: db.BusinessProfile,
+          as: 'business',
+          required: false
+        },
+        {
+          model: db.MemberFinancialSummary,
+          as: 'financial_summary',
+          required: false
+        },
+        {
+          model: db.MemberRegistration,
+          as: 'registration',
+          required: false
         }
       ],
       limit,

@@ -30,12 +30,48 @@ export const importAnggota = async (req, res) => {
     // Get Active Status ID
     let activeStatus = await MemberStatus.findOne({ where: { status_name: "Aktif" } });
     if (!activeStatus) {
-       activeStatus = await MemberStatus.findOne({ where: { status_name: "Active" } });
+      activeStatus = await MemberStatus.findOne({ where: { status_name: "Active" } });
     }
     const statusId = activeStatus ? activeStatus.status_id : null;
 
     const successData = [];
     const errorData = [];
+
+    // Helper untuk parsing tanggal dari format Excel (baik serial number maupun string YYYY-MM-DD / DD-MM-YYYY)
+    const parseExcelDate = (val) => {
+      if (!val) return null;
+      if (typeof val === "number") {
+        // Format serial date dari Excel (basis 1899-12-30)
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return isNaN(date.getTime()) ? null : date;
+      }
+      if (val instanceof Date) {
+        return isNaN(val.getTime()) ? null : val;
+      }
+      const str = String(val).trim();
+      // Format YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // Format DD-MM-YYYY atau DD/MM/YYYY
+      const parts = str.split(/[-/]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          const d = new Date(str);
+          return isNaN(d.getTime()) ? null : d;
+        } else {
+          // DD, MM, YYYY
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const d = new Date(year, month, day);
+          return isNaN(d.getTime()) ? null : d;
+        }
+      }
+      const parsed = new Date(str);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -47,8 +83,15 @@ export const importAnggota = async (req, res) => {
       const nik = row["NIK KTP"];
       const type = row["Jenis Anggota"];
       const gender = row["Jenis Kelamin"];
-      const birthDate = row["Tanggal Lahir (YYYY-MM-DD)"];
-      const joinDate = row["Tanggal Bergabung (YYYY-MM-DD)"];
+      const birthDateRaw =
+        row["Tanggal Lahir (YYYY-MM-DD)"] ||
+        row["Tanggal Lahir"] ||
+        row["Tgl Lahir"];
+      const joinDateRaw =
+        row["Tanggal Bergabung (YYYY-MM-DD)"] ||
+        row["Tanggal Bergabung"] ||
+        row["Tgl Bergabung"] ||
+        row["Tanggal Masuk"];
       const rt = row["RT"];
       const rw = row["RW"];
       // Note: Provinsi, Kabupaten, Kecamatan, Kelurahan exist in Excel but we append them to address or ignore UUID lookup for now
@@ -109,6 +152,9 @@ export const importAnggota = async (req, res) => {
           password_hash = await bcrypt.hash(rawPassword.toString(), salt);
         }
 
+        const parsedBirthDate = parseExcelDate(birthDateRaw);
+        const parsedJoinDate = parseExcelDate(joinDateRaw) || new Date();
+
         const newMember = await Member.create({
           member_no: String(memberNo),
           full_name: fullName,
@@ -118,8 +164,8 @@ export const importAnggota = async (req, res) => {
           nik_ktp: nik ? String(nik) : null,
           member_type: type || "Reguler",
           gender: gender || null,
-          date_of_brith: birthDate ? new Date(birthDate) : null,
-          join_date: joinDate ? new Date(joinDate) : new Date(),
+          date_of_brith: parsedBirthDate,
+          join_date: parsedJoinDate,
           rt: rt ? String(rt) : null,
           rw: rw ? String(rw) : null,
           address: address || null,

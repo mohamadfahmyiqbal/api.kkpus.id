@@ -32,6 +32,10 @@ export default function defineMemberAssociations(db) {
   db.Member.hasMany(db.MemberEmergencyContact, { foreignKey: "member_id", as: "emergencyContacts" });
   db.MemberEmergencyContact.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
 
+  // Member & Business Profile
+  db.Member.hasOne(db.BusinessProfile, { foreignKey: "member_id", as: "business" });
+  db.BusinessProfile.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+
   // Member & Push Subscription
   db.Member.hasMany(db.PushSubscription, { foreignKey: "member_id", as: "pushSubscriptions" });
   db.PushSubscription.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });

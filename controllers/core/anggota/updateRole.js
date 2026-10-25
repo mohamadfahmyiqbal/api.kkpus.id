@@ -24,17 +24,24 @@ export const updateRole = async (req, res) => {
     await MemberRoleAssignment.destroy({ where: { member_id }, transaction });
 
     // 4. Assign new roles
-    if (role_id) {
+    if (role_id && (Array.isArray(role_id) ? role_id.length > 0 : true)) {
       const rolesToAssign = Array.isArray(role_id) ? role_id : [role_id];
-      for (const id of rolesToAssign) {
-        const role = await UserRole.findByPk(id);
+      for (const idOrName of rolesToAssign) {
+        if (!idOrName) continue;
+        // Cari berdasarkan role_id (UUID) atau role_name
+        let role = await UserRole.findByPk(idOrName);
+        if (!role) {
+          role = await UserRole.findOne({ where: { role_name: idOrName } });
+        }
+
         if (!role) {
           await transaction.rollback();
-          return res.status(404).json({ success: false, message: `Role dengan ID ${id} tidak valid` });
+          return res.status(404).json({ success: false, message: `Role '${idOrName}' tidak valid atau tidak ditemukan` });
         }
+
         await MemberRoleAssignment.create({
           member_id,
-          role_id: id,
+          role_id: role.role_id,
           start_date: new Date()
         }, { transaction });
       }

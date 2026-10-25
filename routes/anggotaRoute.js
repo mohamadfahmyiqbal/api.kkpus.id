@@ -15,7 +15,7 @@ import { importAnggota } from "../controllers/core/anggota/importAnggota.js";
 import { downloadTemplateAnggota } from "../controllers/core/anggota/downloadTemplateAnggota.js";
 import { updateRole } from "../controllers/core/anggota/updateRole.js";
 import { getRoles } from "../controllers/core/anggota/getRoles.js";
-import { deleteMember } from "../controllers/core/anggota/deleteMember.js";
+import { deleteMember, deleteBatchMembers } from "../controllers/core/anggota/deleteMember.js";
 
 const router = express.Router();
 const upload = multer();
@@ -34,6 +34,7 @@ router.get("/template-import", downloadTemplateAnggota);
 router.post("/import", upload.single("file"), importAnggota);
 router.put("/:member_id/role", updateRole);
 router.get("/roles", getRoles);
+router.post("/batch-delete", deleteBatchMembers);
 router.delete("/:member_id", deleteMember);
 
 export default router;
