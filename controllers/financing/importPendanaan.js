@@ -31,7 +31,12 @@ export const importPendanaan = async (req, res) => {
       const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
       const keterangan = row["Keterangan"] || "Import Data Pendanaan Syariah";
 
-      if (!memberNo || !namaPendanaan || jumlahPendanaan <= 0 || tenor <= 0) {
+      // Jika nama pendanaan kosong atau jumlah pendanaan 0, lewati baris ini (tidak diimpor)
+      if (!namaPendanaan || jumlahPendanaan <= 0) {
+        continue;
+      }
+
+      if (!memberNo || tenor <= 0) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Pendanaan, Jumlah, Tenor) tidak lengkap/valid" });
         continue;
       }

@@ -32,7 +32,12 @@ export const importInvestasi = async (req, res) => {
       const profitRate = parseFloat(row["Proyeksi Bagi Hasil (%)"]) || 10;
       const keterangan = row["Keterangan"] || "Import Investasi Halal";
 
-      if (!memberNo || !namaProduk || nilaiInvestasi <= 0) {
+      // Jika nama produk kosong atau nilai investasi 0, lewati baris ini (tidak diimpor)
+      if (!namaProduk || nilaiInvestasi <= 0) {
+        continue;
+      }
+
+      if (!memberNo) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Produk, Nilai) tidak lengkap/valid" });
         continue;
       }

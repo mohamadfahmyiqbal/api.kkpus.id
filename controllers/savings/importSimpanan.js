@@ -40,7 +40,12 @@ export const importSimpanan = async (req, res) => {
       
       const keterangan = row["Keterangan"];
 
-      if (!memberNo || !jenisSimpanan || !nominal || !tanggal) {
+      // Jika nominal kosong atau 0, lewati baris ini (tidak diimpor)
+      if (nominal === undefined || nominal === null || nominal === "" || parseFloat(nominal) <= 0) {
+        continue;
+      }
+
+      if (!memberNo || !jenisSimpanan || !tanggal) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Jenis Simpanan, Nominal, Tanggal) tidak boleh kosong" });
         continue;
       }

@@ -1,32 +1,48 @@
 import xlsx from "xlsx";
+import db from "../../models/index.js";
+
+const { Member } = db;
 
 export const downloadTemplateSimpanan = async (req, res) => {
   try {
     const workbook = xlsx.utils.book_new();
 
-    // Data header template
-    const templateData = [
-      {
-        "No. Anggota": "A001",
+    // Ambil daftar anggota aktif dari database
+    const members = await Member.findAll({
+      attributes: ["member_no", "full_name"],
+      order: [["member_no", "ASC"]],
+    });
+
+    let templateData = [];
+
+    if (members && members.length > 0) {
+      templateData = members.map((m) => ({
+        "No. Anggota": m.member_no,
+        "Nama Anggota (Referensi)": m.full_name,
         "Jenis Simpanan": "SUKARELA",
-        "Nominal": 50000,
-        "Tanggal Transaksi": "2024-01-15",
-        "Keterangan": "Setoran awal",
-      },
-      {
-        "No. Anggota": "A002",
-        "Jenis Simpanan": "WAJIB",
-        "Nominal": 20000,
-        "Tanggal Transaksi": "2024-01-16",
-        "Keterangan": "Iuran bulanan",
-      }
-    ];
+        "Nominal": 0,
+        "Tanggal Transaksi": new Date().toISOString().split("T")[0],
+        "Keterangan": "",
+      }));
+    } else {
+      templateData = [
+        {
+          "No. Anggota": "A001",
+          "Nama Anggota (Referensi)": "Contoh Anggota 1",
+          "Jenis Simpanan": "SUKARELA",
+          "Nominal": 50000,
+          "Tanggal Transaksi": "2024-01-15",
+          "Keterangan": "Setoran awal",
+        },
+      ];
+    }
 
     const worksheet = xlsx.utils.json_to_sheet(templateData);
 
     // Set lebar kolom
     worksheet["!cols"] = [
       { wch: 15 }, // No. Anggota
+      { wch: 25 }, // Nama Anggota (Referensi)
       { wch: 15 }, // Jenis Simpanan
       { wch: 15 }, // Nominal
       { wch: 20 }, // Tanggal Transaksi
@@ -52,7 +68,7 @@ export const downloadTemplateSimpanan = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message
+      error: error.message,
     });
   }
 };

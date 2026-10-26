@@ -33,7 +33,12 @@ export const importJualBeli = async (req, res) => {
       const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
       const keterangan = row["Keterangan"] || "Import Data Jual Beli";
 
-      if (!memberNo || !kategori || !namaBarang || hargaBarang <= 0 || tenor <= 0) {
+      // Jika nama barang kosong atau harga 0, lewati baris ini (tidak diimpor)
+      if (!namaBarang || hargaBarang <= 0) {
+        continue;
+      }
+
+      if (!memberNo || !kategori || tenor <= 0) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Kategori, Nama Barang, Harga, Tenor) tidak lengkap/valid" });
         continue;
       }

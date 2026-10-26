@@ -1,36 +1,52 @@
 import xlsx from "xlsx";
+import db from "../../models/index.js";
+
+const { Member } = db;
 
 export const downloadTemplatePinjaman = async (req, res) => {
   try {
     const workbook = xlsx.utils.book_new();
 
-    // Data header template
-    const templateData = [
-      {
-        "No. Anggota": "A001",
+    // Ambil daftar anggota aktif dari database
+    const members = await Member.findAll({
+      attributes: ["member_no", "full_name"],
+      order: [["member_no", "ASC"]],
+    });
+
+    let templateData = [];
+
+    if (members && members.length > 0) {
+      templateData = members.map((m) => ({
+        "No. Anggota": m.member_no,
+        "Nama Anggota (Referensi)": m.full_name,
         "Kategori": "Pinjaman Tunai",
-        "Nama Pinjaman": "Pinjaman Pendidikan",
-        "Jumlah Pinjaman": 5000000,
-        "Margin/Bunga (Rp)": 500000,
-        "Tenor (Bulan)": 10,
-        "Keterangan": "Untuk biaya sekolah",
-      },
-      {
-        "No. Anggota": "A002",
-        "Kategori": "Pinjaman Tunai",
-        "Nama Pinjaman": "Pinjaman Kesehatan",
-        "Jumlah Pinjaman": 2000000,
+        "Nama Pinjaman": "",
+        "Jumlah Pinjaman": 0,
         "Margin/Bunga (Rp)": 0,
-        "Tenor (Bulan)": 5,
-        "Keterangan": "Pinjaman mendesak RS",
-      }
-    ];
+        "Tenor (Bulan)": 10,
+        "Keterangan": "",
+      }));
+    } else {
+      templateData = [
+        {
+          "No. Anggota": "A001",
+          "Nama Anggota (Referensi)": "Contoh Anggota 1",
+          "Kategori": "Pinjaman Tunai",
+          "Nama Pinjaman": "Pinjaman Pendidikan",
+          "Jumlah Pinjaman": 5000000,
+          "Margin/Bunga (Rp)": 500000,
+          "Tenor (Bulan)": 10,
+          "Keterangan": "Untuk biaya sekolah",
+        },
+      ];
+    }
 
     const worksheet = xlsx.utils.json_to_sheet(templateData);
 
     // Set lebar kolom
     worksheet["!cols"] = [
       { wch: 15 }, // No. Anggota
+      { wch: 25 }, // Nama Anggota (Referensi)
       { wch: 20 }, // Kategori
       { wch: 25 }, // Nama Pinjaman
       { wch: 15 }, // Jumlah Pinjaman
@@ -58,7 +74,7 @@ export const downloadTemplatePinjaman = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message
+      error: error.message,
     });
   }
 };

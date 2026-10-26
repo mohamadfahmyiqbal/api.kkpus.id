@@ -32,7 +32,12 @@ export const importPinjaman = async (req, res) => {
       const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
       const keterangan = row["Keterangan"] || "Import Data Pinjaman Lunak";
 
-      if (!memberNo || !namaPinjaman || jumlahPinjaman <= 0 || tenor <= 0) {
+      // Jika nama pinjaman kosong atau jumlah 0, lewati baris ini (tidak diimpor)
+      if (!namaPinjaman || jumlahPinjaman <= 0) {
+        continue;
+      }
+
+      if (!memberNo || tenor <= 0) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Pinjaman, Jumlah, Tenor) tidak lengkap/valid" });
         continue;
       }

@@ -31,7 +31,12 @@ export const importTabungan = async (req, res) => {
       const target = parseFloat(row["Target (Rp)"]) || 0;
       const term = parseInt(row["Jangka Waktu (Bulan)"]) || 12;
 
-      if (!memberNo || !namaProgram) {
+      // Jika nama program kosong, lewati baris ini (tidak diimpor)
+      if (!namaProgram || namaProgram.trim() === "") {
+        continue;
+      }
+
+      if (!memberNo) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Program) tidak lengkap/valid" });
         continue;
       }

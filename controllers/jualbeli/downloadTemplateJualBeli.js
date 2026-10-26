@@ -1,38 +1,54 @@
 import xlsx from "xlsx";
+import db from "../../models/index.js";
+
+const { Member } = db;
 
 export const downloadTemplateJualBeli = async (req, res) => {
   try {
     const workbook = xlsx.utils.book_new();
 
-    // Data header template
-    const templateData = [
-      {
-        "No. Anggota": "A001",
+    // Ambil daftar anggota aktif dari database
+    const members = await Member.findAll({
+      attributes: ["member_no", "full_name"],
+      order: [["member_no", "ASC"]],
+    });
+
+    let templateData = [];
+
+    if (members && members.length > 0) {
+      templateData = members.map((m) => ({
+        "No. Anggota": m.member_no,
+        "Nama Anggota (Referensi)": m.full_name,
         "Kategori": "Elektronik",
-        "Nama Barang": "Laptop Asus",
-        "Harga Barang": 10000000,
-        "DP": 2000000,
-        "Margin (Rp)": 1500000,
+        "Nama Barang": "",
+        "Harga Barang": 0,
+        "DP": 0,
+        "Margin (Rp)": 0,
         "Tenor (Bulan)": 12,
-        "Keterangan": "Pembelian laptop kredit",
-      },
-      {
-        "No. Anggota": "A002",
-        "Kategori": "Kendaraan",
-        "Nama Barang": "Motor Honda Vario",
-        "Harga Barang": 25000000,
-        "DP": 5000000,
-        "Margin (Rp)": 3000000,
-        "Tenor (Bulan)": 24,
-        "Keterangan": "Motor matic",
-      }
-    ];
+        "Keterangan": "",
+      }));
+    } else {
+      templateData = [
+        {
+          "No. Anggota": "A001",
+          "Nama Anggota (Referensi)": "Contoh Anggota 1",
+          "Kategori": "Elektronik",
+          "Nama Barang": "Laptop Asus",
+          "Harga Barang": 10000000,
+          "DP": 2000000,
+          "Margin (Rp)": 1500000,
+          "Tenor (Bulan)": 12,
+          "Keterangan": "Pembelian laptop kredit",
+        },
+      ];
+    }
 
     const worksheet = xlsx.utils.json_to_sheet(templateData);
 
     // Set lebar kolom
     worksheet["!cols"] = [
       { wch: 15 }, // No. Anggota
+      { wch: 25 }, // Nama Anggota (Referensi)
       { wch: 20 }, // Kategori
       { wch: 25 }, // Nama Barang
       { wch: 15 }, // Harga Barang
@@ -61,7 +77,7 @@ export const downloadTemplateJualBeli = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message
+      error: error.message,
     });
   }
 };
