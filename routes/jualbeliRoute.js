@@ -33,21 +33,15 @@ router.post("/create", MidAnggota, createTransaction);
 router.get("/history", MidAnggota, getTransactionHistory);
 
 /**
- * Endpoint: GET /transaction/:id
- * Digunakan untuk mengambil detail transaksi
- */
-router.get("/:id", MidAnggota, getTransactionDetail);
-
-/**
- * Endpoint: GET /transaction/options
- * Digunakan untuk mengambil opsi transaksi
- */
-router.get("/options", MidAnggota, getTransactionOptions);
-
-/**
  * Import Endpoints
  */
 router.get("/template-import", downloadTemplateJualBeli);
 router.post("/import", upload.single("file"), importJualBeli);
+
+/**
+ * Endpoint: GET /transaction/:id
+ * Digunakan untuk mengambil detail transaksi
+ */
+router.get("/:id", MidAnggota, getTransactionDetail);
 
 export default router;
