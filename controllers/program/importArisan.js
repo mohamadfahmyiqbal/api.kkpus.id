@@ -31,7 +31,12 @@ export const importArisan = async (req, res) => {
       const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
       const keterangan = row["Keterangan"] || "Import Data Pengajuan Arisan";
 
-      if (!memberNo || !namaArisan || nilaiArisan <= 0 || tenor <= 0) {
+      // Jika nama arisan kosong atau nilai arisan 0, lewati baris ini (tidak diimpor)
+      if (!namaArisan || nilaiArisan <= 0) {
+        continue;
+      }
+
+      if (!memberNo || tenor <= 0) {
         errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Arisan, Nilai, Tenor) tidak lengkap/valid" });
         continue;
       }
