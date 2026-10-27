@@ -128,6 +128,9 @@ const getFinancingHistory = async (req, res) => {
         data.member_name = data.member.full_name;
         if (!data.user_id) data.user_id = data.member.member_id;
       }
+      if (!data.item_name && data.purpose) {
+        data.item_name = data.purpose;
+      }
       
       const appPayments = paidByApp[data.financing_id] || { total: 0, items: [], installment_amount: 0, installment_count: 0 };
       const appUnpaid = unpaidByApp[data.financing_id] || { total: 0, count: 0, items: [] };

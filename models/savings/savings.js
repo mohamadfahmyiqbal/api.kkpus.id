@@ -20,7 +20,7 @@ export default function Savings(sequelize, Sequelize) {
         },
       },
       savings_type: {
-        type: DataTypes.ENUM("SUKARELA", "WAJIB", "BERJANGKA"),
+        type: DataTypes.ENUM("SUKARELA", "WAJIB", "BERJANGKA", "POKOK"),
         allowNull: false,
       },
       amount: {

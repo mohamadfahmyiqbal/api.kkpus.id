@@ -91,4 +91,10 @@ export default function defineSavingsAssociations(db) {
   db.SavingTarget.hasMany(db.MemberSavingTarget, { foreignKey: "saving_target_id", as: "memberTargets" });
   db.MemberSavingTarget.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
   db.Member.hasMany(db.MemberSavingTarget, { foreignKey: "member_id", as: "savingTargets" });
+
+  // Direct Savings Model
+  if (db.Savings) {
+    db.Savings.belongsTo(db.Member, { foreignKey: "member_id", as: "member" });
+    db.Member.hasMany(db.Savings, { foreignKey: "member_id", as: "savings" });
+  }
 }

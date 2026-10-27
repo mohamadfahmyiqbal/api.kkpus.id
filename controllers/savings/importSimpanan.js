@@ -40,8 +40,15 @@ export const importSimpanan = async (req, res) => {
       
       const keterangan = row["Keterangan"];
 
-      // Jika nominal kosong atau 0, lewati baris ini (tidak diimpor)
-      if (nominal === undefined || nominal === null || nominal === "" || parseFloat(nominal) <= 0) {
+      // Sanitasi nominal (dukung format koma Indonesia: '0,1' -> 0.1)
+      let parsedNominal = nominal;
+      if (typeof nominal === 'string') {
+        parsedNominal = nominal.replace(/\./g, '').replace(',', '.');
+      }
+      const numAmount = parseFloat(parsedNominal);
+
+      // Jika nominal kosong atau 0/negatif, lewati baris ini (tidak diimpor)
+      if (nominal === undefined || nominal === null || nominal === "" || isNaN(numAmount) || numAmount <= 0) {
         continue;
       }
 
@@ -58,7 +65,7 @@ export const importSimpanan = async (req, res) => {
       }
 
       // Validasi nominal
-      if (isNaN(parseFloat(nominal))) {
+      if (isNaN(numAmount)) {
         errorData.push({ row: i + 2, reason: "Nominal harus berupa angka" });
         continue;
       }
@@ -83,7 +90,7 @@ export const importSimpanan = async (req, res) => {
         const newSaving = await Savings.create({
           member_id: existingMember.member_id,
           savings_type: jenisSimpanan,
-          amount: parseFloat(nominal),
+          amount: numAmount,
           description: keterangan || "Import Data Simpanan",
           transaction_date: txDate.toISOString().split('T')[0],
           status: "COMPLETED", // Langsung sukses karena data historis/import

@@ -9,35 +9,46 @@ export const formatRp = (amount) => {
   return `Rp ${val.toLocaleString("id-ID")}`;
 };
 
-export const fetchAdminDashboardStats = async (programCategories) => {
-  // Total Anggota
+export const fetchAdminDashboardStats = async (programCategories = []) => {
+  // 1. Total Anggota
   const finalTotalAnggota = await db.Member.count();
 
-  // Total Simpanan (Pokok, Wajib, Sukarela)
-  const totalSimpanan = await db.Account.sum("current_balance", {
-    where: {
-      account_type: { [Op.in]: ["SAVINGS", "SW_POKOK", "SW_WAJIB", "SS_SUKARELA"] },
-    },
-  });
-
-  // Total Jual Beli (FinancingApplication di luar kategori program)
-  let totalJualBeli = 0;
-  if (programCategories.length > 0) {
-    totalJualBeli = await db.FinancingApplication.sum("amount_requested", {
-      where: {
-        status: { [Op.in]: ["ACTIVE", "APPROVED", "COMPLETED"] },
-        category: { [Op.notIn]: programCategories },
-      },
+  // 2. Total Simpanan (Pokok, Wajib, Sukarela dari tabel savings status COMPLETED)
+  let totalSimpanan = 0;
+  if (db.Savings) {
+    totalSimpanan = await db.Savings.sum("amount", {
+      where: { status: "COMPLETED" },
     });
-  } else {
-    totalJualBeli = await db.FinancingApplication.sum("amount_requested", {
-      where: { status: { [Op.in]: ["ACTIVE", "APPROVED", "COMPLETED"] } },
+  }
+  // Jika tabel savings kosong, fallback ke tabel Account
+  if (!totalSimpanan && db.Account) {
+    totalSimpanan = await db.Account.sum("current_balance", {
+      where: {
+        account_type: { [Op.in]: ["SAVINGS", "SW_POKOK", "SW_WAJIB", "SS_SUKARELA"] },
+      },
     });
   }
 
-  // Total Program (FinancingApplication dalam kategori program)
+  // 3. Total Jual Beli (FinancingApplication di luar kategori program)
+  let totalJualBeli = 0;
+  if (db.FinancingApplication) {
+    if (programCategories.length > 0) {
+      totalJualBeli = await db.FinancingApplication.sum("amount_requested", {
+        where: {
+          status: { [Op.in]: ["ACTIVE", "APPROVED", "COMPLETED"] },
+          category: { [Op.notIn]: programCategories },
+        },
+      });
+    } else {
+      totalJualBeli = await db.FinancingApplication.sum("amount_requested", {
+        where: { status: { [Op.in]: ["ACTIVE", "APPROVED", "COMPLETED"] } },
+      });
+    }
+  }
+
+  // 4. Total Program (FinancingApplication dalam kategori program)
   let totalProgram = 0;
-  if (programCategories.length > 0) {
+  if (db.FinancingApplication && programCategories.length > 0) {
     totalProgram = await db.FinancingApplication.sum("amount_requested", {
       where: {
         status: { [Op.in]: ["ACTIVE", "APPROVED", "COMPLETED"] },
@@ -46,14 +57,37 @@ export const fetchAdminDashboardStats = async (programCategories) => {
     });
   }
 
-  // Total Tabungan & Investasi
-  const totalTabungan = await db.Account.sum("current_balance", {
-    where: { account_type: "TABUNGAN_DEPOSIT" },
-  });
+  // 5. Total Tabungan (dari member_saving_targets atau accounts)
+  let totalTabungan = 0;
+  if (db.MemberSavingTarget) {
+    totalTabungan = await db.MemberSavingTarget.sum("current_balance", {
+      where: { status: { [Op.in]: ["ACTIVE", "COMPLETED"] } },
+    });
+    if (!totalTabungan) {
+      totalTabungan = await db.MemberSavingTarget.sum("current_balance");
+    }
+  }
+  if (!totalTabungan && db.Account) {
+    totalTabungan = await db.Account.sum("current_balance", {
+      where: { account_type: "TABUNGAN_DEPOSIT" },
+    });
+  }
 
-  const totalInvestasi = await db.Account.sum("current_balance", {
-    where: { account_type: "SUKUK_INVESTMENT" },
-  });
+  // 6. Total Investasi (dari sukuk_orders atau accounts)
+  let totalInvestasi = 0;
+  if (db.SukukOrder) {
+    totalInvestasi = await db.SukukOrder.sum("amount", {
+      where: { status: { [Op.in]: ["APPROVED", "COMPLETED", "ACTIVE"] } },
+    });
+    if (!totalInvestasi) {
+      totalInvestasi = await db.SukukOrder.sum("amount");
+    }
+  }
+  if (!totalInvestasi && db.Account) {
+    totalInvestasi = await db.Account.sum("current_balance", {
+      where: { account_type: "SUKUK_INVESTMENT" },
+    });
+  }
 
   return [
     { title: "Total Anggota", value: finalTotalAnggota.toString(), icon: "Users", color: "primary", trend: "Anggota" },

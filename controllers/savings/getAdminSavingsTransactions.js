@@ -191,6 +191,49 @@ export const getAdminSavingsTransactions = async (req, res) => {
           status: t.approved_status === "APPROVED" ? "Selesai" : t.approved_status,
           product_name: t.savingsAccount?.savingsProduct?.name
         }));
+
+        // Jika tidak ada data di SavingsTransaction, ambil dari tabel utama db.Savings (data import / setoran langsung)
+        if (results.length === 0 && db.Savings) {
+          const savingsWhere = {};
+          if (type) {
+            savingsWhere.savings_type = type.toUpperCase();
+          }
+
+          const { count: sCount, rows: directSavings } = await db.Savings.findAndCountAll({
+            where: savingsWhere,
+            include: [
+              {
+                model: db.Member,
+                as: "member",
+                attributes: ["full_name", "member_id", "member_no"],
+                where: search ? {
+                  [Op.or]: [
+                    { full_name: { [Op.like]: `%${search}%` } },
+                    { member_no: { [Op.like]: `%${search}%` } },
+                  ]
+                } : {},
+                required: !!search
+              }
+            ],
+            order: [["transaction_date", "DESC"], ["created_at", "DESC"]],
+            limit: parseInt(limit),
+            offset: offset
+          });
+
+          count = sCount;
+          results = directSavings.map(s => ({
+            id: s.savings_id,
+            date: s.transaction_date || s.created_at,
+            member: s.member?.full_name || "Anggota",
+            member_id: s.member_id,
+            type: "Setoran",
+            amount: parseFloat(s.amount) || 0,
+            balance: "-",
+            status: s.status === "COMPLETED" ? "Selesai" : (s.status === "APPROVED" ? "Disetujui" : s.status),
+            raw_status: s.status,
+            product_name: s.savings_type
+          }));
+        }
       }
     }
 
