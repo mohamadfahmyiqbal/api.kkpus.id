@@ -12,6 +12,7 @@ import { importJualBeli } from "../controllers/jualbeli/importJualBeli.js";
 import { downloadTemplateJualBeli } from "../controllers/jualbeli/downloadTemplateJualBeli.js";
 import { downloadTemplateCicilanJualBeli } from "../controllers/jualbeli/downloadTemplateCicilanJualBeli.js";
 import { importCicilanJualBeli } from "../controllers/jualbeli/importCicilanJualBeli.js";
+import { deleteJualBeli, deleteBatchJualBeli } from "../controllers/jualbeli/deleteJualBeli.js";
 
 const router = express.Router();
 const upload = multer();
@@ -45,6 +46,12 @@ router.post("/import", upload.single("file"), importJualBeli);
  */
 router.get("/template-import-cicilan", downloadTemplateCicilanJualBeli);
 router.post("/import-cicilan", upload.single("file"), importCicilanJualBeli);
+
+/**
+ * Delete Endpoints
+ */
+router.post("/batch-delete", MidAnggota, deleteBatchJualBeli);
+router.delete("/:id", MidAnggota, deleteJualBeli);
 
 /**
  * Endpoint: GET /transaction/:id
