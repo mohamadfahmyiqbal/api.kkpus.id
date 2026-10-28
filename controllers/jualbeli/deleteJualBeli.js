@@ -16,9 +16,7 @@ export const deleteJualBeli = async (req, res) => {
 
     // Cek apakah ada di FinancingApplication
     const financing = await FinancingApplication.findOne({
-      where: {
-        [Op.or]: [{ financing_id: id }, { id: id }],
-      },
+      where: { financing_id: id },
       transaction: t,
     });
 
@@ -26,7 +24,7 @@ export const deleteJualBeli = async (req, res) => {
 
     if (financing) {
       memberId = financing.member_id;
-      const financingId = financing.financing_id || financing.id;
+      const financingId = financing.financing_id;
 
       // Hapus bill_items terkait
       await BillItem.destroy({
@@ -106,13 +104,13 @@ export const deleteBatchJualBeli = async (req, res) => {
     // Ambil data pembiayaan yang akan dihapus untuk dapatkan member_id list
     const financings = await FinancingApplication.findAll({
       where: {
-        [Op.or]: [{ financing_id: { [Op.in]: ids } }, { id: { [Op.in]: ids } }],
+        financing_id: { [Op.in]: ids },
       },
       attributes: ["financing_id", "member_id"],
       transaction: t,
     });
 
-    const financingIds = financings.map((f) => f.financing_id || f.id);
+    const financingIds = financings.map((f) => f.financing_id);
     const memberIds = [...new Set(financings.map((f) => f.member_id))];
 
     if (financingIds.length > 0) {
@@ -136,7 +134,7 @@ export const deleteBatchJualBeli = async (req, res) => {
       // Hapus financing applications
       await FinancingApplication.destroy({
         where: {
-          [Op.or]: [{ financing_id: { [Op.in]: financingIds } }, { id: { [Op.in]: financingIds } }],
+          financing_id: { [Op.in]: financingIds },
         },
         transaction: t,
       });
