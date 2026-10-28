@@ -9,6 +9,7 @@ import getTabunganBills from "../controllers/savings/getTabunganBills.js";
 import { getAdminTabungan } from "../controllers/savings/getAdminTabungan.js";
 import { getTabunganPrograms, createTabunganProgram, updateTabunganProgram, deleteTabunganProgram, getAvailablePrograms } from "../controllers/savings/manageAdminTabungan.js";
 import { importTabungan } from "../controllers/savings/importTabungan.js";
+import { importTransaksiTabungan } from "../controllers/savings/importTransaksiTabungan.js";
 import { downloadTemplateTabungan } from "../controllers/savings/downloadTemplateTabungan.js";
 import multer from "multer";
 
@@ -40,5 +41,6 @@ router.delete("/admin/programs/:id", MidAnggota, MidRole(['Ketua', 'Bendahara', 
 
 router.get("/admin/template-import", downloadTemplateTabungan);
 router.post("/admin/import", upload.single("file"), importTabungan);
+router.post("/admin/import-transaksi", upload.single("file"), importTransaksiTabungan);
 
 export default router;
