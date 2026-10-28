@@ -1,8 +1,9 @@
+import { Op } from "sequelize";
 import db from "../../models/index.js";
 import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js";
 import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 
-const { FinancingApplication, BillItem, Approval, GeneralTransaction, Op } = db;
+const { FinancingApplication, BillItem, Approval, GeneralTransaction } = db;
 
 export const deleteJualBeli = async (req, res) => {
   const t = await db.sequelize.transaction();
