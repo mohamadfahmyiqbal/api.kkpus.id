@@ -21,25 +21,34 @@ export const importJualBeli = async (req, res) => {
     const successData = [];
     const errorData = [];
 
-    // Header Template: No. Anggota, Kategori, Nama Barang, Harga Barang, DP, Margin (Rp), Tenor (Bulan), Keterangan
+    // Header Template mendukung:
+    // "No. Anggota", "Type / Kategori" atau "Kategori", "Nama Barang", "Harga Barang", "DP", "Margin (Rp)", "Tenor (Bulan)", "Status", "Keterangan"
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const memberNo = row["No. Anggota"];
-      const kategori = row["Kategori"];
-      const namaBarang = row["Nama Barang"];
+      const kategori = row["Type / Kategori"] || row["Kategori"] || row["Type"] || "Elektronik";
+      const namaBarang = row["Nama Barang"] || row["Barang"];
       const hargaBarang = parseFloat(row["Harga Barang"]) || 0;
-      const dp = parseFloat(row["DP"]) || 0;
-      const margin = parseFloat(row["Margin (Rp)"]) || 0;
-      const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
+      const dp = parseFloat(row["DP"] || row["Uang Muka"]) || 0;
+      const margin = parseFloat(row["Margin (Rp)"] || row["Margin"]) || 0;
+      const tenor = parseInt(row["Tenor (Bulan)"] || row["Tenor"]) || 0;
       const keterangan = row["Keterangan"] || "Import Data Jual Beli";
+
+      // Status pengajuan: default APPROVED (berjalan), atau bisa PENDING, COMPLETED / LUNAS
+      let statusInput = (row["Status"] || "APPROVED").toString().trim().toUpperCase();
+      if (statusInput === "LUNAS" || statusInput === "PAID") {
+        statusInput = "COMPLETED";
+      } else if (!["PENDING", "APPROVED", "COMPLETED", "ACTIVE"].includes(statusInput)) {
+        statusInput = "APPROVED";
+      }
 
       // Jika nama barang kosong atau harga 0, lewati baris ini (tidak diimpor)
       if (!namaBarang || hargaBarang <= 0) {
         continue;
       }
 
-      if (!memberNo || !kategori || tenor <= 0) {
-        errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Kategori, Nama Barang, Harga, Tenor) tidak lengkap/valid" });
+      if (!memberNo || tenor <= 0) {
+        errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Barang, Harga Barang, Tenor) tidak lengkap/valid" });
         continue;
       }
 
@@ -69,7 +78,7 @@ export const importJualBeli = async (req, res) => {
           cooperation_months: tenor,
           monthly_installment: monthlyInstallment,
           keterangan: keterangan,
-          status: "COMPLETED", // Status lunas/berjalan, diset COMPLETED mengikuti asumsi histori 
+          status: statusInput, // APPROVED / PENDING / COMPLETED sesuai status transaksi
           akad_type: "Murabahah",
         });
         successData.push(newFinancing);

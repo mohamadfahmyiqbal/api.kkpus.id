@@ -19,12 +19,13 @@ export const downloadTemplateJualBeli = async (req, res) => {
       templateData = members.map((m) => ({
         "No. Anggota": m.member_no,
         "Nama Anggota (Referensi)": m.full_name,
-        "Kategori": "Elektronik",
+        "Type / Kategori": "Elektronik",
         "Nama Barang": "",
         "Harga Barang": 0,
         "DP": 0,
         "Margin (Rp)": 0,
         "Tenor (Bulan)": 12,
+        "Status": "APPROVED", // Pilihan: APPROVED (Berjalan), PENDING (Menunggu Persetujuan), atau COMPLETED (Lunas)
         "Keterangan": "",
       }));
     } else {
@@ -32,12 +33,13 @@ export const downloadTemplateJualBeli = async (req, res) => {
         {
           "No. Anggota": "A001",
           "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Kategori": "Elektronik",
+          "Type / Kategori": "Elektronik",
           "Nama Barang": "Laptop Asus",
           "Harga Barang": 10000000,
           "DP": 2000000,
           "Margin (Rp)": 1500000,
           "Tenor (Bulan)": 12,
+          "Status": "APPROVED",
           "Keterangan": "Pembelian laptop kredit",
         },
       ];
@@ -49,12 +51,13 @@ export const downloadTemplateJualBeli = async (req, res) => {
     worksheet["!cols"] = [
       { wch: 15 }, // No. Anggota
       { wch: 25 }, // Nama Anggota (Referensi)
-      { wch: 20 }, // Kategori
+      { wch: 20 }, // Type / Kategori
       { wch: 25 }, // Nama Barang
       { wch: 15 }, // Harga Barang
       { wch: 15 }, // DP
       { wch: 15 }, // Margin (Rp)
       { wch: 15 }, // Tenor (Bulan)
+      { wch: 15 }, // Status
       { wch: 30 }, // Keterangan
     ];
 

@@ -62,6 +62,8 @@ export const importPinjaman = async (req, res) => {
           member_id: existingMember.member_id,
           category: kategori,
           purpose: finalPurpose, 
+          item_price: jumlahPinjaman,
+          down_payment: 0,
           amount_requested: jumlahPinjaman,
           margin_amount: margin,
           total_tagihan: totalTagihan,
