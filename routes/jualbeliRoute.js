@@ -10,6 +10,8 @@ import {
 } from "../controllers/jualbeli/jualbeliController.js";
 import { importJualBeli } from "../controllers/jualbeli/importJualBeli.js";
 import { downloadTemplateJualBeli } from "../controllers/jualbeli/downloadTemplateJualBeli.js";
+import { downloadTemplateCicilanJualBeli } from "../controllers/jualbeli/downloadTemplateCicilanJualBeli.js";
+import { importCicilanJualBeli } from "../controllers/jualbeli/importCicilanJualBeli.js";
 
 const router = express.Router();
 const upload = multer();
@@ -33,10 +35,16 @@ router.post("/create", MidAnggota, createTransaction);
 router.get("/history", MidAnggota, getTransactionHistory);
 
 /**
- * Import Endpoints
+ * Import Endpoints - Master Jual Beli
  */
 router.get("/template-import", downloadTemplateJualBeli);
 router.post("/import", upload.single("file"), importJualBeli);
+
+/**
+ * Import Endpoints - Riwayat Cicilan Jual Beli (Opsi B)
+ */
+router.get("/template-import-cicilan", downloadTemplateCicilanJualBeli);
+router.post("/import-cicilan", upload.single("file"), importCicilanJualBeli);
 
 /**
  * Endpoint: GET /transaction/:id
