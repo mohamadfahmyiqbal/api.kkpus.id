@@ -1,11 +1,31 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import db from "../../models/index.js";
 
 const { Member } = db;
 
 export const downloadTemplateJualBeli = async (req, res) => {
   try {
-    const workbook = xlsx.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Template_Import_JualBeli");
+
+    // Header Kolom
+    worksheet.columns = [
+      { header: "No. Anggota", key: "member_no", width: 16 },
+      { header: "Nama Anggota (Referensi)", key: "member_name", width: 28 },
+      { header: "Type / Kategori", key: "category", width: 20 },
+      { header: "Nama Barang", key: "item_name", width: 26 },
+      { header: "Harga Barang", key: "item_price", width: 16 },
+      { header: "DP", key: "dp", width: 16 },
+      { header: "Margin (Rp)", key: "margin", width: 16 },
+      { header: "Tenor (Bulan)", key: "tenor", width: 16 },
+      { header: "Status", key: "status", width: 18 },
+      { header: "Keterangan", key: "keterangan", width: 32 },
+    ];
+
+    // Format header style
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
     // Ambil daftar anggota aktif dari database
     const members = await Member.findAll({
@@ -13,57 +33,56 @@ export const downloadTemplateJualBeli = async (req, res) => {
       order: [["member_no", "ASC"]],
     });
 
-    let templateData = [];
-
     if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Type / Kategori": "Elektronik",
-        "Nama Barang": "",
-        "Harga Barang": 0,
-        "DP": 0,
-        "Margin (Rp)": 0,
-        "Tenor (Bulan)": 12,
-        "Status": "APPROVED", // Pilihan: APPROVED (Berjalan), PENDING (Menunggu Persetujuan), atau COMPLETED (Lunas)
-        "Keterangan": "",
-      }));
+      members.forEach((m) => {
+        worksheet.addRow({
+          member_no: m.member_no,
+          member_name: m.full_name,
+          category: "Elektronik",
+          item_name: "",
+          item_price: 0,
+          dp: 0,
+          margin: 0,
+          tenor: 12,
+          status: "APPROVED",
+          keterangan: "",
+        });
+      });
     } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Type / Kategori": "Elektronik",
-          "Nama Barang": "Laptop Asus",
-          "Harga Barang": 10000000,
-          "DP": 2000000,
-          "Margin (Rp)": 1500000,
-          "Tenor (Bulan)": 12,
-          "Status": "APPROVED",
-          "Keterangan": "Pembelian laptop kredit",
-        },
-      ];
+      worksheet.addRow({
+        member_no: "A001",
+        member_name: "Contoh Anggota 1",
+        category: "Elektronik",
+        item_name: "Laptop Asus",
+        item_price: 10000000,
+        dp: 2000000,
+        margin: 1500000,
+        tenor: 12,
+        status: "APPROVED",
+        keterangan: "Pembelian laptop kredit",
+      });
     }
 
-    const worksheet = xlsx.utils.json_to_sheet(templateData);
+    // Pasang Dropdown Data Validation pada kolom Status (Kolom I / Kolom 9)
+    const rowCount = Math.max(members.length + 10, 100);
+    const statusValidationFormula = `"${["APPROVED", "PENDING", "COMPLETED"].join(",")}"`;
 
-    // Set lebar kolom
-    worksheet["!cols"] = [
-      { wch: 15 }, // No. Anggota
-      { wch: 25 }, // Nama Anggota (Referensi)
-      { wch: 20 }, // Type / Kategori
-      { wch: 25 }, // Nama Barang
-      { wch: 15 }, // Harga Barang
-      { wch: 15 }, // DP
-      { wch: 15 }, // Margin (Rp)
-      { wch: 15 }, // Tenor (Bulan)
-      { wch: 15 }, // Status
-      { wch: 30 }, // Keterangan
-    ];
+    for (let r = 2; r <= rowCount; r++) {
+      worksheet.getCell(`I${r}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        formulae: [statusValidationFormula],
+        showErrorMessage: true,
+        errorStyle: "stop",
+        errorTitle: "Status Tidak Valid",
+        error: "Pilih salah satu status dari pilihan yang tersedia: APPROVED, PENDING, atau COMPLETED.",
+        showInputMessage: true,
+        promptTitle: "Pilih Status",
+        prompt: "APPROVED = Sedang Berjalan\nPENDING = Menunggu Approval\nCOMPLETED = Lunas",
+      };
+    }
 
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Import_JualBeli");
-
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
