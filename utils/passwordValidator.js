@@ -29,7 +29,7 @@ export const validatePassword = (password) => {
     errors.push(AUTH_CONSTANTS.ERROR_MESSAGES.PASSWORD_MISSING_NUMBERS);
   }
   
-  if (AUTH_CONSTANTS.PASSWORD_REQUIRE_SPECIAL_CHARS && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+  if (AUTH_CONSTANTS.PASSWORD_REQUIRE_SPECIAL_CHARS && !/[!@#$%^&*(),.?":{}|<>_\-~+=/\\\[\]]/.test(password)) {
     errors.push(AUTH_CONSTANTS.ERROR_MESSAGES.PASSWORD_MISSING_SPECIAL);
   }
   
