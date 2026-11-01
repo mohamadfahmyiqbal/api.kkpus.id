@@ -33,13 +33,14 @@ const requestWithdrawal = async (req, res) => {
             });
         }
 
-        // 2. Cari akun simpanan member menggunakan saving_product_id
+        // 2. Cari akun simpanan member menggunakan saving_product_id (dengan row lock agar atomic)
         const account = await db.MemberSavingsAccount.findOne({
             where: { 
                 member_id: memberId,
-                savings_product_id: product.savings_product_id // atau product_id tergantung nama kolom Anda
+                savings_product_id: product.savings_product_id
             },
-            transaction: t
+            transaction: t,
+            lock: t.LOCK.UPDATE
         });
 
         // Jika akun tidak ditemukan (berarti belum ada setoran awal)

@@ -63,7 +63,7 @@ export const disburseWithdrawal = async (req, res) => {
   const t = await db.sequelize.transaction();
 
   try {
-    const { entityId } = req.params;
+    const entityId = req.params.entityId || req.params.withdrawal_id;
     if (!entityId) throw new Error("ID Penarikan diperlukan.");
 
     const { Op } = db.Sequelize || {};

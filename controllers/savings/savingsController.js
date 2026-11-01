@@ -44,8 +44,8 @@ const createSavingsApplication = async (req, res) => {
 
       await t.commit();
 
-      // Sync report list
-      await syncSavingsReportList(db.sequelize);
+      // Sync report list untuk member yang bersangkutan
+      await syncSavingsReportList(db.sequelize, memberId);
 
       // Kirim notifikasi
       setImmediate(async () => {

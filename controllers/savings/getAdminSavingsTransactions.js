@@ -1,9 +1,37 @@
 import db from "../../models/index.js";
 import { Op } from "sequelize";
 
+const mapTransactionStatuses = (statusFilter) => {
+  if (!statusFilter) return ["PAID", "PENDING_VERIFICATION", "PENDING", "SETTLED", "COMPLETED", "REJECTED", "FAILED"];
+  const s = statusFilter.toLowerCase();
+  if (s === "selesai") return ["PAID", "COMPLETED", "APPROVED", "SETTLED"];
+  if (s.includes("verifikasi")) return ["PENDING_VERIFICATION"];
+  if (s === "pending") return ["PENDING", "PENDING_VERIFICATION"];
+  if (s === "ditolak") return ["REJECTED", "FAILED", "CANCELLED", "EXPIRED"];
+  return [statusFilter];
+};
+
+const mapWithdrawalStatuses = (statusFilter) => {
+  if (!statusFilter) return null;
+  const s = statusFilter.toLowerCase();
+  if (s === "selesai") return ["DISBURSED", "APPROVED", "COMPLETED"];
+  if (s.includes("verifikasi") || s === "pending") return ["PENDING", "WAITING_APPROVAL", "READY_TO_PAY"];
+  if (s === "ditolak") return ["REJECTED", "FAILED", "CANCELLED"];
+  return [statusFilter];
+};
+
+const mapSavingsStatuses = (statusFilter) => {
+  if (!statusFilter) return null;
+  const s = statusFilter.toLowerCase();
+  if (s === "selesai") return ["COMPLETED", "APPROVED"];
+  if (s.includes("verifikasi") || s === "pending") return ["PENDING", "PENDING_VERIFICATION"];
+  if (s === "ditolak") return ["REJECTED", "CANCELLED"];
+  return [statusFilter];
+};
+
 export const getAdminSavingsTransactions = async (req, res) => {
   try {
-    const { type, tx_category, page = 1, limit = 10, search = "" } = req.query;
+    const { type, tx_category, page = 1, limit = 10, search = "", status = "" } = req.query;
     const offset = (page - 1) * limit;
 
     let results = [];
@@ -14,7 +42,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
     if (tx_category !== "PENCAIRAN") {
       const { count: tCount, rows: transactions } = await db.Transaction.findAndCountAll({
         where: {
-          status: { [Op.in]: ["PAID", "PENDING_VERIFICATION", "PENDING"] },
+          status: { [Op.in]: mapTransactionStatuses(status) },
         },
         include: [
           {
@@ -117,12 +145,18 @@ export const getAdminSavingsTransactions = async (req, res) => {
       };
 
       if (tx_category === "PENCAIRAN") {
+        const wdStatusFilter = mapWithdrawalStatuses(status);
+        const wdWhere = {
+          member_saving_target_id: {
+            [Op.is]: null
+          }
+        };
+        if (wdStatusFilter) {
+          wdWhere.status = { [Op.in]: wdStatusFilter };
+        }
+
         const { count: wCount, rows: withdrawals } = await db.SavingsWithdrawal.findAndCountAll({
-          where: {
-            member_saving_target_id: {
-              [Op.is]: null
-            }
-          },
+          where: wdWhere,
           include: [
             includeAccounts,
             { 
@@ -174,14 +208,20 @@ export const getAdminSavingsTransactions = async (req, res) => {
           final_status: w.status,
           approvals: w.approvals?.map(a => typeof a.toJSON === 'function' ? a.toJSON() : a)
         }));
-        
-        console.log("DEBUG TRANSACTIONS:", JSON.stringify(results.map(r => ({id: r.id, approvals_count: r.approvals?.length, notes: r.approvals?.map(a => a.note)})), null, 2));
       } else {
+        const stWhere = {
+          tx_type: { [Op.in]: ["SETORAN", "DEPOSIT"] }
+        };
+        if (status) {
+          const s = status.toLowerCase();
+          if (s === "selesai") stWhere.approved_status = "APPROVED";
+          else if (s.includes("verifikasi") || s === "pending") stWhere.approved_status = "PENDING";
+          else if (s === "ditolak") stWhere.approved_status = "REJECTED";
+        }
+
         const { count: tCount, rows: transactions } = await db.SavingsTransaction.findAndCountAll({
           include: [includeAccounts],
-          where: {
-            tx_type: { [Op.in]: ["SETORAN", "DEPOSIT"] }
-          },
+          where: stWhere,
           order: [["created_at", "DESC"]],
           limit: parseInt(limit),
           offset: offset
@@ -206,6 +246,10 @@ export const getAdminSavingsTransactions = async (req, res) => {
           const savingsWhere = {};
           if (type) {
             savingsWhere.savings_type = type.toUpperCase();
+          }
+          const svStatusFilter = mapSavingsStatuses(status);
+          if (svStatusFilter) {
+            savingsWhere.status = { [Op.in]: svStatusFilter };
           }
 
           const { count: sCount, rows: directSavings } = await db.Savings.findAndCountAll({

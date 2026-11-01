@@ -29,7 +29,12 @@ router.post("/penarikan/request", MidAnggota, requestWithdrawal);
 router.get("/penarikan/history", MidAnggota, getWithdrawalHistory);
 router.get("/transactions/:invoiceNumber", MidAnggota, getTransactionDetail);
 router.get("/penarikan/detail/:withdrawalId", MidAnggota, getWithdrawalDetail);
-router.post("/penarikan/:withdrawal_id/disburse", MidAnggota, disburseWithdrawal); // Tambahan
+router.post(
+  "/penarikan/:withdrawal_id/disburse",
+  MidAnggota,
+  MidRole(["Ketua", "Bendahara", "Pengawas", "Admin", "admin", "BENDAHARA"]),
+  disburseWithdrawal
+);
 
 // Route for Simpanan Config
 router.get("/config", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas', 'Admin', 'admin']), getSimpananConfig);
