@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import db from "../../../models/index.js";
 const Op = db.Sequelize.Op;
 
@@ -32,10 +33,40 @@ const modelsWithMemberId = [
 ];
 
 export const deleteMember = async (req, res) => {
-  const t = await db.sequelize.transaction();
-  try {
-    const { member_id } = req.params;
+  const adminId = req.userId;
+  if (!adminId) {
+    return res.status(401).json({
+      success: false,
+      message: "Autentikasi diperlukan untuk melakukan penghapusan anggota.",
+    });
+  }
 
+  const { password } = req.body || {};
+  if (!password) {
+    return res.status(400).json({
+      success: false,
+      message: "Password administrator wajib diisi untuk konfirmasi penghapusan data.",
+    });
+  }
+
+  try {
+    const admin = await db.Member.findByPk(adminId);
+    if (!admin || !admin.password_hash) {
+      return res.status(401).json({
+        success: false,
+        message: "Akun administrator tidak valid atau tidak ditemukan.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Password administrator salah. Penghapusan anggota dibatalkan.",
+      });
+    }
+
+    const { member_id } = req.params;
     if (!member_id) {
       return res.status(400).json({
         success: false,
@@ -51,33 +82,51 @@ export const deleteMember = async (req, res) => {
       });
     }
 
-    for (const model of modelsWithMemberId) {
-      if (model) {
-        await model.destroy({ where: { member_id }, transaction: t }).catch(() => {});
+    const t = await db.sequelize.transaction();
+    try {
+      for (const model of modelsWithMemberId) {
+        if (model) {
+          await model.destroy({ where: { member_id }, transaction: t }).catch(() => {});
+        }
       }
+
+      if (db.Approval) {
+        await db.Approval.destroy({ where: { approver_member_id: member_id }, transaction: t }).catch(() => {});
+      }
+
+      if (db.ArisanDraw) {
+        await db.ArisanDraw.destroy({ where: { winner_member_id: member_id }, transaction: t }).catch(() => {});
+      }
+
+      await db.Member.destroy({
+        where: { member_id },
+        transaction: t,
+      });
+
+      // Catat log aktivitas penghapusan
+      if (db.ActivityLog) {
+        await db.ActivityLog.create(
+          {
+            member_id: adminId,
+            activity_type: "HARD_DELETE_MEMBER",
+            detail: `Admin ${admin.full_name || "Unknown"} (${admin.member_no || adminId}) menghapus permanen anggota ${member.full_name || "-"} (No: ${member.member_no || "-"}, NIK: ${member.nik_ktp || "-"}, ID: ${member_id}).`,
+            activity_datetime: new Date(),
+          },
+          { transaction: t }
+        );
+      }
+
+      await t.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: `Berhasil menghapus anggota ${member.full_name || ""} secara permanen dan mencatat log audit.`,
+      });
+    } catch (dbError) {
+      await t.rollback();
+      throw dbError;
     }
-
-    if (db.Approval) {
-      await db.Approval.destroy({ where: { approver_member_id: member_id }, transaction: t }).catch(() => {});
-    }
-
-    if (db.ArisanDraw) {
-      await db.ArisanDraw.destroy({ where: { winner_member_id: member_id }, transaction: t }).catch(() => {});
-    }
-
-    await db.Member.destroy({
-      where: { member_id },
-      transaction: t,
-    });
-
-    await t.commit();
-
-    return res.status(200).json({
-      success: true,
-      message: "Berhasil menghapus anggota dan data terkait",
-    });
   } catch (error) {
-    await t.rollback();
     console.error("Delete Member Error:", error);
     return res.status(500).json({
       success: false,
@@ -87,60 +136,119 @@ export const deleteMember = async (req, res) => {
 };
 
 export const deleteBatchMembers = async (req, res) => {
-  const t = await db.sequelize.transaction();
-  try {
-    const { member_ids } = req.body;
+  const adminId = req.userId;
+  if (!adminId) {
+    return res.status(401).json({
+      success: false,
+      message: "Autentikasi diperlukan untuk melakukan penghapusan massal.",
+    });
+  }
 
-    if (!Array.isArray(member_ids) || member_ids.length === 0) {
-      return res.status(400).json({
+  const { member_ids, password } = req.body || {};
+
+  if (!Array.isArray(member_ids) || member_ids.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Daftar ID anggota tidak valid atau kosong",
+    });
+  }
+
+  if (!password) {
+    return res.status(400).json({
+      success: false,
+      message: "Password administrator wajib diisi untuk konfirmasi penghapusan massal.",
+    });
+  }
+
+  try {
+    const admin = await db.Member.findByPk(adminId);
+    if (!admin || !admin.password_hash) {
+      return res.status(401).json({
         success: false,
-        message: "Daftar ID anggota tidak valid atau kosong",
+        message: "Akun administrator tidak valid atau tidak ditemukan.",
       });
     }
 
-    for (const model of modelsWithMemberId) {
-      if (model) {
-        await model
+    const isMatch = await bcrypt.compare(password, admin.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Password administrator salah. Penghapusan massal dibatalkan.",
+      });
+    }
+
+    const targetMembers = await db.Member.findAll({
+      where: { member_id: { [Op.in]: member_ids } },
+      attributes: ["member_id", "member_no", "full_name", "nik_ktp"],
+    });
+
+    const t = await db.sequelize.transaction();
+    try {
+      for (const model of modelsWithMemberId) {
+        if (model) {
+          await model
+            .destroy({
+              where: { member_id: { [Op.in]: member_ids } },
+              transaction: t,
+            })
+            .catch(() => {});
+        }
+      }
+
+      if (db.Approval) {
+        await db.Approval
           .destroy({
-            where: { member_id: { [Op.in]: member_ids } },
+            where: { approver_member_id: { [Op.in]: member_ids } },
             transaction: t,
           })
           .catch(() => {});
       }
+
+      if (db.ArisanDraw) {
+        await db.ArisanDraw
+          .destroy({
+            where: { winner_member_id: { [Op.in]: member_ids } },
+            transaction: t,
+          })
+          .catch(() => {});
+      }
+
+      const deletedCount = await db.Member.destroy({
+        where: { member_id: { [Op.in]: member_ids } },
+        transaction: t,
+      });
+
+      // Catat log aktivitas penghapusan massal
+      if (db.ActivityLog) {
+        const summaryList = targetMembers
+          .slice(0, 10)
+          .map((m) => `${m.full_name} (${m.member_no || m.member_id})`)
+          .join(", ");
+        const extraCount = targetMembers.length > 10 ? ` dan ${targetMembers.length - 10} anggota lainnya` : "";
+
+        await db.ActivityLog.create(
+          {
+            member_id: adminId,
+            activity_type: "BATCH_DELETE_MEMBERS",
+            detail: `Admin ${admin.full_name || "Unknown"} (${admin.member_no || adminId}) menghapus permanen ${deletedCount} anggota: [${summaryList}${extraCount}].`,
+            activity_datetime: new Date(),
+          },
+          { transaction: t }
+        );
+      }
+
+      await t.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: `Berhasil menghapus ${deletedCount} anggota terpilih secara permanen dan mencatat log audit.`,
+        data: { deletedCount },
+      });
+    } catch (dbError) {
+      await t.rollback();
+      throw dbError;
     }
-
-    if (db.Approval) {
-      await db.Approval
-        .destroy({
-          where: { approver_member_id: { [Op.in]: member_ids } },
-          transaction: t,
-        })
-        .catch(() => {});
-    }
-
-    if (db.ArisanDraw) {
-      await db.ArisanDraw
-        .destroy({
-          where: { winner_member_id: { [Op.in]: member_ids } },
-          transaction: t,
-        })
-        .catch(() => {});
-    }
-
-    const deletedCount = await db.Member.destroy({
-      where: { member_id: { [Op.in]: member_ids } },
-      transaction: t,
-    });
-
-    await t.commit();
-
-    return res.status(200).json({
-      success: true,
-      message: `Berhasil menghapus ${deletedCount} anggota terpilih`,
-      data: { deletedCount },
-    });
   } catch (error) {
-    await t.rollback();
     console.error("Delete Batch Members Error:", error);
     return res.status(500).json({
       success: false,

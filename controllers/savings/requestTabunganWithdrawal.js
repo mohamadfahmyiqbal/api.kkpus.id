@@ -1,5 +1,7 @@
 import db from "../../models/index.js";
 import { broadcastApprovalNotification } from "../../utils/socket.js";
+import { sendGlobalNotification } from "../../services/notificationHelper.js";
+import { notifyInitialStepApprovers } from "../core/approvals/approvalNotificationHelper.js";
 
 export const requestTabunganWithdrawal = async (req, res) => {
     const memberId = req.userId;
@@ -100,6 +102,27 @@ export const requestTabunganWithdrawal = async (req, res) => {
         }, { transaction: t });
 
         await t.commit();
+
+        setImmediate(async () => {
+            try {
+                await sendGlobalNotification({
+                    memberId: memberId,
+                    title: "Pengajuan Pencairan Tabungan",
+                    content: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(amount).toLocaleString("id-ID")} berhasil dikirim.`,
+                    type: "SAVINGS",
+                    url: "/tabungan"
+                });
+
+                notifyInitialStepApprovers({
+                    approvalFlowId: approvalFlow?.approval_flow_id,
+                    entityLabel: `Pencairan Tabungan (${target.savingTarget?.target_name || "Tabungan"})`,
+                    applicantMemberId: memberId,
+                    url: "/dashboard",
+                });
+            } catch (err) {
+                console.error("Notification Error:", err.message);
+            }
+        });
 
         broadcastApprovalNotification({
             type: "TABUNGAN_WITHDRAWAL",

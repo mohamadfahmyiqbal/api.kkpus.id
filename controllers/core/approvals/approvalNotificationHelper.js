@@ -146,3 +146,58 @@ export const notifyApprovalResult = async ({
     console.error("[processApproval] Notification emission error:", e.message);
   }
 };
+
+/**
+ * Notifikasi ke Verifikator Langkah Pertama (Step 1 - biasanya Pengawas)
+ * saat suatu pengajuan baru dibuat oleh anggota.
+ */
+export const notifyInitialStepApprovers = async ({
+  approvalFlowId,
+  entityLabel = "Pengajuan",
+  applicantMemberId,
+  applicantName,
+  url = "/dashboard",
+  customTitle,
+  customContent,
+}) => {
+  try {
+    if (!approvalFlowId) return;
+
+    const firstStep = await db.ApprovalStep.findOne({
+      where: { approval_flow_id: approvalFlowId, step_order: 1 },
+    });
+
+    if (!firstStep || !firstStep.role_id) return;
+
+    let name = applicantName;
+    if (!name && applicantMemberId) {
+      const applicant = await db.Member.findByPk(applicantMemberId, {
+        attributes: ["full_name"],
+      });
+      name = applicant?.full_name || "Seorang Anggota";
+    }
+
+    const approvers = await db.MemberRoleAssignment.findAll({
+      where: { role_id: firstStep.role_id },
+    });
+
+    const title = customTitle || `Tugas Baru: Persetujuan ${entityLabel}`;
+    const content =
+      customContent ||
+      `Menunggu verifikasi Anda: Pengajuan ${entityLabel} dari ${name || "Anggota"}.`;
+
+    await Promise.allSettled(
+      approvers.map((approver) =>
+        sendGlobalNotification({
+          memberId: approver.member_id,
+          title,
+          content,
+          type: "APPROVAL_REQUIRED",
+          url,
+        })
+      )
+    );
+  } catch (err) {
+    console.error("[notifyInitialStepApprovers] Error:", err.message);
+  }
+};

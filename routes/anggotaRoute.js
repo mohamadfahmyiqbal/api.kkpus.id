@@ -29,12 +29,12 @@ router.get("/berhenti-keanggotaan/status", MidAnggota, getTerminationStatus);
 router.post("/berhenti-keanggotaan/konfirmasi", MidAnggota, confirmTermination);
 
 // API untuk Backoffice
-router.get("/all", getAllMembers);
-router.get("/template-import", downloadTemplateAnggota);
-router.post("/import", upload.single("file"), importAnggota);
-router.put("/:member_id/role", updateRole);
-router.get("/roles", getRoles);
-router.post("/batch-delete", deleteBatchMembers);
-router.delete("/:member_id", deleteMember);
+router.get("/all", MidAnggota, getAllMembers);
+router.get("/template-import", MidAnggota, downloadTemplateAnggota);
+router.post("/import", MidAnggota, upload.single("file"), importAnggota);
+router.put("/:member_id/role", MidAnggota, updateRole);
+router.get("/roles", MidAnggota, getRoles);
+router.post("/batch-delete", MidAnggota, deleteBatchMembers);
+router.delete("/:member_id", MidAnggota, deleteMember);
 
 export default router;

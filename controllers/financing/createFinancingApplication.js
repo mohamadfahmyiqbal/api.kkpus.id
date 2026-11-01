@@ -1,6 +1,7 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import { broadcastApprovalNotification } from "../../utils/socket.js";
+import { notifyInitialStepApprovers } from "../core/approvals/approvalNotificationHelper.js";
 
 const createFinancingApplication = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -159,6 +160,13 @@ const createFinancingApplication = async (req, res) => {
           content: `Pengajuan ${category} (${item_name}) senilai Rp ${Number(principal_amount).toLocaleString('id-ID')} telah berhasil dikirim.`,
           type: "FINANCING",
           url: "/transaksi"
+        });
+
+        notifyInitialStepApprovers({
+          approvalFlowId: flow?.approval_flow_id,
+          entityLabel: `Pembiayaan (${category || item_name || "Pinjaman"})`,
+          applicantMemberId: memberId,
+          url: "/dashboard",
         });
 
         broadcastApprovalNotification({

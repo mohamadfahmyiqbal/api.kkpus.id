@@ -1,5 +1,7 @@
 import db from "../../../models/index.js";
 import { broadcastApprovalNotification } from "../../../utils/socket.js";
+import { sendGlobalNotification } from "../../../services/notificationHelper.js";
+import { notifyInitialStepApprovers } from "../approvals/approvalNotificationHelper.js";
 
 const submitTermination = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -69,6 +71,27 @@ const submitTermination = async (req, res) => {
     const termination = await db.MembershipTermination.create(terminationData, { transaction: t });
 
     await t.commit();
+
+    setImmediate(async () => {
+      try {
+        await sendGlobalNotification({
+          memberId: memberId,
+          title: "Pengajuan Berhenti Keanggotaan",
+          content: "Pengajuan pengunduran diri Anda berhasil dikirim dan sedang menunggu verifikasi Pengawas.",
+          type: "SYSTEM",
+          url: "/profile"
+        });
+
+        notifyInitialStepApprovers({
+          approvalFlowId: flow?.approval_flow_id,
+          entityLabel: "Pengunduran Diri Anggota",
+          applicantMemberId: memberId,
+          url: "/dashboard",
+        });
+      } catch (err) {
+        console.error("Notification Error:", err.message);
+      }
+    });
 
     broadcastApprovalNotification({
       type: "TERMINATION",

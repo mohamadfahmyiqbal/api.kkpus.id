@@ -18,13 +18,19 @@ export const updateNotificationStatus = async (req, res) => {
       .json({ message: "Otorisasi gagal. ID Anggota tidak ditemukan." });
   }
 
-  if (!notificationIds || (Array.isArray(notificationIds) && notificationIds.length === 0)) {
+  const isMarkAll = Boolean(req.body.all);
+
+  if (!isMarkAll && (!notificationIds || (Array.isArray(notificationIds) && notificationIds.length === 0))) {
     return res.status(400).json({ message: "ID notifikasi wajib diisi." });
   }
 
   try {
     // Normalize notification IDs to array
-    const idsArray = Array.isArray(notificationIds) ? notificationIds : [notificationIds];
+    const idsArray = isMarkAll
+      ? []
+      : Array.isArray(notificationIds)
+      ? notificationIds
+      : [notificationIds];
     
     // Determine target status
     let targetStatus = NOTIFICATION_STATUS.READ; // Default to read
@@ -42,10 +48,15 @@ export const updateNotificationStatus = async (req, res) => {
     }
 
     // Build where condition
-    const whereCondition = {
-      notification_id: { [Op.in]: idsArray },
-      member_id: authenticatedMemberId,
-    };
+    const whereCondition = isMarkAll
+      ? {
+          member_id: authenticatedMemberId,
+          status: [NOTIFICATION_STATUS.UNREAD, NOTIFICATION_STATUS.SENT],
+        }
+      : {
+          notification_id: { [Op.in]: idsArray },
+          member_id: authenticatedMemberId,
+        };
 
     // Only update from current status if specified
     if (req.query.from_status) {

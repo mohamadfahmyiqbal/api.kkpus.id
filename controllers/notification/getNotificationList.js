@@ -47,6 +47,14 @@ const getNotificationList = async (req, res) => {
       raw: true,
     });
 
+    // Hitung total notifikasi belum dibaca untuk user ini
+    const unreadCount = await Notification.count({
+      where: {
+        member_id: memberId,
+        status: [NOTIFICATION_STATUS.UNREAD, NOTIFICATION_STATUS.SENT],
+      },
+    });
+
     // Transformasi ke format Frontend dengan proper status mapping
     const list = rows.map((item) => {
       const frontendStatus = STATUS_MAPPING[item.status] || 1; // Default to unread
@@ -62,6 +70,7 @@ const getNotificationList = async (req, res) => {
     return res.status(200).json({
       message: "Success",
       total_count: count,
+      unread_count: unreadCount,
       current_page: Math.floor(offset / limit) + 1,
       total_pages: Math.ceil(count / limit),
       has_next: offset + limit < count,

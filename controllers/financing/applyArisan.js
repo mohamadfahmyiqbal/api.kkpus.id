@@ -3,6 +3,7 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import { broadcastApprovalNotification } from "../../utils/socket.js";
+import { notifyInitialStepApprovers } from "../core/approvals/approvalNotificationHelper.js";
 
 const { ArisanBatch, ArisanProgram, ArisanParticipant, FinancingApplication, ApprovalFlow, ApprovalStep } = db;
 
@@ -113,6 +114,13 @@ const applyArisan = async (req, res) => {
           content: `Pengajuan bergabung grup arisan ${batch.program?.program_name || 'Arisan'} (${batch.batch_name}) berhasil dikirim dan sedang menunggu persetujuan.`,
           type: "FINANCING",
           url: "/transaksi"
+        });
+
+        notifyInitialStepApprovers({
+          approvalFlowId: flow?.approval_flow_id,
+          entityLabel: `Arisan (${batch.program?.program_name || 'Arisan'} - ${batch.batch_name})`,
+          applicantMemberId: memberId,
+          url: "/dashboard",
         });
 
         broadcastApprovalNotification({

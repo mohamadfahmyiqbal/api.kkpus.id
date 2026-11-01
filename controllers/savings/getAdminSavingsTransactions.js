@@ -20,9 +20,12 @@ export const getAdminSavingsTransactions = async (req, res) => {
           {
             model: db.Member,
             as: "member",
-            attributes: ["full_name", "member_id"],
+            attributes: ["full_name", "member_id", "member_no"],
             where: search ? {
-              full_name: { [Op.like]: `%${search}%` }
+              [Op.or]: [
+                { full_name: { [Op.like]: `%${search}%` } },
+                { member_no: { [Op.like]: `%${search}%` } },
+              ]
             } : {}
           },
           {
@@ -66,6 +69,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
             date: t.created_at,
             member: t.member?.full_name || "Unknown",
             member_id: t.member_id,
+            member_no: t.member?.member_no || "-",
             type: "Setoran",
             amount: itemAmount,
             balance: "-", 
@@ -90,9 +94,12 @@ export const getAdminSavingsTransactions = async (req, res) => {
           {
             model: db.Member,
             as: "member",
-            attributes: ["full_name", "member_id"],
+            attributes: ["full_name", "member_id", "member_no"],
             where: search ? {
-              full_name: { [Op.like]: `%${search}%` }
+              [Op.or]: [
+                { full_name: { [Op.like]: `%${search}%` } },
+                { member_no: { [Op.like]: `%${search}%` } },
+              ]
             } : {}
           },
           {
@@ -156,6 +163,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
           date: w.created_at,
           member: w.savingsAccount?.member?.full_name || "Unknown",
           member_id: w.savingsAccount?.member_id,
+          member_no: w.savingsAccount?.member?.member_no || "-",
           type: "Pencairan",
           amount: w.amount,
           balance: w.savingsAccount?.current_balance,
@@ -185,6 +193,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
           date: t.created_at,
           member: t.savingsAccount?.member?.full_name || "Unknown",
           member_id: t.savingsAccount?.member_id,
+          member_no: t.savingsAccount?.member?.member_no || "-",
           type: "Setoran",
           amount: t.amount,
           balance: t.savingsAccount?.current_balance,
@@ -226,6 +235,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
             date: s.transaction_date || s.created_at,
             member: s.member?.full_name || "Anggota",
             member_id: s.member_id,
+            member_no: s.member?.member_no || "-",
             type: "Setoran",
             amount: parseFloat(s.amount) || 0,
             balance: "-",

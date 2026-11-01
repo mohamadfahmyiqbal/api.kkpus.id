@@ -1,6 +1,7 @@
 import db from "../../models/index.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import { broadcastApprovalNotification } from "../../utils/socket.js";
+import { notifyInitialStepApprovers } from "../core/approvals/approvalNotificationHelper.js";
 import moment from "moment";
 
 export const applySavingsTarget = async (req, res) => {
@@ -102,6 +103,13 @@ export const applySavingsTarget = async (req, res) => {
           content: `Pengajuan ${targetName} senilai Rp ${Number(targetAmount).toLocaleString('id-ID')} telah diproses.`,
           type: "SAVINGS",
           url: "/tabungan"
+        });
+
+        notifyInitialStepApprovers({
+          approvalFlowId: flow?.approval_flow_id,
+          entityLabel: `Tabungan Target (${targetName})`,
+          applicantMemberId: memberId,
+          url: "/dashboard",
         });
 
         broadcastApprovalNotification({
