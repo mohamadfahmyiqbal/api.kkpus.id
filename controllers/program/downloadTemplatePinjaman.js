@@ -1,11 +1,35 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import db from "../../models/index.js";
 
 const { Member } = db;
 
 export const downloadTemplatePinjaman = async (req, res) => {
   try {
-    const workbook = xlsx.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Template_Import_Pinjaman");
+
+    // Header Kolom
+    worksheet.columns = [
+      { header: "No. Anggota", key: "member_no", width: 16 },
+      { header: "Nama Anggota (Referensi)", key: "member_name", width: 28 },
+      { header: "Kategori", key: "category", width: 20 },
+      { header: "Nama Pinjaman", key: "loan_name", width: 28 },
+      { header: "Jumlah Pinjaman", key: "amount", width: 18 },
+      { header: "Uang Muka / DP", key: "dp", width: 16 },
+      { header: "Margin/Bunga (Rp)", key: "margin", width: 18 },
+      { header: "Tenor (Bulan)", key: "tenor", width: 15 },
+      { header: "Tanggal Pengajuan (YYYY-MM-DD)", key: "application_date", width: 26 },
+      { header: "Status", key: "status", width: 16 },
+      { header: "Metode Pencairan", key: "disbursement_method", width: 18 },
+      { header: "Bank Tujuan", key: "bank_name", width: 20 },
+      { header: "No. Rekening", key: "account_no", width: 22 },
+      { header: "Keterangan", key: "keterangan", width: 30 },
+    ];
+
+    // Format header style
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
     // Ambil daftar anggota aktif dari database
     const members = await Member.findAll({
@@ -13,51 +37,79 @@ export const downloadTemplatePinjaman = async (req, res) => {
       order: [["member_no", "ASC"]],
     });
 
-    let templateData = [];
+    const todayStr = new Date().toISOString().split("T")[0];
 
     if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Kategori": "Pinjaman Tunai",
-        "Nama Pinjaman": "",
-        "Jumlah Pinjaman": 0,
-        "Margin/Bunga (Rp)": 0,
-        "Tenor (Bulan)": 10,
-        "Keterangan": "",
-      }));
+      members.forEach((m) => {
+        worksheet.addRow({
+          member_no: m.member_no,
+          member_name: m.full_name,
+          category: "Pinjaman Tunai",
+          loan_name: "",
+          amount: 0,
+          dp: 0,
+          margin: 0,
+          tenor: 10,
+          application_date: todayStr,
+          status: "APPROVED",
+          disbursement_method: "Tunai",
+          bank_name: "",
+          account_no: "",
+          keterangan: "",
+        });
+      });
     } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Kategori": "Pinjaman Tunai",
-          "Nama Pinjaman": "Pinjaman Pendidikan",
-          "Jumlah Pinjaman": 5000000,
-          "Margin/Bunga (Rp)": 500000,
-          "Tenor (Bulan)": 10,
-          "Keterangan": "Untuk biaya sekolah",
-        },
-      ];
+      worksheet.addRow({
+        member_no: "A001",
+        member_name: "Contoh Anggota 1",
+        category: "Pinjaman Tunai",
+        loan_name: "Pinjaman Lunak",
+        amount: 5000000,
+        dp: 0,
+        margin: 500000,
+        tenor: 10,
+        application_date: todayStr,
+        status: "APPROVED",
+        disbursement_method: "Tunai",
+        bank_name: "",
+        account_no: "",
+        keterangan: "Contoh pinjaman lunak anggota",
+      });
     }
 
-    const worksheet = xlsx.utils.json_to_sheet(templateData);
+    // Pasang Data Validation pada kolom Status (Kolom J / Kolom 10) & Metode Pencairan (Kolom K / Kolom 11)
+    const rowCount = Math.max((members?.length || 0) + 10, 100);
+    const statusValidationFormula = `"${["APPROVED", "COMPLETED", "PENDING"].join(",")}"`;
+    const disbursementValidationFormula = `"${["Tunai", "Transfer"].join(",")}"`;
 
-    // Set lebar kolom
-    worksheet["!cols"] = [
-      { wch: 15 }, // No. Anggota
-      { wch: 25 }, // Nama Anggota (Referensi)
-      { wch: 20 }, // Kategori
-      { wch: 25 }, // Nama Pinjaman
-      { wch: 15 }, // Jumlah Pinjaman
-      { wch: 18 }, // Margin/Bunga
-      { wch: 15 }, // Tenor (Bulan)
-      { wch: 30 }, // Keterangan
-    ];
+    for (let r = 2; r <= rowCount; r++) {
+      // Status dropdown
+      worksheet.getCell(`J${r}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        formulae: [statusValidationFormula],
+        showErrorMessage: true,
+        errorStyle: "stop",
+        errorTitle: "Status Tidak Valid",
+        error: "Pilih status: APPROVED (Berjalan), COMPLETED (Lunas), atau PENDING.",
+        showInputMessage: true,
+        promptTitle: "Pilih Status",
+        prompt: "APPROVED = Pinjaman aktif/berjalan\nCOMPLETED = Pinjaman sudah lunas\nPENDING = Menunggu persetujuan",
+      };
 
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Import_Pinjaman");
+      // Metode Pencairan dropdown
+      worksheet.getCell(`K${r}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        formulae: [disbursementValidationFormula],
+        showErrorMessage: true,
+        errorStyle: "stop",
+        errorTitle: "Metode Tidak Valid",
+        error: "Pilih metode pencairan: Tunai atau Transfer.",
+      };
+    }
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
@@ -73,7 +125,7 @@ export const downloadTemplatePinjaman = async (req, res) => {
     console.error("Download Template Pinjaman Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Gagal membuat template Excel.",
+      message: "Gagal membuat template Excel pinjaman.",
       error: error.message,
     });
   }

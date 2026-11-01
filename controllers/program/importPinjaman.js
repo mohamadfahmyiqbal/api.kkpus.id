@@ -3,6 +3,23 @@ import db from "../../models/index.js";
 
 const { Member, FinancingApplication } = db;
 
+const parseDateValue = (val) => {
+  if (!val) return new Date();
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val;
+  }
+  if (typeof val === "number") {
+    // Excel base date: 1899-12-30
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    return new Date(excelEpoch.getTime() + val * 86400000);
+  }
+  const parsed = new Date(val);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  return new Date();
+};
+
 export const importPinjaman = async (req, res) => {
   try {
     if (!req.file) {
@@ -21,18 +38,29 @@ export const importPinjaman = async (req, res) => {
     const successData = [];
     const errorData = [];
 
-    // Header Template: No. Anggota, Kategori, Nama Pinjaman, Jumlah Pinjaman, Margin/Bunga (Rp), Tenor (Bulan), Keterangan
+    // Header Template: No. Anggota, Kategori, Nama Pinjaman, Jumlah Pinjaman, Uang Muka / DP, Margin/Bunga (Rp), Tenor (Bulan), Tanggal Pengajuan, Status, Metode Pencairan, Bank Tujuan, No. Rekening, Keterangan
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const memberNo = row["No. Anggota"];
       const kategori = row["Kategori"] || "Pinjaman Tunai";
       const namaPinjaman = row["Nama Pinjaman"];
       const jumlahPinjaman = parseFloat(row["Jumlah Pinjaman"]) || 0;
-      const margin = parseFloat(row["Margin/Bunga (Rp)"]) || 0;
-      const tenor = parseInt(row["Tenor (Bulan)"]) || 0;
+      const dp = parseFloat(row["Uang Muka / DP"] || row["DP"] || row["Uang Muka"]) || 0;
+      const margin = parseFloat(row["Margin/Bunga (Rp)"] || row["Margin (Rp)"] || row["Margin"]) || 0;
+      const tenor = parseInt(row["Tenor (Bulan)"] || row["Tenor"]) || 0;
+      const rawTanggal = row["Tanggal Pengajuan (YYYY-MM-DD)"] || row["Tanggal Pengajuan"] || row["Tanggal Akad"] || row["Tanggal"];
+      
+      let statusInput = (row["Status"] || "APPROVED").toString().trim().toUpperCase();
+      if (!["APPROVED", "COMPLETED", "PENDING"].includes(statusInput)) {
+        statusInput = "APPROVED";
+      }
+
+      const metodePencairan = row["Metode Pencairan"] || row["Metode"] || "Tunai";
+      const bankTujuan = row["Bank Tujuan"] || row["Bank"] || null;
+      const noRekening = row["No. Rekening"] || row["Nomor Rekening"] || row["No Rekening"] || null;
       const keterangan = row["Keterangan"] || "Import Data Pinjaman Lunak";
 
-      // Jika nama pinjaman kosong atau jumlah 0, lewati baris ini (tidak diimpor)
+      // Jika nama pinjaman kosong atau jumlah <= 0, lewati baris ini (header / baris kosong)
       if (!namaPinjaman || jumlahPinjaman <= 0) {
         continue;
       }
@@ -42,8 +70,8 @@ export const importPinjaman = async (req, res) => {
         continue;
       }
 
-      // Pastikan nama pinjaman berawalan 'Pinjaman' agar terbaca di dashboard Pinjaman
-      const finalPurpose = namaPinjaman.toLowerCase().startsWith('pinjaman') ? namaPinjaman : `Pinjaman ${namaPinjaman}`;
+      // Pastikan nama pinjaman berawalan 'Pinjaman' agar terbaca di filter/dashboard Pinjaman
+      const finalPurpose = namaPinjaman.toLowerCase().startsWith("pinjaman") ? namaPinjaman : `Pinjaman ${namaPinjaman}`;
 
       const existingMember = await Member.findOne({
         where: { member_no: String(memberNo) }
@@ -54,8 +82,9 @@ export const importPinjaman = async (req, res) => {
         continue;
       }
 
-      const totalTagihan = jumlahPinjaman + margin;
-      const monthlyInstallment = totalTagihan / tenor;
+      const totalTagihan = Math.max(0, (jumlahPinjaman + margin) - dp);
+      const monthlyInstallment = tenor > 0 ? totalTagihan / tenor : 0;
+      const applicationDate = parseDateValue(rawTanggal);
 
       try {
         const newFinancing = await FinancingApplication.create({
@@ -63,15 +92,21 @@ export const importPinjaman = async (req, res) => {
           category: kategori,
           purpose: finalPurpose, 
           item_price: jumlahPinjaman,
-          down_payment: 0,
+          down_payment: dp,
           amount_requested: jumlahPinjaman,
           margin_amount: margin,
           total_tagihan: totalTagihan,
           cooperation_months: tenor,
           monthly_installment: monthlyInstallment,
           keterangan: keterangan,
-          status: "COMPLETED", // Diset COMPLETED agar masuk ke rekap history lunas/aktif
-          akad_type: "Qardh", // Biasanya pinjaman lunak akadnya Qardh
+          status: statusInput,
+          akad_type: "Qardh", // Pinjaman lunak berakad Qardh
+          metode_pencairan: metodePencairan,
+          bank_tujuan: bankTujuan,
+          no_rekening: noRekening,
+          tanggal_pencairan: applicationDate,
+          created_at: applicationDate,
+          updated_at: applicationDate,
         });
         successData.push(newFinancing);
       } catch (err) {
@@ -81,7 +116,7 @@ export const importPinjaman = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Proses import Pinjaman Lunak selesai",
+      message: "Proses import Data Pinjaman selesai",
       data: {
         totalImported: successData.length,
         totalFailed: errorData.length,

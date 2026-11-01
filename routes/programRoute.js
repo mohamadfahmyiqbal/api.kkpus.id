@@ -17,6 +17,8 @@ import { importPinjaman } from "../controllers/program/importPinjaman.js";
 import { importArisan } from "../controllers/program/importArisan.js";
 import { downloadTemplatePinjaman } from "../controllers/program/downloadTemplatePinjaman.js";
 import { downloadTemplateArisan } from "../controllers/program/downloadTemplateArisan.js";
+import { downloadTemplateCicilanPinjaman } from "../controllers/program/downloadTemplateCicilanPinjaman.js";
+import { importCicilanPinjaman } from "../controllers/program/importCicilanPinjaman.js";
 
 const router = express.Router();
 const upload = multer();
@@ -84,6 +86,8 @@ router.get("/options", getProgramOptions);
 // IMPORT ENDPOINTS
 router.get("/pinjaman/template-import", downloadTemplatePinjaman);
 router.post("/pinjaman/import", upload.single("file"), importPinjaman);
+router.get("/pinjaman/template-import-transaksi", downloadTemplateCicilanPinjaman);
+router.post("/pinjaman/import-transaksi", upload.single("file"), importCicilanPinjaman);
 
 router.get("/arisan/template-import", downloadTemplateArisan);
 router.post("/arisan/import", upload.single("file"), importArisan);
