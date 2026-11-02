@@ -166,12 +166,38 @@ const getFinancingDetail = async (req, res) => {
       };
     });
 
-    const expectedTotalInstallment = (parseFloat(detail.item_price || detail.amount_requested || 0) - parseFloat(detail.down_payment || 0));
-    
+    // Total kewajiban cicilan: prioritaskan total_tagihan, lalu fallback ke
+    // (harga + operasional + margin) - DP - diskon, lalu tenor x cicilan.
+    const totalTagihanDetail = parseFloat(detail.total_tagihan || 0);
+    const fallbackTotalDetail = Math.max(
+      0,
+      parseFloat(detail.item_price || detail.amount_requested || 0) +
+        parseFloat(detail.operational_cost || 0) +
+        parseFloat(detail.margin_amount || 0) -
+        parseFloat(detail.down_payment || 0) -
+        parseFloat(detail.discount || 0)
+    );
+    const tenorTotalDetail =
+      parseFloat(detail.monthly_installment || 0) *
+      parseInt(detail.cooperation_months || 0, 10);
+    const expectedTotalInstallment =
+      totalTagihanDetail > 0
+        ? totalTagihanDetail
+        : fallbackTotalDetail > 0
+          ? fallbackTotalDetail
+          : tenorTotalDetail;
+
+    // Lunas hanya jika nominal cicilan yang dibayar sudah menutup total kewajiban.
+    // Data hasil import hanya membuat BillItem PAID, sehingga tidak boleh
+    // menyimpulkan lunas hanya dari tidak adanya BillItem UNPAID.
+    const isFullyPaid =
+      expectedTotalInstallment > 0 &&
+      paid_installment_amount >= expectedTotalInstallment;
+
     let unpaid_amount = unpaid_amount_raw;
     let unpaid_term_count = unpaid_term_count_raw;
 
-    if (paid_installment_amount >= expectedTotalInstallment && expectedTotalInstallment > 0) {
+    if (isFullyPaid) {
       unpaid_amount = 0;
       unpaid_term_count = 0;
     }
@@ -194,7 +220,7 @@ const getFinancingDetail = async (req, res) => {
     const eligibleForPaidStatus = ["WAITING_PAYMENT", "READY_TO_PAY", "PAID", "APPROVED"].includes(detail.status);
     
     let finalStatus = detail.status;
-    if (unpaid_term_count === 0 && paid_term_count > 0) {
+    if (isFullyPaid && paid_term_count > 0) {
       finalStatus = 'PAID';
     } else if (isDPPaid && eligibleForPaidStatus) {
       if (!detail.cooperation_months || detail.cooperation_months === 0 || detail.cooperation_months === "0") {

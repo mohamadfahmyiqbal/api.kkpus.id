@@ -138,11 +138,39 @@ const getFinancingHistory = async (req, res) => {
       const hasDPBill = allAppItems.some(item => ['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code));
       const hasPaidDP = appPayments.items.some(item => item.category_code === 'TRANSACTION_DOWN_PAYMENT' || item.category_code === 'DP_PEMBIAYAAN');
       
-      const expectedTotalInstallment = (parseFloat(data.item_price || data.amount_requested || 0) - parseFloat(data.down_payment || 0));
+      // Total kewajiban cicilan yang harus dibayar anggota.
+      // Prioritaskan total_tagihan (sudah memperhitungkan margin, biaya operasional,
+      // DP, dan diskon). Jika belum tersedia, gunakan perhitungan fallback.
+      const totalTagihan = parseFloat(data.total_tagihan || 0);
+      const fallbackTotalTagihan = Math.max(
+        0,
+        parseFloat(data.item_price || data.amount_requested || 0) +
+          parseFloat(data.operational_cost || 0) +
+          parseFloat(data.margin_amount || 0) -
+          parseFloat(data.down_payment || 0) -
+          parseFloat(data.discount || 0)
+      );
+      const tenorTotal =
+        parseFloat(data.monthly_installment || 0) *
+        parseInt(data.cooperation_months || 0, 10);
+      const expectedTotalInstallment =
+        totalTagihan > 0
+          ? totalTagihan
+          : fallbackTotalTagihan > 0
+            ? fallbackTotalTagihan
+            : tenorTotal;
+
+      // Kontrak hanya dianggap lunas jika nominal cicilan yang benar-benar sudah
+      // dibayar menutup total kewajiban. Jangan mengandalkan "tidak ada BillItem
+      // UNPAID" saja, karena data hasil import hanya membuat BillItem PAID.
+      const isFullyPaid =
+        expectedTotalInstallment > 0 &&
+        appPayments.installment_amount >= expectedTotalInstallment;
+
       let calculatedUnpaid = appUnpaid.total;
       let calculatedUnpaidCount = appUnpaid.count;
 
-      if (appPayments.installment_amount >= expectedTotalInstallment && expectedTotalInstallment > 0) {
+      if (isFullyPaid) {
         calculatedUnpaid = 0;
         calculatedUnpaidCount = 0;
       }
@@ -156,7 +184,7 @@ const getFinancingHistory = async (req, res) => {
       data.paid_term_count = appPayments.installment_count;
       data.paid_installment_amount = appPayments.installment_amount;
       
-      if (data.unpaid_term_count === 0 && data.paid_term_count > 0 && (data.status === 'APPROVED' || data.status === 'COMPLETED' || data.status === 'ACTIVE')) {
+      if (isFullyPaid && (data.status === 'APPROVED' || data.status === 'COMPLETED' || data.status === 'ACTIVE')) {
         data.status = 'PAID';
       }
 

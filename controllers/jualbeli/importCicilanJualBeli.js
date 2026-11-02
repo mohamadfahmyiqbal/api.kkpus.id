@@ -106,6 +106,46 @@ export const importCicilanJualBeli = async (req, res) => {
           updated_at: paymentDate,
         });
 
+        // Tandai kontrak selesai HANYA jika akumulasi cicilan yang sudah dibayar
+        // benar-benar menutup total tagihan (total_tagihan / fallback).
+        if (statusInput === "PAID") {
+          const totalTagihan = parseFloat(financing.total_tagihan || 0);
+          const fallbackTotal = Math.max(
+            0,
+            parseFloat(financing.item_price || financing.amount_requested || 0) +
+              parseFloat(financing.operational_cost || 0) +
+              parseFloat(financing.margin_amount || 0) -
+              parseFloat(financing.down_payment || 0) -
+              parseFloat(financing.discount || 0)
+          );
+          const tenorTotal =
+            parseFloat(financing.monthly_installment || 0) *
+            parseInt(financing.cooperation_months || 0, 10);
+          const expectedTotal =
+            totalTagihan > 0
+              ? totalTagihan
+              : fallbackTotal > 0
+                ? fallbackTotal
+                : tenorTotal;
+
+          if (expectedTotal > 0) {
+            const totalPaidItems = await BillItem.sum("amount", {
+              where: {
+                financing_application_id: financing.financing_id,
+                category_code: "TRANSACTION_INSTALLMENT",
+                status: "PAID",
+              },
+            });
+
+            if (
+              parseFloat(totalPaidItems || 0) >= expectedTotal &&
+              ["APPROVED", "ACTIVE"].includes(financing.status)
+            ) {
+              await financing.update({ status: "COMPLETED" });
+            }
+          }
+        }
+
         successData.push(newBillItem);
       } catch (err) {
         errorData.push({ row: i + 2, reason: err.message });
