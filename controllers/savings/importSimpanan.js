@@ -96,6 +96,31 @@ export const importSimpanan = async (req, res) => {
           status: "COMPLETED", // Langsung sukses karena data historis/import
         });
         successData.push(newSaving);
+
+        // Update/create MemberSavingsAccount agar data langsung sinkron
+        if (db.MemberSavingsAccount && db.SavingsProduct) {
+          const productCode = jenisSimpanan === 'POKOK' ? 'SW_POKOK' : (jenisSimpanan === 'WAJIB' ? 'SW_WAJIB' : 'SS_SUKARELA');
+          const product = await db.SavingsProduct.findOne({ where: { product_code: productCode } });
+          if (product) {
+            const memberCode = existingMember.member_no || existingMember.member_id.substring(0, 8);
+            const accountNo = `SAV-${product.product_code}-${memberCode}`;
+            const [savAcc, created] = await db.MemberSavingsAccount.findOrCreate({
+              where: {
+                member_id: existingMember.member_id,
+                savings_product_id: product.savings_product_id,
+              },
+              defaults: {
+                account_no: accountNo,
+                account_type: product.name,
+                open_date: txDate,
+                current_balance: numAmount,
+              },
+            });
+            if (!created) {
+              await savAcc.increment("current_balance", { by: numAmount });
+            }
+          }
+        }
       } catch (err) {
         errorData.push({ row: i + 2, reason: err.message });
       }

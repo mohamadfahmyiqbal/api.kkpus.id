@@ -1,9 +1,13 @@
 import xlsx from "xlsx";
 import db from "../../models/index.js";
 
-const { Member, FinancingApplication, BillItem, BillType } = db;
+const { Member, FinancingApplication, BillItem, BillType, sequelize } = db;
+
+const MAX_IMPORT_ROWS = 5000;
 
 export const importCicilanJualBeli = async (req, res) => {
+  let transaction;
+
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Tidak ada file yang diunggah" });
@@ -14,8 +18,15 @@ export const importCicilanJualBeli = async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    if (data.length === 0) {
+    if (!data.length) {
       return res.status(400).json({ success: false, message: "File Excel kosong" });
+    }
+
+    if (data.length > MAX_IMPORT_ROWS) {
+      return res.status(400).json({
+        success: false,
+        message: `Jumlah baris melebihi batas ${MAX_IMPORT_ROWS} baris per file.`,
+      });
     }
 
     // Ambil BillType untuk TRANSACTION_INSTALLMENT
@@ -27,6 +38,8 @@ export const importCicilanJualBeli = async (req, res) => {
     const successData = [];
     const errorData = [];
 
+    transaction = await sequelize.transaction();
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const memberNo = row["No. Anggota"];
@@ -35,7 +48,11 @@ export const importCicilanJualBeli = async (req, res) => {
       const nominal = parseFloat(row["Nominal Bayar"] || row["Nominal"] || row["Jumlah"]) || 0;
       const tanggalInput = row["Tanggal Pembayaran (YYYY-MM-DD)"] || row["Tanggal Pembayaran"] || row["Tanggal"];
       let statusInput = (row["Status"] || "PAID").toString().trim().toUpperCase();
-      const keterangan = row["Keterangan / Catatan"] || row["Keterangan"] || `Setoran Cicilan Bulan ${installmentNo}`;
+      const keteranganRaw =
+        row["Keterangan / Catatan"] ||
+        row["Keterangan"] ||
+        `Setoran Cicilan Bulan ${installmentNo}`;
+      const keterangan = String(keteranganRaw).slice(0, 255);
 
       if (!["PAID", "UNPAID"].includes(statusInput)) {
         statusInput = "PAID";
@@ -49,8 +66,17 @@ export const importCicilanJualBeli = async (req, res) => {
         continue;
       }
 
+      if (installmentNo < 1 || installmentNo > 600) {
+        errorData.push({
+          row: i + 2,
+          reason: "Cicilan Ke harus berada di antara 1 dan 600",
+        });
+        continue;
+      }
+
       const existingMember = await Member.findOne({
         where: { member_no: String(memberNo) },
+        transaction,
       });
 
       if (!existingMember) {
@@ -61,25 +87,46 @@ export const importCicilanJualBeli = async (req, res) => {
         continue;
       }
 
-      // Cari kontrak jual beli milik anggota ini
+      // Cari kontrak jual beli milik anggota ini. Gunakan exact match agar
+      // cicilan tidak masuk ke kontrak lain yang namanya mirip.
       const financingWhere = {
         member_id: existingMember.member_id,
         category: { [db.Sequelize.Op.ne]: "Pendanaan Syariah UMKM" },
       };
 
       if (namaBarang) {
-        financingWhere.purpose = { [db.Sequelize.Op.like]: `%${namaBarang.trim()}%` };
+        financingWhere.purpose = String(namaBarang).trim();
       }
 
       const financing = await FinancingApplication.findOne({
         where: financingWhere,
         order: [["created_at", "DESC"]],
+        transaction,
       });
 
       if (!financing) {
         errorData.push({
           row: i + 2,
           reason: `Kontrak Jual Beli ${namaBarang ? `(${namaBarang}) ` : ""}untuk anggota ${memberNo} tidak ditemukan`,
+        });
+        continue;
+      }
+
+      // Cegah duplikasi saat file yang sama diunggah ulang.
+      const duplicate = await BillItem.findOne({
+        where: {
+          financing_application_id: financing.financing_id,
+          category_code: "TRANSACTION_INSTALLMENT",
+          amount: nominal,
+          description: keterangan,
+        },
+        transaction,
+      });
+
+      if (duplicate) {
+        errorData.push({
+          row: i + 2,
+          reason: "Setoran cicilan dengan data yang sama sudah ada (duplikat)",
         });
         continue;
       }
@@ -104,7 +151,7 @@ export const importCicilanJualBeli = async (req, res) => {
           status: statusInput,
           created_at: paymentDate,
           updated_at: paymentDate,
-        });
+        }, { transaction });
 
         // Tandai kontrak selesai HANYA jika akumulasi cicilan yang sudah dibayar
         // benar-benar menutup total tagihan (total_tagihan / fallback).
@@ -135,13 +182,14 @@ export const importCicilanJualBeli = async (req, res) => {
                 category_code: "TRANSACTION_INSTALLMENT",
                 status: "PAID",
               },
+              transaction,
             });
 
             if (
               parseFloat(totalPaidItems || 0) >= expectedTotal &&
               ["APPROVED", "ACTIVE"].includes(financing.status)
             ) {
-              await financing.update({ status: "COMPLETED" });
+              await financing.update({ status: "COMPLETED" }, { transaction });
             }
           }
         }
@@ -151,6 +199,9 @@ export const importCicilanJualBeli = async (req, res) => {
         errorData.push({ row: i + 2, reason: err.message });
       }
     }
+
+    await transaction.commit();
+    transaction = null;
 
     return res.status(200).json({
       success: true,
@@ -162,7 +213,10 @@ export const importCicilanJualBeli = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Import Cicilan Jual Beli Error:", error);
+    if (transaction && !transaction.finished) {
+      await transaction.rollback();
+    }
+    console.error("Import Cicilan Jual Beli Error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import cicilan",

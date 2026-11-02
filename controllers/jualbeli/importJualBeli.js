@@ -3,7 +3,11 @@ import db from "../../models/index.js";
 
 const { Member, FinancingApplication, sequelize } = db;
 
+const MAX_IMPORT_ROWS = 5000;
+
 export const importJualBeli = async (req, res) => {
+  let transaction;
+
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Tidak ada file yang diunggah" });
@@ -14,12 +18,23 @@ export const importJualBeli = async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    if (data.length === 0) {
+    if (!data.length) {
       return res.status(400).json({ success: false, message: "File Excel kosong" });
+    }
+
+    if (data.length > MAX_IMPORT_ROWS) {
+      return res.status(400).json({
+        success: false,
+        message: `Jumlah baris melebihi batas ${MAX_IMPORT_ROWS} baris per file.`,
+      });
     }
 
     const successData = [];
     const errorData = [];
+
+    // Satu file diproses dalam satu transaksi. Baris yang tidak valid tetap
+    // dilewati, tetapi kegagalan fatal tidak meninggalkan data setengah jadi.
+    transaction = await sequelize.transaction();
 
     // Header Template mendukung:
     // "No. Anggota", "Type / Kategori" atau "Kategori", "Nama Barang", "Harga Barang", "DP", "Margin (Rp)", "Tenor (Bulan)", "Status", "Keterangan"
@@ -42,22 +57,63 @@ export const importJualBeli = async (req, res) => {
         statusInput = "APPROVED";
       }
 
-      // Jika nama barang kosong atau harga 0, lewati baris ini (tidak diimpor)
       if (!namaBarang || hargaBarang <= 0) {
+        errorData.push({
+          row: i + 2,
+          reason: "Nama Barang dan Harga Barang wajib diisi dengan nilai lebih dari 0",
+        });
         continue;
       }
 
-      if (!memberNo || tenor <= 0) {
-        errorData.push({ row: i + 2, reason: "Kolom wajib (No. Anggota, Nama Barang, Harga Barang, Tenor) tidak lengkap/valid" });
+      if (!memberNo || tenor <= 0 || tenor > 600) {
+        errorData.push({
+          row: i + 2,
+          reason: "Kolom wajib (No. Anggota, Tenor 1-600 bulan) tidak lengkap/valid",
+        });
+        continue;
+      }
+
+      if (dp < 0 || dp >= hargaBarang) {
+        errorData.push({
+          row: i + 2,
+          reason: "DP harus >= 0 dan lebih kecil dari Harga Barang",
+        });
+        continue;
+      }
+
+      if (margin < 0) {
+        errorData.push({ row: i + 2, reason: "Margin tidak boleh negatif" });
         continue;
       }
 
       const existingMember = await Member.findOne({
-        where: { member_no: String(memberNo) }
+        where: { member_no: String(memberNo) },
+        transaction,
       });
 
       if (!existingMember) {
         errorData.push({ row: i + 2, reason: `Anggota dengan No. ${memberNo} tidak ditemukan` });
+        continue;
+      }
+
+      // Cegah duplikasi saat file yang sama diunggah ulang.
+      const duplicate = await FinancingApplication.findOne({
+        where: {
+          member_id: existingMember.member_id,
+          category: kategori,
+          purpose: namaBarang,
+          item_price: hargaBarang,
+          down_payment: dp,
+          cooperation_months: tenor,
+        },
+        transaction,
+      });
+
+      if (duplicate) {
+        errorData.push({
+          row: i + 2,
+          reason: "Kontrak dengan data yang sama sudah ada (duplikat)",
+        });
         continue;
       }
 
@@ -69,7 +125,7 @@ export const importJualBeli = async (req, res) => {
         const newFinancing = await FinancingApplication.create({
           member_id: existingMember.member_id,
           category: kategori,
-          purpose: namaBarang, 
+          purpose: namaBarang,
           item_price: hargaBarang,
           down_payment: dp,
           amount_requested: amountRequested,
@@ -77,15 +133,18 @@ export const importJualBeli = async (req, res) => {
           total_tagihan: totalTagihan,
           cooperation_months: tenor,
           monthly_installment: monthlyInstallment,
-          keterangan: keterangan,
-          status: statusInput, // APPROVED / PENDING / COMPLETED sesuai status transaksi
+          keterangan,
+          status: statusInput,
           akad_type: "Murabahah",
-        });
+        }, { transaction });
         successData.push(newFinancing);
       } catch (err) {
         errorData.push({ row: i + 2, reason: err.message });
       }
     }
+
+    await transaction.commit();
+    transaction = null;
 
     return res.status(200).json({
       success: true,
@@ -98,7 +157,10 @@ export const importJualBeli = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Import Jual Beli Error:", error);
+    if (transaction && !transaction.finished) {
+      await transaction.rollback();
+    }
+    console.error("Import Jual Beli Error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import Jual Beli",

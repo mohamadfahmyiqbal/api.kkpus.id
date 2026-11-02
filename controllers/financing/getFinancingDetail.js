@@ -1,5 +1,6 @@
 // 📁 controllers/financing/getFinancingDetail.js
 import db from "../../models/index.js";
+import { isBackoffice } from "../../utils/authorization.js";
 
 const getFinancingDetail = async (req, res) => {
   try {
@@ -41,6 +42,15 @@ const getFinancingDetail = async (req, res) => {
 
     if (!detail) {
       return res.status(404).json({ status: false, message: "Data tidak ditemukan" });
+    }
+
+    // Hanya pemilik data atau petugas backoffice yang boleh melihat detail.
+    const isOwner = String(detail.member_id) === String(req.userId);
+    if (!isOwner && !(await isBackoffice(req.userId))) {
+      return res.status(403).json({
+        status: false,
+        message: "Akses ditolak. Anda tidak berhak melihat data ini.",
+      });
     }
 
     const existingApprovals = detail.approvals || [];

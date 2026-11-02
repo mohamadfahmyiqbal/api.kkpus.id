@@ -60,10 +60,50 @@ const getBillingHistory = async (req, res) => {
       order: [["updated_at", "DESC"]],
     });
 
+    let resultData = [...rows];
+
+    // Jika kategori simpanan, sertakan juga riwayat dari db.Savings (data import / setoran langsung)
+    if (db.Savings && category) {
+      let targetType = null;
+      const catUpper = category.toUpperCase();
+      if (catUpper.includes("POKOK")) targetType = "POKOK";
+      else if (catUpper.includes("WAJIB")) targetType = "WAJIB";
+      else if (catUpper.includes("SUKARELA")) targetType = "SUKARELA";
+
+      if (targetType) {
+        const directSavings = await db.Savings.findAll({
+          where: {
+            member_id: memberId,
+            savings_type: targetType,
+            status: { [Op.in]: ["COMPLETED", "APPROVED"] }
+          },
+          order: [["transaction_date", "DESC"], ["created_at", "DESC"]],
+          limit: historyLimit
+        });
+
+        const extraItems = directSavings.map(s => ({
+          id: s.savings_id,
+          bill_item_id: s.savings_id,
+          category_code: category,
+          description: s.description || `Simpanan ${s.savings_type}`,
+          amount: parseFloat(s.amount || 0),
+          status: "PAID",
+          createdAt: s.transaction_date || s.created_at,
+          updated_at: s.updated_at || s.created_at,
+          type: {
+            type_name: `Simpanan ${s.savings_type}`,
+            category_map: category
+          }
+        }));
+
+        resultData = [...resultData, ...extraItems];
+      }
+    }
+
     return res.status(200).json({
       status: true,
       message: "Riwayat item berhasil diambil sesuai kategori.",
-      data: rows,
+      data: resultData,
     });
   } catch (error) {
     console.error("Kesalahan getBillingHistory:", error);

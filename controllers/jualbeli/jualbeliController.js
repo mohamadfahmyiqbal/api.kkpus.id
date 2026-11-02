@@ -246,7 +246,8 @@ const getJualBeliReport = async (req, res) => {
           nama: h.member?.full_name || 'Anggota',
           tahun_ini: { total: 0, pokok: 0, dp: 0, margin: 0, cicilan: 0 },
           tahun_lalu: { total: 0, pokok: 0, dp: 0, margin: 0, cicilan: 0 },
-          tahun_lalu2: { total: 0, pokok: 0, dp: 0, margin: 0, cicilan: 0 }
+          tahun_lalu2: { total: 0, pokok: 0, dp: 0, margin: 0, cicilan: 0 },
+          tahun_lain: { total: 0, pokok: 0, dp: 0, margin: 0, cicilan: 0 }
         };
       }
 
@@ -255,6 +256,7 @@ const getJualBeliReport = async (req, res) => {
       if (year === currentYear) targetYear = 'tahun_ini';
       else if (year === currentYear - 1) targetYear = 'tahun_lalu';
       else if (year === currentYear - 2) targetYear = 'tahun_lalu2';
+      else targetYear = 'tahun_lain';
 
       if (targetYear) {
         const pokok = parseFloat(h.item_price || h.amount_requested || 0) + parseFloat(h.operational_cost || 0);

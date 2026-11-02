@@ -16,9 +16,13 @@ import { downloadTemplateAnggota } from "../controllers/core/anggota/downloadTem
 import { updateRole } from "../controllers/core/anggota/updateRole.js";
 import { getRoles } from "../controllers/core/anggota/getRoles.js";
 import { deleteMember, deleteBatchMembers } from "../controllers/core/anggota/deleteMember.js";
+import MidRole from "../middleware/MidRole.js";
 
 const router = express.Router();
 const upload = multer();
+
+const BACKOFFICE_ROLES = ["Admin", "Super Admin", "Ketua", "Bendahara", "Pengawas", "admin"];
+const ADMIN_MANAGE_ROLES = ["Admin", "Super Admin", "Ketua", "admin"];
 
 router.get("/profil", MidAnggota, getAnggotaProfile);
 router.put("/profil", MidAnggota, updateAnggotaProfile);
@@ -29,12 +33,12 @@ router.get("/berhenti-keanggotaan/status", MidAnggota, getTerminationStatus);
 router.post("/berhenti-keanggotaan/konfirmasi", MidAnggota, confirmTermination);
 
 // API untuk Backoffice
-router.get("/all", MidAnggota, getAllMembers);
-router.get("/template-import", MidAnggota, downloadTemplateAnggota);
-router.post("/import", MidAnggota, upload.single("file"), importAnggota);
-router.put("/:member_id/role", MidAnggota, updateRole);
-router.get("/roles", MidAnggota, getRoles);
-router.post("/batch-delete", MidAnggota, deleteBatchMembers);
-router.delete("/:member_id", MidAnggota, deleteMember);
+router.get("/all", MidAnggota, MidRole(BACKOFFICE_ROLES), getAllMembers);
+router.get("/template-import", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), downloadTemplateAnggota);
+router.post("/import", MidAnggota, upload.single("file"), MidRole(ADMIN_MANAGE_ROLES), importAnggota);
+router.put("/:member_id/role", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), updateRole);
+router.get("/roles", MidAnggota, MidRole(BACKOFFICE_ROLES), getRoles);
+router.post("/batch-delete", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteBatchMembers);
+router.delete("/:member_id", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteMember);
 
 export default router;

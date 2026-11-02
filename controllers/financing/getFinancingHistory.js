@@ -1,4 +1,5 @@
 import db from "../../models/index.js";
+import { isBackoffice } from "../../utils/authorization.js";
 
 const getFinancingHistory = async (req, res) => {
   try {
@@ -13,9 +14,19 @@ const getFinancingHistory = async (req, res) => {
     }
 
     const { type, all, batch_id } = req.query; // 'jualbeli' or 'pinjaman'
+    const requestAllMembers = String(all) === "true";
+
+    // all=true hanya untuk backoffice. Tanpa cek ini, anggota biasa dapat
+    // membaca seluruh pembiayaan anggota lain.
+    if (requestAllMembers && !(await isBackoffice(member_id))) {
+      return res.status(403).json({
+        status: false,
+        message: "Akses ditolak. Fitur ini hanya untuk petugas backoffice.",
+      });
+    }
 
     const whereClause = {};
-    if (String(all) !== 'true') {
+    if (!requestAllMembers) {
       whereClause.member_id = member_id;
     }
 
@@ -71,7 +82,9 @@ const getFinancingHistory = async (req, res) => {
           include: [{ model: db.UserRole, as: 'verifierRole' }]
         }
       ],
-      limit: 50,
+      // Backoffice yang meminta all=true harus menerima seluruh data agar
+      // ringkasan, pencarian, dan export tidak terpotong diam-diam.
+      ...(requestAllMembers ? {} : { limit: 50 }),
       order: [['created_at', 'DESC']]
     });
 

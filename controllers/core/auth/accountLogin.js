@@ -43,10 +43,14 @@ export const accountLogin = async (req, res) => {
     //   });
     // }
     // 2. CARI AKUN di tabel 'members'
-    // Mencari berdasarkan email ATAU phone_number
+    // Mencari berdasarkan email, phone_number, atau member_no
     const member = await Member.findOne({
       where: {
-        [Op.or]: [{ email: emailHp }, { phone_number: emailHp }],
+        [Op.or]: [
+          { email: emailHp },
+          { phone_number: emailHp },
+          { member_no: emailHp },
+        ],
       },
       include: [
         {
@@ -100,13 +104,52 @@ export const accountLogin = async (req, res) => {
       });
     }
 
-    // 5. Generate JWT Token
+    // Hapus password_hash dari objek member sebelum dikirim ke frontend
+    const userResponse = member.toJSON();
+    delete userResponse.password_hash;
+
+    // Extract roles to flat array for frontend convenience
+    userResponse.roles = (userResponse.roleAssignments || [])
+      .map(ra => {
+        const roleName = ra.role?.role_name?.toLowerCase().trim();
+        return roleName;
+      })
+      .filter(Boolean);
+
+    // Validasi otorisasi server-side jika login berasal dari aplikasi backoffice/admin
+    const isBackofficeClient =
+      req.body.clientType === "admin" ||
+      req.headers["x-client-app"] === "admin";
+
+    const allowedBackofficeRoles = [
+      "pengawas",
+      "ketua",
+      "bendahara",
+      "admin",
+      "super admin",
+      "superadmin",
+    ];
+    const hasBackofficeAccess = userResponse.roles.some((r) =>
+      allowedBackofficeRoles.includes(r.toLowerCase())
+    );
+
+    if (isBackofficeClient && !hasBackofficeAccess) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Akses ditolak: Hanya Pengawas, Ketua, Bendahara, atau Admin yang dapat mengakses backoffice.",
+      });
+    }
+
+    // 5. Generate JWT Token (menyertakan roles agar sinkron dengan socket & middleware)
     const tokenPayload = {
       member_id: member.member_id,
       member_no: member.member_no,
       full_name: member.full_name,
       email: member.email,
       status_id: member.status_id,
+      roles: userResponse.roles,
+      role: userResponse.roles[0] || "member",
     };
 
     const token = jwt.sign(tokenPayload, JWT_SECRET, {
@@ -117,24 +160,6 @@ export const accountLogin = async (req, res) => {
     // await logLoginAttempt(req, true, member.member_id, "Login successful");
 
     // 7. Respon Sukses
-    // Mengembalikan atribut user, kecuali password_hash (Sequelize secara otomatis tidak menyertakannya jika tidak diminta secara spesifik,
-    // namun kita telah meminta di atas. Pastikan Anda menghapus atribut password_hash di response, atau atur default scope pada model)
-
-    // Hapus password_hash dari objek member sebelum dikirim ke frontend
-    const userResponse = member.toJSON();
-    delete userResponse.password_hash;
-
-    // Extract roles to flat array for frontend convenience
-    userResponse.roles = (userResponse.roleAssignments || [])
-      .map(ra => {
-        const roleName = ra.role?.role_name?.toLowerCase().trim();
-        console.log("Found role:", roleName);
-        return roleName;
-      })
-      .filter(Boolean);
-
-    console.log("Final userResponse roles:", userResponse.roles);
-
     return res.status(200).json({
       success: true,
       message: "Login berhasil!",

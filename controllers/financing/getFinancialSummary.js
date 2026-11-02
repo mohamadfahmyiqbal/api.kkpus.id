@@ -46,12 +46,20 @@ export const getFinancialSummary = async (req, res) => {
     const completedSavings = await Savings.findAll({
       where: { member_id: memberId, status: "COMPLETED" }
     });
+    let savings_pokok_sum = 0;
+    let savings_wajib_sum = 0;
+    let savings_sukarela_sum = 0;
+
     completedSavings.forEach(s => {
       const amt = parseFloat(s.amount || 0);
-      if (s.savings_type === 'POKOK' && simpanan_pokok === 0) simpanan_pokok += amt;
-      else if (s.savings_type === 'WAJIB' && simpanan_wajib === 0) simpanan_wajib += amt;
-      else if (s.savings_type === 'SUKARELA' && simpanan_sukarela === 0) simpanan_sukarela += amt;
+      if (s.savings_type === 'POKOK') savings_pokok_sum += amt;
+      else if (s.savings_type === 'WAJIB') savings_wajib_sum += amt;
+      else if (s.savings_type === 'SUKARELA') savings_sukarela_sum += amt;
     });
+
+    if (simpanan_pokok === 0) simpanan_pokok = savings_pokok_sum;
+    if (simpanan_wajib === 0) simpanan_wajib = savings_wajib_sum;
+    if (simpanan_sukarela === 0) simpanan_sukarela = savings_sukarela_sum;
 
     // 3. Tabungan from MemberSavingsAccount
     const msAccounts = await MemberSavingsAccount.findAll({

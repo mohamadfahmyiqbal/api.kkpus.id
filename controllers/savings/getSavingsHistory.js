@@ -5,7 +5,16 @@ import { Op } from "sequelize";
 export const getSavingsHistory = async (req, res) => {
   try {
     const memberId = req.userId; // Diambil dari middleware autentikasi Anda
-    const { category } = req.query; // e.g., "Simpanan Pokok" atau "Simpanan Wajib"
+    let { category } = req.query; // e.g., "Simpanan Pokok" atau "Simpanan Wajib"
+
+    // Fallback jika category terkirim sebagai serialized array index oleh Axios (?0=S&1=S...)
+    if (!category && req.query['0']) {
+      category = Object.keys(req.query)
+        .filter((k) => !isNaN(k))
+        .sort((a, b) => a - b)
+        .map((k) => req.query[k])
+        .join('');
+    }
 
     /**
      * Penjelasan Query:
@@ -53,6 +62,56 @@ export const getSavingsHistory = async (req, res) => {
     });
 
     if (!transactions || transactions.length === 0) {
+      // Fallback: Jika tidak ada transaksi dari sistem Billing, ambil dari data Savings (import / langsung)
+      if (db.Savings) {
+        let targetType = null;
+        if (category) {
+          const catUpper = category.toUpperCase();
+          if (catUpper.includes("POKOK")) targetType = "POKOK";
+          else if (catUpper.includes("WAJIB")) targetType = "WAJIB";
+          else if (catUpper.includes("SUKARELA")) targetType = "SUKARELA";
+        }
+
+        const savingsWhere = {
+          member_id: memberId,
+          status: { [Op.in]: ["COMPLETED", "APPROVED"] }
+        };
+        if (targetType) {
+          savingsWhere.savings_type = targetType;
+        }
+
+        const directSavings = await db.Savings.findAll({
+          where: savingsWhere,
+          include: [
+            {
+              model: db.Member,
+              as: "member",
+              attributes: ["full_name"],
+            }
+          ],
+          order: [["transaction_date", "DESC"], ["created_at", "DESC"]],
+        });
+
+        if (directSavings && directSavings.length > 0) {
+          const mapped = directSavings.map(s => ({
+            transaction_id: s.savings_id,
+            id: s.savings_id,
+            amount: parseFloat(s.amount || 0),
+            status: "PAID",
+            created_at: s.transaction_date || s.created_at,
+            type: "DEPOSIT",
+            description: s.description || `Simpanan ${s.savings_type}`,
+            member: s.member
+          }));
+
+          return res.status(200).json({
+            status: true,
+            message: "Data riwayat simpanan berhasil diambil",
+            data: mapped,
+          });
+        }
+      }
+
       return res.status(200).json({
         status: true,
         message: "Belum ada riwayat simpanan untuk kategori ini.",
@@ -60,10 +119,21 @@ export const getSavingsHistory = async (req, res) => {
       });
     }
 
+    const mappedTransactions = transactions.map((t) => {
+      const item = t.toJSON ? t.toJSON() : t;
+      return {
+        ...item,
+        id: item.transaction_id,
+        type: "DEPOSIT",
+        description: item.bill?.items?.[0]?.description || `Simpanan ${category || ""}`.trim(),
+        amount: parseFloat(item.amount || 0),
+      };
+    });
+
     return res.status(200).json({
       status: true,
       message: "Data riwayat simpanan berhasil diambil",
-      data: transactions,
+      data: mappedTransactions,
     });
   } catch (error) {
     console.error("Error getSavingsHistory:", error);

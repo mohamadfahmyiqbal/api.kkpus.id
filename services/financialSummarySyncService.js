@@ -67,11 +67,15 @@ export const syncFinancialSummary = async (sequelize, memberId) => {
     // We only add from Savings table if the Account ledger for that type is 0
     // or if we consider them separate records. Based on getDashboard.js, 
     // Savings table is often the primary source for some implementations.
+    const hasLedgerPokok = simpanan_pokok > 0;
+    const hasLedgerWajib = simpanan_wajib > 0;
+    const hasLedgerSukarela = simpanan_sukarela > 0;
+
     completedSavings.forEach(s => {
       const amt = parseFloat(s.amount || 0);
-      if (s.savings_type === 'POKOK' && simpanan_pokok === 0) simpanan_pokok += amt;
-      else if (s.savings_type === 'WAJIB' && simpanan_wajib === 0) simpanan_wajib += amt;
-      else if (s.savings_type === 'SUKARELA' && simpanan_sukarela === 0) simpanan_sukarela += amt;
+      if (s.savings_type === 'POKOK' && !hasLedgerPokok) simpanan_pokok += amt;
+      else if (s.savings_type === 'WAJIB' && !hasLedgerWajib) simpanan_wajib += amt;
+      else if (s.savings_type === 'SUKARELA' && !hasLedgerSukarela) simpanan_sukarela += amt;
     });
 
     // 3. Tabungan from MemberSavingsAccount (Product-based savings)

@@ -30,7 +30,7 @@ export const deleteJualBeli = async (req, res) => {
       await BillItem.destroy({
         where: { financing_application_id: financingId },
         transaction: t,
-      }).catch(() => {});
+      });
 
       // Hapus approvals terkait jika ada
       if (Approval) {
@@ -40,7 +40,7 @@ export const deleteJualBeli = async (req, res) => {
             entity_id: financingId,
           },
           transaction: t,
-        }).catch(() => {});
+        });
       }
 
       // Hapus financing application
@@ -112,13 +112,14 @@ export const deleteBatchJualBeli = async (req, res) => {
 
     const financingIds = financings.map((f) => f.financing_id);
     const memberIds = [...new Set(financings.map((f) => f.member_id))];
+    let deletedCount = 0;
 
     if (financingIds.length > 0) {
       // Hapus bill items terkait
       await BillItem.destroy({
         where: { financing_application_id: { [Op.in]: financingIds } },
         transaction: t,
-      }).catch(() => {});
+      });
 
       // Hapus approvals terkait jika ada
       if (Approval) {
@@ -128,11 +129,11 @@ export const deleteBatchJualBeli = async (req, res) => {
             entity_id: { [Op.in]: financingIds },
           },
           transaction: t,
-        }).catch(() => {});
+        });
       }
 
       // Hapus financing applications
-      await FinancingApplication.destroy({
+      deletedCount += await FinancingApplication.destroy({
         where: {
           financing_id: { [Op.in]: financingIds },
         },
@@ -150,7 +151,7 @@ export const deleteBatchJualBeli = async (req, res) => {
     if (generalTxs.length > 0) {
       const gMemberIds = generalTxs.map((g) => g.member_id);
       memberIds.push(...gMemberIds);
-      await GeneralTransaction.destroy({
+      deletedCount += await GeneralTransaction.destroy({
         where: { transaction_id: { [Op.in]: ids } },
         transaction: t,
       });
@@ -174,8 +175,11 @@ export const deleteBatchJualBeli = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Berhasil menghapus ${ids.length} data transaksi terpilih`,
-      data: { deletedCount: ids.length },
+      message:
+        deletedCount > 0
+          ? `Berhasil menghapus ${deletedCount} data transaksi terpilih`
+          : "Tidak ada data transaksi yang cocok untuk dihapus",
+      data: { deletedCount },
     });
   } catch (error) {
     if (t && !t.finished) await t.rollback();
