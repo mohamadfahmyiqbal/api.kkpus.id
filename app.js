@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 // Security middleware
 app.use(
@@ -178,7 +179,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Client-App", "Origin"],
   }),
 );
 app.use(express.json({ limit: "25mb" }));

@@ -53,8 +53,8 @@ router.get("/admin-transactions", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pe
 router.get("/admin-report", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsReport);
 router.get("/admin-export", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), exportAdminSavings);
 
-router.get("/template-import", downloadTemplateSimpanan);
-router.post("/import", upload.single("file"), importSimpanan);
+router.get("/template-import", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), downloadTemplateSimpanan);
+router.post("/import", MidAnggota, MidRole(['Ketua', 'Bendahara']), upload.single("file"), importSimpanan);
 
 /**
  * Endpoint: GET /savings/:id

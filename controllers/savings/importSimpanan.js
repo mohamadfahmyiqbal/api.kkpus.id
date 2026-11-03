@@ -4,6 +4,7 @@ const Member = db.Member;
 const Savings = db.Savings;
 
 export const importSimpanan = async (req, res) => {
+  let transaction;
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Tidak ada file yang diunggah" });
@@ -17,6 +18,15 @@ export const importSimpanan = async (req, res) => {
     if (data.length === 0) {
       return res.status(400).json({ success: false, message: "File Excel kosong" });
     }
+
+    // Pre-cache SavingsProducts to avoid N+1 queries inside loop
+    const productMap = new Map();
+    if (db.SavingsProduct) {
+      const allProducts = await db.SavingsProduct.findAll();
+      allProducts.forEach((p) => productMap.set(p.product_code, p));
+    }
+
+    transaction = await db.sequelize.transaction();
 
     const successData = [];
     const errorData = [];
@@ -78,7 +88,8 @@ export const importSimpanan = async (req, res) => {
 
       // Cari anggota berdasarkan No. Anggota
       const existingMember = await Member.findOne({
-        where: { member_no: String(memberNo) }
+        where: { member_no: String(memberNo) },
+        transaction,
       });
 
       if (!existingMember) {
@@ -94,13 +105,13 @@ export const importSimpanan = async (req, res) => {
           description: keterangan || "Import Data Simpanan",
           transaction_date: txDate.toISOString().split('T')[0],
           status: "COMPLETED", // Langsung sukses karena data historis/import
-        });
+        }, { transaction });
         successData.push(newSaving);
 
         // Update/create MemberSavingsAccount agar data langsung sinkron
-        if (db.MemberSavingsAccount && db.SavingsProduct) {
+        if (db.MemberSavingsAccount) {
           const productCode = jenisSimpanan === 'POKOK' ? 'SW_POKOK' : (jenisSimpanan === 'WAJIB' ? 'SW_WAJIB' : 'SS_SUKARELA');
-          const product = await db.SavingsProduct.findOne({ where: { product_code: productCode } });
+          const product = productMap.get(productCode);
           if (product) {
             const memberCode = existingMember.member_no || existingMember.member_id.substring(0, 8);
             const accountNo = `SAV-${product.product_code}-${memberCode}`;
@@ -115,9 +126,10 @@ export const importSimpanan = async (req, res) => {
                 open_date: txDate,
                 current_balance: numAmount,
               },
+              transaction,
             });
             if (!created) {
-              await savAcc.increment("current_balance", { by: numAmount });
+              await savAcc.increment("current_balance", { by: numAmount, transaction });
             }
           }
         }
@@ -125,6 +137,8 @@ export const importSimpanan = async (req, res) => {
         errorData.push({ row: i + 2, reason: err.message });
       }
     }
+
+    await transaction.commit();
 
     return res.status(200).json({
       success: true,
@@ -137,6 +151,7 @@ export const importSimpanan = async (req, res) => {
     });
 
   } catch (error) {
+    if (transaction) await transaction.rollback();
     console.error("Import Simpanan Error:", error);
     return res.status(500).json({
       success: false,

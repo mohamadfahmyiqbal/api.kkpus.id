@@ -32,13 +32,15 @@ export const syncJualBeliReport = async (sequelize, member_id) => {
             { [Op.notLike]: '%pelunasan%' }
           ]
         },
-        status: { [Op.in]: ['APPROVED', 'COMPLETED', 'ACTIVE', 'LUNAS'] }
+        status: { [Op.in]: ['APPROVED', 'COMPLETED', 'ACTIVE', 'LUNAS', 'PAID'] }
       },
       order: [['created_at', 'DESC']]
     });
 
     if (history.length === 0) {
-      console.log(`No Jual Beli history found for member ${member_id}`);
+      // Hapus data agregasi jika transaksi sudah tidak ada atau dihapus
+      await JualBeliReport.destroy({ where: { member_id } });
+      console.log(`No Jual Beli history found for member ${member_id}, cleaned up reports`);
       return;
     }
 

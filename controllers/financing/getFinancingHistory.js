@@ -94,7 +94,7 @@ const getFinancingHistory = async (req, res) => {
       where: {
         member_id: { [db.Sequelize.Op.in]: memberIds },
         category_code: {
-          [db.Sequelize.Op.in]: ['TRANSACTION_INSTALLMENT', 'TRANSACTION_DOWN_PAYMENT']
+          [db.Sequelize.Op.in]: ['TRANSACTION_INSTALLMENT', 'TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN']
         },
         status: 'PAID'
       }

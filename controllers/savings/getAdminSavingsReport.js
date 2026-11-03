@@ -35,6 +35,25 @@ export const getAdminSavingsReport = async (req, res) => {
       where: { year: { [Sequelize.Op.in]: [currentYear - 1, currentYear - 2] } }
     });
 
+    // Hash maps to convert O(N*M) nested scans to O(N + M)
+    const savingsByMember = new Map();
+    directSavings.forEach((s) => {
+      if (!savingsByMember.has(s.member_id)) savingsByMember.set(s.member_id, []);
+      savingsByMember.get(s.member_id).push(s);
+    });
+
+    const accountsByMember = new Map();
+    accounts.forEach((a) => {
+      if (!accountsByMember.has(a.member_id)) accountsByMember.set(a.member_id, []);
+      accountsByMember.get(a.member_id).push(a);
+    });
+
+    const histByMember = new Map();
+    historical.forEach((h) => {
+      if (!histByMember.has(h.member_id)) histByMember.set(h.member_id, []);
+      histByMember.get(h.member_id).push(h);
+    });
+
     let sum_total_pokok = 0;
     let sum_total_wajib = 0;
     let sum_total_sukarela = 0;
@@ -46,7 +65,7 @@ export const getAdminSavingsReport = async (req, res) => {
       let lalu2_pokok = 0, lalu2_wajib = 0, lalu2_sukarela = 0, lalu2_total = 0;
 
       // Filter dari tabel savings
-      const memberSavings = directSavings.filter(s => s.member_id === member.member_id);
+      const memberSavings = savingsByMember.get(member.member_id) || [];
       if (memberSavings.length > 0) {
         memberSavings.forEach(s => {
           const yr = parseInt(s.yr, 10);
@@ -72,7 +91,7 @@ export const getAdminSavingsReport = async (req, res) => {
         });
       } else {
         // Fallback ke MemberSavingsAccount
-        const memberAccounts = accounts.filter(a => a.member_id === member.member_id);
+        const memberAccounts = accountsByMember.get(member.member_id) || [];
         memberAccounts.forEach(acc => {
           const type = (acc.savingsProduct?.name || "").toUpperCase();
           const balance = parseFloat(acc.current_balance) || 0;
@@ -84,7 +103,7 @@ export const getAdminSavingsReport = async (req, res) => {
       }
 
       // Gabungkan dengan historical jika tahun lalu/tahun lalu2 belum terisi
-      const memberHist = historical.filter(h => h.member_id === member.member_id);
+      const memberHist = histByMember.get(member.member_id) || [];
       memberHist.forEach(h => {
         if (h.year === currentYear - 1 && lalu_total === 0) {
           lalu_pokok = parseFloat(h.total_pokok) || 0;

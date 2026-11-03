@@ -31,8 +31,10 @@ const mapSavingsStatuses = (statusFilter) => {
 
 export const getAdminSavingsTransactions = async (req, res) => {
   try {
-    const { type, tx_category, page = 1, limit = 10, search = "", status = "" } = req.query;
-    const offset = (page - 1) * limit;
+    const { type, tx_category, page = 1, limit = 10, search = "", status = "", date = "", amount = "" } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 10);
+    const offset = (pageNum - 1) * limitNum;
 
     let results = [];
     let count = 0;
@@ -40,10 +42,21 @@ export const getAdminSavingsTransactions = async (req, res) => {
     // Check if we should fetch from Billing system (including Sukarela if it exists there)
     // Most deposits (Pokok, Wajib, Sukarela Setoran) are likely in Billing Transactions
     if (tx_category !== "PENCAIRAN") {
+      const txWhere = {
+        status: { [Op.in]: mapTransactionStatuses(status) },
+      };
+      if (date) {
+        txWhere.created_at = { [Op.like]: `%${date}%` };
+      }
+      if (amount) {
+        const cleanAmt = amount.replace(/[^0-9]/g, "");
+        if (cleanAmt) {
+          txWhere.amount = { [Op.gte]: parseFloat(cleanAmt) };
+        }
+      }
+
       const { count: tCount, rows: transactions } = await db.Transaction.findAndCountAll({
-        where: {
-          status: { [Op.in]: mapTransactionStatuses(status) },
-        },
+        where: txWhere,
         include: [
           {
             model: db.Member,
@@ -77,40 +90,100 @@ export const getAdminSavingsTransactions = async (req, res) => {
           }
         ],
         order: [["created_at", "DESC"]],
-        limit: parseInt(limit),
-        offset: offset
       });
 
-      if (tCount > 0) {
-        count = tCount;
-        results = transactions.map(t => {
-          // Calculate amount from matched items (e.g., only Pokok or only Wajib)
-          let itemAmount = t.amount;
-          if (t.bill && t.bill.items && t.bill.items.length > 0) {
-            itemAmount = t.bill.items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-          }
-          
-          const isPending = t.status === "PENDING_VERIFICATION";
+      const billingItems = transactions.map(t => {
+        let itemAmount = t.amount;
+        if (t.bill && t.bill.items && t.bill.items.length > 0) {
+          itemAmount = t.bill.items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+        }
+        
+        const isPending = t.status === "PENDING_VERIFICATION";
 
-          return {
-            id: t.transaction_id,
-            date: t.created_at,
-            member: t.member?.full_name || "Unknown",
-            member_id: t.member_id,
-            member_no: t.member?.member_no || "-",
-            type: "Setoran",
-            amount: itemAmount,
-            balance: "-", 
-            status: isPending ? "Menunggu Verifikasi" : "Selesai",
-            raw_status: t.status,
-            proof_of_transfer: t.proof_of_transfer,
-            sender_name: t.sender_name,
-            sender_bank: t.sender_bank,
-            is_manual_payment: isPending,
-            product_name: t.bill?.items?.[0]?.description || type
-          };
+        return {
+          id: t.transaction_id,
+          date: t.created_at,
+          member: t.member?.full_name || "Unknown",
+          member_id: t.member_id,
+          member_no: t.member?.member_no || "-",
+          type: "Setoran",
+          amount: itemAmount,
+          balance: "-", 
+          status: isPending ? "Menunggu Verifikasi" : "Selesai",
+          raw_status: t.status,
+          proof_of_transfer: t.proof_of_transfer,
+          sender_name: t.sender_name,
+          sender_bank: t.sender_bank,
+          is_manual_payment: isPending,
+          product_name: t.bill?.items?.[0]?.description || type
+        };
+      });
+
+      // Also query db.Savings (historical/import records) so they are not hidden
+      let directSavingsItems = [];
+      let sCount = 0;
+      if (db.Savings) {
+        const savingsWhere = {};
+        if (type) {
+          savingsWhere.savings_type = type.toUpperCase();
+        }
+        const svStatusFilter = mapSavingsStatuses(status);
+        if (svStatusFilter) {
+          savingsWhere.status = { [Op.in]: svStatusFilter };
+        }
+        if (date) {
+          savingsWhere[Op.or] = [
+            { transaction_date: { [Op.like]: `%${date}%` } },
+            { created_at: { [Op.like]: `%${date}%` } }
+          ];
+        }
+        if (amount) {
+          const cleanAmt = amount.replace(/[^0-9]/g, "");
+          if (cleanAmt) {
+            savingsWhere.amount = { [Op.gte]: parseFloat(cleanAmt) };
+          }
+        }
+
+        const { count: sc, rows: directSavings } = await db.Savings.findAndCountAll({
+          where: savingsWhere,
+          include: [
+            {
+              model: db.Member,
+              as: "member",
+              attributes: ["full_name", "member_id", "member_no"],
+              where: search ? {
+                [Op.or]: [
+                  { full_name: { [Op.like]: `%${search}%` } },
+                  { member_no: { [Op.like]: `%${search}%` } },
+                ]
+              } : {},
+              required: !!search
+            }
+          ],
+          order: [["transaction_date", "DESC"], ["created_at", "DESC"]],
         });
+
+        sCount = sc;
+        directSavingsItems = directSavings.map(s => ({
+          id: s.savings_id,
+          date: s.transaction_date || s.created_at,
+          member: s.member?.full_name || "Anggota",
+          member_id: s.member_id,
+          member_no: s.member?.member_no || "-",
+          type: "Setoran",
+          amount: parseFloat(s.amount) || 0,
+          balance: "-",
+          status: s.status === "COMPLETED" ? "Selesai" : (s.status === "APPROVED" ? "Disetujui" : s.status),
+          raw_status: s.status,
+          product_name: s.savings_type
+        }));
       }
+
+      const allMerged = [...billingItems, ...directSavingsItems];
+      allMerged.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+      count = allMerged.length;
+      results = allMerged.slice(offset, offset + limitNum);
     }
 
     // If no results found in Billing, or if it's a PENCAIRAN, check Savings system
@@ -153,6 +226,15 @@ export const getAdminSavingsTransactions = async (req, res) => {
         };
         if (wdStatusFilter) {
           wdWhere.status = { [Op.in]: wdStatusFilter };
+        }
+        if (date) {
+          wdWhere.created_at = { [Op.like]: `%${date}%` };
+        }
+        if (amount) {
+          const cleanAmt = amount.replace(/[^0-9]/g, "");
+          if (cleanAmt) {
+            wdWhere.amount = { [Op.gte]: parseFloat(cleanAmt) };
+          }
         }
 
         const { count: wCount, rows: withdrawals } = await db.SavingsWithdrawal.findAndCountAll({

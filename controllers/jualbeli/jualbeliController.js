@@ -200,7 +200,7 @@ const getJualBeliReport = async (req, res) => {
             { [Op.notLike]: '%pelunasan%' }
           ]
         },
-        status: { [Op.in]: ['APPROVED', 'COMPLETED', 'ACTIVE', 'LUNAS'] }
+        status: { [Op.in]: ['APPROVED', 'COMPLETED', 'ACTIVE', 'LUNAS', 'PAID'] }
       },
       include: [
         {
