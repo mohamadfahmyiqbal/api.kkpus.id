@@ -1,6 +1,7 @@
 // services/forgotPasswordService.js
 import db from "../models/index.js";
 import { logger } from "../utils/logger.js";
+import { hashOTP, verifyOTP } from "../utils/otpHelper.js";
 import notificationService from "./notificationService.js";
 
 const { Member, ForgotPasswordSession, PasswordResetToken } = db;
@@ -64,10 +65,11 @@ class ForgotPasswordService {
    */
   async createSession(emailHp, sessionId, otpCode, expiresAt, memberId) {
     try {
+      const hashedOtp = hashOTP(otpCode);
       return await ForgotPasswordSession.create({
         email_hp: emailHp,
         session_id: sessionId,
-        otp_code: otpCode,
+        otp_code: hashedOtp,
         expires_at: expiresAt,
         member_id: memberId
       });
@@ -82,13 +84,28 @@ class ForgotPasswordService {
    */
   async updateSession(session, otpCode, expiresAt) {
     try {
+      const hashedOtp = hashOTP(otpCode);
       return await session.update({
-        otp_code: otpCode,
+        otp_code: hashedOtp,
         expires_at: expiresAt,
         attempts: session.attempts + 1
       });
     } catch (error) {
       logger.error("Error updating session:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Increment OTP attempts counter without re-hashing
+   */
+  async incrementAttempts(session) {
+    try {
+      return await session.update({
+        attempts: session.attempts + 1
+      });
+    } catch (error) {
+      logger.error("Error incrementing attempts:", error);
       throw error;
     }
   }

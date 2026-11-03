@@ -2,12 +2,11 @@
 
 const ErrorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  console.error(`[ERROR] ${err.message}`);
+  console.error(`[ERROR] ${err.message}`, { stack: err.stack, timestamp: new Date().toISOString() });
   
   res.status(statusCode).json({
     success: false,
-    message: err.message || "Internal Server Error",
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    message: err.message || "Internal Server Error"
   });
 };
 

@@ -7,6 +7,7 @@ import { logger } from '../utils/logger.js';
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 const generalMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
 const authMax = parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 10;
+const loginMax = parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 10;
 const otpMax = parseInt(process.env.OTP_RATE_LIMIT_MAX) || 5;
 const passwordResetMax = parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX) || 5;
 
@@ -33,6 +34,17 @@ export const authLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: authMax,
   message: { ...standardMessage, message: 'Terlalu banyak percobaan login, silakan tunggu 5 menit.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Stricter rate limiter for login attempts
+ */
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: loginMax,
+  message: { ...standardMessage, message: 'Terlalu banyak percobaan login yang gagal. Silakan coba lagi setelah 15 menit.' },
   standardHeaders: true,
   legacyHeaders: false,
 });

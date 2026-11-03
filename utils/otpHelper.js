@@ -2,10 +2,10 @@
 import crypto from 'crypto';
 
 /**
- * Generate 6-digit OTP code
+ * Generate 6-digit OTP code using cryptographically secure random
  */
 export const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 };
 
 /**

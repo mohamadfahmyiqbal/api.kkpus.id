@@ -5,7 +5,8 @@ import {
   generateResetToken, 
   calculateOTPExpiry, 
   calculateResetTokenExpiry, 
-  isOTPExpired 
+  isOTPExpired,
+  verifyOTP as verifyOtpHash
 } from "../../../utils/otpHelper.js";
 import { validatePassword } from "../../../utils/passwordValidator.js";
 import forgotPasswordService from "../../../services/forgotPasswordService.js";
@@ -116,9 +117,9 @@ export const verifyOTP = async (req, res) => {
     }
 
     // Verify OTP
-    if (session.otp_code !== otpCode) {
+    if (!verifyOtpHash(otpCode, session.otp_code)) {
       // Increment attempts
-      await forgotPasswordService.updateSession(session, session.otp_code, session.expires_at);
+      await forgotPasswordService.incrementAttempts(session);
       
       return res.status(400).json({
         success: false,

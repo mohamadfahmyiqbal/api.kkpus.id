@@ -3,6 +3,12 @@ import jwt from "jsonwebtoken";
 import db from "../models/index.js";
 import fs from "fs";
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error("CRITICAL: JWT_SECRET tidak valid atau tidak diatur di environment variables");
+  process.exit(1);
+}
+
 let io = null;
 const users = new Map();
 
@@ -53,7 +59,7 @@ export const initSocket = (server) => {
     const authToken = socket.handshake.auth?.token;
     if (authToken) {
       try {
-        const decoded = jwt.verify(authToken, process.env.JWT_SECRET || "secret");
+        const decoded = jwt.verify(authToken, JWT_SECRET);
         const mId = decoded.member_id || decoded.id || decoded.userId;
         if (mId) {
           const idStr = String(mId).toLowerCase();
