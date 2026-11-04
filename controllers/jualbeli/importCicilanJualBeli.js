@@ -41,7 +41,16 @@ export const importCicilanJualBeli = async (req, res) => {
     transaction = await sequelize.transaction();
 
     for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+      const rawRow = data[i];
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Sanitasi input mencegah prototype pollution (OWASP A06 / ISO 27001 A.8.8)
+      const row = Object.create(null);
+      for (const [key, val] of Object.entries(rawRow)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        row[key] = typeof val === "string" ? val.trim() : val;
+      }
+
       const memberNo = row["No. Anggota"];
       const namaBarang = row["Nama Barang / Transaksi"] || row["Nama Barang"];
       const installmentNo = parseInt(row["Cicilan Ke"] || row["Cicilan"]) || 1;
@@ -216,11 +225,10 @@ export const importCicilanJualBeli = async (req, res) => {
     if (transaction && !transaction.finished) {
       await transaction.rollback();
     }
-    console.error("Import Cicilan Jual Beli Error:", error.message);
+    console.error("Import Cicilan Jual Beli Error:", error);
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import cicilan",
-      error: error.message,
     });
   }
 };

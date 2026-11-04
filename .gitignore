@@ -8,6 +8,8 @@ id_deploy.pub
 *.key
 *.crt
 uploads/
+backups/
+credentials/
 socket.log
 *.log
 coverage/

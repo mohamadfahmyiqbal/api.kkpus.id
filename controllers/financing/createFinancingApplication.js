@@ -120,19 +120,57 @@ const createFinancingApplication = async (req, res) => {
 
     if (!firstStep) throw new Error("Approval Step belum dikonfigurasi.");
 
+    // Validasi & kalkulasi finansial di server mencegah price & margin tampering (OWASP A04 / ISO 27001 A.8.28)
+    const rawPrice = parseFloat(amount_requested || principal_amount || 0);
+    const rawDP = Math.max(0, parseFloat(down_payment || 0));
+    const safeTenure = Math.max(1, parseInt(tenure, 10) || 1);
+    const safePrincipal = Math.max(0, rawPrice - rawDP);
+
+    let safeMarginPercent = 0;
+    let safeMarginAmount = 0;
+    let safeTotalTagihan = 0;
+    let safeMonthlyInstallment = 0;
+
+    if (!isPinjaman && !isPelunasan) {
+      const member = await db.Member.findByPk(memberId, { attributes: ['member_id', 'role_id'], transaction: t });
+      const isAnggota = member && Number(member.role_id) !== 1;
+
+      const termRecord = await db.FinancingTerm.findOne({
+        where: { value_months: safeTenure, is_active: true },
+        transaction: t,
+      });
+
+      if (termRecord) {
+        safeMarginPercent = isAnggota
+          ? parseFloat(termRecord.persentase_anggota || 0)
+          : parseFloat(termRecord.persentase_reguler || 0);
+      } else {
+        safeMarginPercent = parseFloat(margin_percent || 0);
+      }
+
+      safeMarginAmount = Math.round(rawPrice * (safeMarginPercent / 100));
+      safeTotalTagihan = rawPrice + safeMarginAmount;
+      safeMonthlyInstallment = Math.ceil(Math.max(0, safeTotalTagihan - rawDP) / safeTenure);
+    } else {
+      safeMarginPercent = parseFloat(margin_percent || 0);
+      safeMarginAmount = parseFloat(margin_amount || 0);
+      safeTotalTagihan = parseFloat(total_tagihan || (rawPrice + safeMarginAmount));
+      safeMonthlyInstallment = parseFloat(monthly_installment || (safeTotalTagihan / safeTenure));
+    }
+
     // Prepare application data
     const applicationData = {
       member_id: memberId,
       category: category,
       purpose: item_name,
-      item_price: amount_requested,
-      down_payment: down_payment,
-      amount_requested: principal_amount,
-      cooperation_months: parseInt(tenure),
-      monthly_installment: monthly_installment,
-      margin_percent: margin_percent || 0,
-      margin_amount: margin_amount || 0,
-      total_tagihan: total_tagihan || 0,
+      item_price: rawPrice,
+      down_payment: rawDP,
+      amount_requested: safePrincipal,
+      cooperation_months: safeTenure,
+      monthly_installment: safeMonthlyInstallment,
+      margin_percent: safeMarginPercent,
+      margin_amount: safeMarginAmount,
+      total_tagihan: safeTotalTagihan,
       operational_cost: operational_cost || 0,
       status: 'PENDING',
       approval_flow_id: flow.approval_flow_id,

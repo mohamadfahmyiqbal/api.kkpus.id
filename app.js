@@ -186,8 +186,14 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 
 const staticOptions = { maxAge: "1d", etag: true };
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), staticOptions));
-app.use("/api/uploads", express.static(path.join(__dirname, "uploads"), staticOptions));
+const blockSensitiveStaticFiles = (req, res, next) => {
+  if (/\.(sql|env|key|pem|json|sh|bak|tar|gz|config)$/i.test(req.path) || req.path.includes("..")) {
+    return res.status(403).json({ success: false, message: "Akses ditolak" });
+  }
+  next();
+};
+app.use("/uploads", blockSensitiveStaticFiles, express.static(path.join(__dirname, "uploads"), staticOptions));
+app.use("/api/uploads", blockSensitiveStaticFiles, express.static(path.join(__dirname, "uploads"), staticOptions));
 
 app.use((req, res, next) => {
   if (io) req.io = io;

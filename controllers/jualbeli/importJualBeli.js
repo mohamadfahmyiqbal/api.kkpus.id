@@ -39,7 +39,16 @@ export const importJualBeli = async (req, res) => {
     // Header Template mendukung:
     // "No. Anggota", "Type / Kategori" atau "Kategori", "Nama Barang", "Harga Barang", "DP", "Margin (Rp)", "Tenor (Bulan)", "Status", "Keterangan"
     for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+      const rawRow = data[i];
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Sanitasi input mencegah prototype pollution (OWASP A06 / ISO 27001 A.8.8)
+      const row = Object.create(null);
+      for (const [key, val] of Object.entries(rawRow)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        row[key] = typeof val === "string" ? val.trim() : val;
+      }
+
       const memberNo = row["No. Anggota"];
       const kategori = row["Type / Kategori"] || row["Kategori"] || row["Type"] || "Elektronik";
       const namaBarang = row["Nama Barang"] || row["Barang"];
@@ -160,11 +169,10 @@ export const importJualBeli = async (req, res) => {
     if (transaction && !transaction.finished) {
       await transaction.rollback();
     }
-    console.error("Import Jual Beli Error:", error.message);
+    console.error("Import Jual Beli Error:", error);
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import Jual Beli",
-      error: error.message
     });
   }
 };

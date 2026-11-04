@@ -25,60 +25,32 @@ export const downloadTemplateCicilanJualBeli = async (req, res) => {
     headerRow.font = { bold: true };
     headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-    // Ambil data pembiayaan jual beli yang ada untuk dijadikan referensi/contoh
-    const existingFinancings = await FinancingApplication.findAll({
-      where: {
-        category: {
-          [db.Sequelize.Op.ne]: "Pendanaan Syariah UMKM",
-        },
-        purpose: {
-          [db.Sequelize.Op.and]: [
-            { [db.Sequelize.Op.notLike]: "Pinjaman%" },
-            { [db.Sequelize.Op.notLike]: "Arisan%" },
-          ],
-        },
-      },
-      include: [
-        {
-          model: Member,
-          as: "member",
-          attributes: ["member_no", "full_name"],
-        },
-      ],
-      limit: 50,
-      order: [["created_at", "DESC"]],
-    });
-
     const todayStr = new Date().toISOString().split("T")[0];
 
-    if (existingFinancings && existingFinancings.length > 0) {
-      existingFinancings.forEach((f) => {
-        worksheet.addRow({
-          member_no: f.member?.member_no || "",
-          member_name: f.member?.full_name || "",
-          item_name: f.purpose || "",
-          installment_number: 1,
-          amount: parseFloat(f.monthly_installment || 0),
-          payment_date: todayStr,
-          status: "PAID",
-          description: "Pembayaran cicilan jual beli",
-        });
-      });
-    } else {
-      worksheet.addRow({
-        member_no: "A001",
-        member_name: "Contoh Anggota 1",
-        item_name: "Laptop Asus",
-        installment_number: 1,
-        amount: 791666,
-        payment_date: todayStr,
-        status: "PAID",
-        description: "Setoran cicilan bulan 1",
-      });
-    }
+    // Gunakan contoh data statis anonim untuk mencegah kebocoran PII (ISO 27001 A.5.34 / A.8.11 / A.8.33)
+    worksheet.addRow({
+      member_no: "A001",
+      member_name: "Contoh Anggota 1",
+      item_name: "Laptop Asus",
+      installment_number: 1,
+      amount: 791666,
+      payment_date: todayStr,
+      status: "PAID",
+      description: "Setoran cicilan bulan 1",
+    });
+    worksheet.addRow({
+      member_no: "A001",
+      member_name: "Contoh Anggota 1",
+      item_name: "Laptop Asus",
+      installment_number: 2,
+      amount: 791666,
+      payment_date: todayStr,
+      status: "UNPAID",
+      description: "Setoran cicilan bulan 2",
+    });
 
     // Pasang Dropdown Data Validation pada kolom Status (Kolom G / Kolom 7)
-    const rowCount = Math.max((existingFinancings?.length || 0) + 10, 100);
+    const rowCount = 100;
     const statusValidationFormula = `"${["PAID", "UNPAID"].join(",")}"`;
 
     for (let r = 2; r <= rowCount; r++) {
@@ -113,7 +85,6 @@ export const downloadTemplateCicilanJualBeli = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel cicilan.",
-      error: error.message,
     });
   }
 };
