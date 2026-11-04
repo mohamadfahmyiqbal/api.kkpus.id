@@ -45,7 +45,16 @@ export const importCicilanPinjaman = async (req, res) => {
     const errorData = [];
 
     for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+      const rawRow = data[i];
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Sanitasi input mencegah prototype pollution (CWE-1321 / ISO 27001 A.8.8)
+      const row = Object.create(null);
+      for (const [key, val] of Object.entries(rawRow)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        row[key] = typeof val === "string" ? val.trim() : val;
+      }
+
       const memberNo = row["No. Anggota"];
       const loanName = row["Nama Pinjaman"] || row["Nama Transaksi"] || row["Pinjaman"];
       const installmentNo = parseInt(row["Cicilan Ke"] || row["Cicilan"]) || 1;
@@ -152,7 +161,6 @@ export const importCicilanPinjaman = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import transaksi cicilan pinjaman",
-      error: error.message,
     });
   }
 };

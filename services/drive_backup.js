@@ -31,7 +31,11 @@ export const backupDatabase = () => {
     const date = new Date();
     const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const fileName = `backup-${DB_NAME}-${dateString}.sql`;
-    const filePath = path.join(__dirname, `../uploads/${fileName}`);
+    const backupDir = path.join(__dirname, '../backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const filePath = path.join(backupDir, fileName);
 
     // Adjust this dump command if needed (e.g. adding path to mysqldump)
     let dumpCommand = `mysqldump -h ${DB_HOST} -u ${DB_USER}`;

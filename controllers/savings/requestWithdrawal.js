@@ -16,6 +16,21 @@ const requestWithdrawal = async (req, res) => {
         cash_location 
     } = req.body;
 
+    // Validasi input awal (Defensive programming)
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({
+            status: false,
+            message: "Nominal penarikan harus berupa angka lebih besar dari 0."
+        });
+    }
+
+    if (!category || typeof category !== "string") {
+        return res.status(400).json({
+            status: false,
+            message: "Kategori simpanan wajib diisi."
+        });
+    }
+
     const t = await db.sequelize.transaction();
 
     try {

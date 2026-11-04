@@ -7,6 +7,14 @@ export const getSavingsHistory = async (req, res) => {
     const memberId = req.userId; // Diambil dari middleware autentikasi Anda
     let { category } = req.query; // e.g., "Simpanan Pokok" atau "Simpanan Wajib"
 
+    // Validasi input category
+    if (category && typeof category !== "string") {
+      return res.status(400).json({
+        status: false,
+        message: "Parameter kategori harus berupa string."
+      });
+    }
+
     // Fallback jika category terkirim sebagai serialized array index oleh Axios (?0=S&1=S...)
     if (!category && req.query['0']) {
       category = Object.keys(req.query)

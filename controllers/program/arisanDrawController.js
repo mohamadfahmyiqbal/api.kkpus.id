@@ -3,6 +3,7 @@ import { Op } from "sequelize";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Konfigurasi multer untuk upload file bukti transfer
 const storage = multer.diskStorage({
@@ -118,8 +119,8 @@ export const conductDraw = async (req, res) => {
       return res.status(400).json({ success: false, message: "Tidak ada peserta yang memenuhi syarat untuk dikocok." });
     }
 
-    // Random pick
-    const randomIndex = Math.floor(Math.random() * eligibleParticipants.length);
+    // Random pick menggunakan CSPRNG kriptografis aman (CWE-330 / ISO 27001 A.8.24)
+    const randomIndex = crypto.randomInt(0, eligibleParticipants.length);
     const winner = eligibleParticipants[randomIndex];
 
     // Create draw record

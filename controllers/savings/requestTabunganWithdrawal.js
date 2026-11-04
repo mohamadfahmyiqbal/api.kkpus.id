@@ -108,7 +108,7 @@ export const requestTabunganWithdrawal = async (req, res) => {
                 await sendGlobalNotification({
                     memberId: memberId,
                     title: "Pengajuan Pencairan Tabungan",
-                    content: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(amount).toLocaleString("id-ID")} berhasil dikirim.`,
+                    content: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(currentBalance).toLocaleString("id-ID")} berhasil dikirim.`,
                     type: "SAVINGS",
                     url: "/tabungan"
                 });
@@ -127,8 +127,8 @@ export const requestTabunganWithdrawal = async (req, res) => {
         broadcastApprovalNotification({
             type: "TABUNGAN_WITHDRAWAL",
             title: "Pengajuan Pencairan Tabungan",
-            message: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(amount).toLocaleString("id-ID")}.`,
-            data: { withdrawal_id: newRequest.withdrawal_id, member_id: memberId, amount }
+            message: `Pengajuan pencairan tabungan (${target.savingTarget?.target_name || "Tabungan"}) sebesar Rp ${Number(currentBalance).toLocaleString("id-ID")}.`,
+            data: { withdrawal_id: newRequest.withdrawal_id, member_id: memberId, amount: currentBalance }
         });
 
         return res.status(200).json({

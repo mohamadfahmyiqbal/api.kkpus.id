@@ -194,9 +194,8 @@ const getProgramPinjaman = async (req, res) => {
     console.log("[getProgramPinjaman] No pending financing and no loan data found, returning null");
     return res.json({ success: true, data: null });
   } catch (error) {
-    console.error("[getProgramPinjaman] ERROR:", error.message);
-    console.error(error.stack);
-    res.status(500).json({ success: false, message: "Server error: " + error.message });
+    console.error("[getProgramPinjaman] ERROR:", error);
+    res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
   }
 };
 

@@ -23,7 +23,16 @@ export const importArisan = async (req, res) => {
 
     // Header Template: No. Anggota, Nama Arisan, Nilai Arisan, Biaya Admin (Rp), Tenor (Bulan), Keterangan
     for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+      const rawRow = data[i];
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Sanitasi input mencegah prototype pollution (CWE-1321 / ISO 27001 A.8.8)
+      const row = Object.create(null);
+      for (const [key, val] of Object.entries(rawRow)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        row[key] = typeof val === "string" ? val.trim() : val;
+      }
+
       const memberNo = row["No. Anggota"];
       const namaArisan = row["Nama Arisan"];
       const nilaiArisan = parseFloat(row["Nilai Arisan"]) || 0;
@@ -91,7 +100,6 @@ export const importArisan = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import Arisan",
-      error: error.message
     });
   }
 };

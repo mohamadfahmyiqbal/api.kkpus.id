@@ -7,37 +7,18 @@ export const downloadTemplateArisan = async (req, res) => {
   try {
     const workbook = xlsx.utils.book_new();
 
-    // Ambil daftar anggota aktif dari database
-    const members = await Member.findAll({
-      attributes: ["member_no", "full_name"],
-      order: [["member_no", "ASC"]],
-    });
-
-    let templateData = [];
-
-    if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Nama Arisan": "",
-        "Nilai Arisan": 0,
-        "Biaya Admin (Rp)": 0,
+    // Data contoh statis anonim untuk mencegah kebocoran PII (ISO 27001 A.5.34 / A.8.11 / UU PDP)
+    const templateData = [
+      {
+        "No. Anggota": "A001",
+        "Nama Anggota (Referensi)": "Contoh Anggota 1",
+        "Nama Arisan": "Arisan Sembako",
+        "Nilai Arisan": 1000000,
+        "Biaya Admin (Rp)": 10000,
         "Tenor (Bulan)": 10,
-        "Keterangan": "",
-      }));
-    } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Nama Arisan": "Arisan Sembako",
-          "Nilai Arisan": 1000000,
-          "Biaya Admin (Rp)": 10000,
-          "Tenor (Bulan)": 10,
-          "Keterangan": "Arisan bulanan ibu-ibu",
-        },
-      ];
-    }
+        "Keterangan": "Arisan bulanan ibu-ibu",
+      },
+    ];
 
     const worksheet = xlsx.utils.json_to_sheet(templateData);
 
@@ -71,7 +52,6 @@ export const downloadTemplateArisan = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message,
     });
   }
 };

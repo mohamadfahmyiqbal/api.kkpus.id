@@ -27,44 +27,22 @@ export const downloadTemplateJualBeli = async (req, res) => {
     headerRow.font = { bold: true };
     headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-    // Ambil daftar anggota aktif dari database
-    const members = await Member.findAll({
-      attributes: ["member_no", "full_name"],
-      order: [["member_no", "ASC"]],
+    // Gunakan contoh data statis anonim untuk mencegah kebocoran PII (ISO 27001 A.5.34 / A.8.11 / A.8.33)
+    worksheet.addRow({
+      member_no: "A001",
+      member_name: "Contoh Anggota 1",
+      category: "Elektronik",
+      item_name: "Laptop Asus",
+      item_price: 10000000,
+      dp: 2000000,
+      margin: 1500000,
+      tenor: 12,
+      status: "APPROVED",
+      keterangan: "Pembelian laptop kredit",
     });
 
-    if (members && members.length > 0) {
-      members.forEach((m) => {
-        worksheet.addRow({
-          member_no: m.member_no,
-          member_name: m.full_name,
-          category: "Elektronik",
-          item_name: "",
-          item_price: 0,
-          dp: 0,
-          margin: 0,
-          tenor: 12,
-          status: "APPROVED",
-          keterangan: "",
-        });
-      });
-    } else {
-      worksheet.addRow({
-        member_no: "A001",
-        member_name: "Contoh Anggota 1",
-        category: "Elektronik",
-        item_name: "Laptop Asus",
-        item_price: 10000000,
-        dp: 2000000,
-        margin: 1500000,
-        tenor: 12,
-        status: "APPROVED",
-        keterangan: "Pembelian laptop kredit",
-      });
-    }
-
     // Pasang Dropdown Data Validation pada kolom Status (Kolom I / Kolom 9)
-    const rowCount = Math.max(members.length + 10, 100);
+    const rowCount = 100;
     const statusValidationFormula = `"${["APPROVED", "PENDING", "COMPLETED"].join(",")}"`;
 
     for (let r = 2; r <= rowCount; r++) {
@@ -99,7 +77,6 @@ export const downloadTemplateJualBeli = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message,
     });
   }
 };

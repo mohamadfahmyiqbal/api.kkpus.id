@@ -40,7 +40,16 @@ export const importPinjaman = async (req, res) => {
 
     // Header Template: No. Anggota, Kategori, Nama Pinjaman, Jumlah Pinjaman, Uang Muka / DP, Margin/Bunga (Rp), Tenor (Bulan), Tanggal Pengajuan, Status, Metode Pencairan, Bank Tujuan, No. Rekening, Keterangan
     for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+      const rawRow = data[i];
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Sanitasi input mencegah prototype pollution (CWE-1321 / ISO 27001 A.8.8)
+      const row = Object.create(null);
+      for (const [key, val] of Object.entries(rawRow)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        row[key] = typeof val === "string" ? val.trim() : val;
+      }
+
       const memberNo = row["No. Anggota"];
       const kategori = row["Kategori"] || "Pinjaman Tunai";
       const namaPinjaman = row["Nama Pinjaman"];
@@ -129,7 +138,6 @@ export const importPinjaman = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import Pinjaman",
-      error: error.message
     });
   }
 };
