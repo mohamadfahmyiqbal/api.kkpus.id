@@ -62,7 +62,7 @@ const getAvailableArisan = async (req, res) => {
     res.json({ success: true, data: filtered });
   } catch (error) {
     console.error("Error in getAvailableArisan:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
   }
 };
 

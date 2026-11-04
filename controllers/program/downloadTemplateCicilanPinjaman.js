@@ -25,54 +25,21 @@ export const downloadTemplateCicilanPinjaman = async (req, res) => {
     headerRow.font = { bold: true };
     headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-    // Ambil data pinjaman aktif/ada untuk dijadikan referensi
-    const existingLoans = await FinancingApplication.findAll({
-      where: {
-        purpose: {
-          [db.Sequelize.Op.like]: "Pinjaman%",
-        },
-      },
-      include: [
-        {
-          model: Member,
-          as: "member",
-          attributes: ["member_no", "full_name"],
-        },
-      ],
-      limit: 50,
-      order: [["created_at", "DESC"]],
+    // Data contoh statis anonim untuk mencegah kebocoran PII (ISO 27001 A.5.34 / A.8.11 / UU PDP)
+    const todayStr = new Date().toISOString().split("T")[0];
+    worksheet.addRow({
+      member_no: "A001",
+      member_name: "Contoh Anggota 1",
+      loan_name: "Pinjaman Lunak",
+      installment_number: 1,
+      amount: 500000,
+      payment_date: todayStr,
+      status: "PAID",
+      description: "Setoran cicilan pinjaman ke-1",
     });
 
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    if (existingLoans && existingLoans.length > 0) {
-      existingLoans.forEach((loan) => {
-        worksheet.addRow({
-          member_no: loan.member?.member_no || "",
-          member_name: loan.member?.full_name || "",
-          loan_name: loan.purpose || "Pinjaman Lunak",
-          installment_number: 1,
-          amount: parseFloat(loan.monthly_installment || 0),
-          payment_date: todayStr,
-          status: "PAID",
-          description: `Pembayaran cicilan ${loan.purpose || "pinjaman"}`,
-        });
-      });
-    } else {
-      worksheet.addRow({
-        member_no: "A001",
-        member_name: "Contoh Anggota 1",
-        loan_name: "Pinjaman Lunak",
-        installment_number: 1,
-        amount: 500000,
-        payment_date: todayStr,
-        status: "PAID",
-        description: "Setoran cicilan pinjaman ke-1",
-      });
-    }
-
     // Pasang Dropdown Data Validation pada kolom Status (Kolom G / Kolom 7)
-    const rowCount = Math.max((existingLoans?.length || 0) + 10, 100);
+    const rowCount = 100;
     const statusValidationFormula = `"${["PAID", "UNPAID"].join(",")}"`;
 
     for (let r = 2; r <= rowCount; r++) {
@@ -107,7 +74,6 @@ export const downloadTemplateCicilanPinjaman = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel transaksi cicilan pinjaman.",
-      error: error.message,
     });
   }
 };
