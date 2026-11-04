@@ -4,10 +4,16 @@ import { isTokenBlacklisted } from "../utils/tokenBlacklist.js";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error("CRITICAL: JWT_SECRET tidak terdefinisi di environment variables!");
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET tidak diatur di environment variable");
+    }
+    return "default_jwt_secret_dev_32_characters_min_len";
+  }
+  return secret;
+};
 
 export const MidAnggota = async (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
@@ -30,7 +36,7 @@ export const MidAnggota = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     if (!decoded.member_id) {
       return res.status(403).json({

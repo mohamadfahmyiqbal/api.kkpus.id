@@ -9,13 +9,16 @@ const Sequelize = db.Sequelize;
 const Op = Sequelize.Op;
 
 // PENTING: JWT Secret harus diambil dari environment variable
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// Validasi JWT Secret
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  console.error('CRITICAL: JWT_SECRET tidak valid atau tidak diatur di environment variables');
-  process.exit(1);
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET tidak diatur di environment variable");
+    }
+    return "default_jwt_secret_dev_32_characters_min_len";
+  }
+  return secret;
+};
 
 /**
  * Kontroler untuk menangani proses login anggota, langsung menggunakan tabel 'members'.
@@ -152,7 +155,7 @@ export const accountLogin = async (req, res) => {
       role: userResponse.roles[0] || "member",
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, {
+    const token = jwt.sign(tokenPayload, getJwtSecret(), {
       expiresIn: "1d",
     });
 

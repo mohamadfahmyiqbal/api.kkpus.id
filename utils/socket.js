@@ -3,11 +3,16 @@ import jwt from "jsonwebtoken";
 import db from "../models/index.js";
 import fs from "fs";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  console.error("CRITICAL: JWT_SECRET tidak valid atau tidak diatur di environment variables");
-  process.exit(1);
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET tidak diatur di environment variable");
+    }
+    return "default_jwt_secret_dev_32_characters_min_len";
+  }
+  return secret;
+};
 
 let io = null;
 const users = new Map();
@@ -59,7 +64,7 @@ export const initSocket = (server) => {
     const authToken = socket.handshake.auth?.token;
     if (authToken) {
       try {
-        const decoded = jwt.verify(authToken, JWT_SECRET);
+        const decoded = jwt.verify(authToken, getJwtSecret());
         const mId = decoded.member_id || decoded.id || decoded.userId;
         if (mId) {
           const idStr = String(mId).toLowerCase();
@@ -105,7 +110,7 @@ export const initSocket = (server) => {
       if (!token) return;
 
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, getJwtSecret());
         const memberId = decoded.member_id;
 
         const member = await db.Member.findByPk(memberId, {
@@ -176,7 +181,7 @@ export const initSocket = (server) => {
       if (!token) return;
 
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+        const decoded = jwt.verify(token, getJwtSecret());
         const memberId = decoded.member_id;
 
         if (category.startsWith('TAB_DEP_')) {

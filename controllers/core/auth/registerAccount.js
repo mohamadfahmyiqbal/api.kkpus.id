@@ -4,11 +4,16 @@ import db from "../../../models/index.js";
 import { sendGlobalNotification } from "../../../services/notificationHelper.js";
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  console.error("CRITICAL: JWT_SECRET tidak valid atau tidak diatur di environment variables!");
-  process.exit(1);
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET tidak diatur di environment variable");
+    }
+    return "default_jwt_secret_dev_32_characters_min_len";
+  }
+  return secret;
+};
 
 // Validation helpers
 const validateEmail = (email) => {
@@ -201,7 +206,7 @@ export const registerAccount = async (req, res) => {
       status_id: newMember.status_id,
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, {
+    const token = jwt.sign(tokenPayload, getJwtSecret(), {
       expiresIn: "1d",
     });
 

@@ -1,7 +1,16 @@
 import { blacklistToken } from "../../utils/tokenBlacklist.js";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET tidak diatur di environment variable");
+    }
+    return "default_jwt_secret_dev_32_characters_min_len";
+  }
+  return secret;
+};
 
 const logout = async (req, res) => {
   try {
@@ -9,7 +18,7 @@ const logout = async (req, res) => {
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
       try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, getJwtSecret());
         blacklistToken(token, decoded.exp ? decoded.exp * 1000 : Date.now() + 86400000);
       } catch (err) {
         // Token already invalid; still blacklist to be safe

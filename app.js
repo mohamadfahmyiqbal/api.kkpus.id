@@ -166,15 +166,15 @@ if (process.env.CORS_ORIGIN) {
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Reject requests with no origin (browser-only API)
-      if (!origin) return callback(new Error("Not allowed by CORS: origin required"));
-      
+      // Izinkan request tanpa origin (curl, health check, mobile non-browser)
+      if (!origin) return callback(null, true);
+
       const isSubdomain = origin.match(/^https?:\/\/(.*\.)?kkpus\.id$/);
       if (allowedOrigins.indexOf(origin) !== -1 || isSubdomain) {
         callback(null, true);
       } else {
         console.warn(`[CORS] Rejected origin: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
+        callback(null, false);
       }
     },
     credentials: true,
