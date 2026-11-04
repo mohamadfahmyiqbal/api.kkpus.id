@@ -1,4 +1,4 @@
-import { blacklistToken } from "../../utils/tokenBlacklist.js";
+import { blacklistToken } from "../../../utils/tokenBlacklist.js";
 import jwt from "jsonwebtoken";
 
 const getJwtSecret = () => {
