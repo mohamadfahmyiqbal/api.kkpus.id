@@ -5,15 +5,22 @@ import { notifyInitialStepApprovers } from "../core/approvals/approvalNotificati
 import moment from "moment";
 
 export const applySavingsTarget = async (req, res) => {
+  const memberId = req.userId;
+  const { saving_target_id, monthly_deposit, term_months } = req.body || {};
+
+  const parsedDeposit = parseFloat(monthly_deposit);
+  const parsedTerm = parseInt(term_months, 10);
+
+  if (!saving_target_id || isNaN(parsedDeposit) || parsedDeposit <= 0 || isNaN(parsedTerm) || parsedTerm <= 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Data pengajuan tidak lengkap atau nominal/durasi tidak valid"
+    });
+  }
+
   const t = await db.sequelize.transaction();
 
   try {
-    const memberId = req.userId;
-    const { saving_target_id, monthly_deposit, term_months } = req.body;
-
-    if (!saving_target_id || !monthly_deposit || !term_months) {
-      throw new Error("Data pengajuan tidak lengkap");
-    }
 
     // Find the Master Program
     const newTarget = await db.SavingTarget.findByPk(saving_target_id, { transaction: t });
@@ -22,8 +29,8 @@ export const applySavingsTarget = async (req, res) => {
     }
 
     const targetName = newTarget.target_name;
-    const targetAmount = monthly_deposit * term_months;
-    const setoranAwal = monthly_deposit; // Default setoran awal is the first month's deposit
+    const targetAmount = parsedDeposit * parsedTerm;
+    const setoranAwal = parsedDeposit; // Default setoran awal is the first month's deposit
 
     // Handle Approval Flow
     const flow = await db.ApprovalFlow.findOne({
@@ -57,8 +64,8 @@ export const applySavingsTarget = async (req, res) => {
       current_step_id: initialStepId,
       status: 'PENDING',
       target_amount: targetAmount,
-      term_months: term_months,
-      monthly_deposit: monthly_deposit
+      term_months: parsedTerm,
+      monthly_deposit: parsedDeposit
     }, { transaction: t });
 
     // Generate Setoran Awal bill

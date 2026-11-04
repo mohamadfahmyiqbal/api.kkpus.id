@@ -1,19 +1,65 @@
-"use strict";
+import test from "node:test";
+import assert from "node:assert/strict";
+import { applySavingsTarget } from "../controllers/savings/applySavingsTarget.js";
 
-/**
- * Basic tests for savings controllers
- * Tests the requestWithdrawal controller function
- */
+test("Tabungan - applySavingsTarget rejects missing or negative values", async () => {
+  let statusCode = null;
+  let responseData = null;
 
-if (typeof describe === "undefined") {
-  global.describe = global.it ? (title, fn) => fn() : () => {};
-  global.test = global.it ? (title, fn) => fn() : () => {};
-  global.beforeEach = () => {};
-  global.afterEach = () => {};
-}
+  const mockReq = {
+    userId: 1,
+    body: {
+      saving_target_id: 1,
+      monthly_deposit: -10000,
+      term_months: 12
+    }
+  };
 
-describe("Savings Controller Tests", () => {
-  test("requestWithdrawal requires amount", async () => {
-    expect(true).toBe(true);
-  });
+  const mockRes = {
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(payload) {
+      responseData = payload;
+      return this;
+    }
+  };
+
+  await applySavingsTarget(mockReq, mockRes);
+
+  assert.equal(statusCode, 400);
+  assert.equal(responseData?.status, false);
+  assert.match(responseData?.message, /Data pengajuan tidak lengkap atau nominal\/durasi tidak valid/);
+});
+
+test("Tabungan - applySavingsTarget rejects zero term duration", async () => {
+  let statusCode = null;
+  let responseData = null;
+
+  const mockReq = {
+    userId: 1,
+    body: {
+      saving_target_id: 1,
+      monthly_deposit: 100000,
+      term_months: 0
+    }
+  };
+
+  const mockRes = {
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(payload) {
+      responseData = payload;
+      return this;
+    }
+  };
+
+  await applySavingsTarget(mockReq, mockRes);
+
+  assert.equal(statusCode, 400);
+  assert.equal(responseData?.status, false);
+  assert.match(responseData?.message, /Data pengajuan tidak lengkap atau nominal\/durasi tidak valid/);
 });
