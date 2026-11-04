@@ -6,6 +6,16 @@ export const getAccountDetail = async (req, res) => {
     const memberId = req.userId;
     let { category } = req.query;
 
+    // Validasi query parameter category
+    if (!category) {
+      category = "SS_SUKARELA";
+    } else if (typeof category !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Kategori simpanan harus berupa string."
+      });
+    }
+
     // Fallback jika category terkirim sebagai serialized array index oleh Axios (?0=S&1=S...)
     if (!category && req.query['0']) {
       category = Object.keys(req.query)
