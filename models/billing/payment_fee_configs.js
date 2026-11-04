@@ -28,7 +28,7 @@ export default (sequelize, DataTypes) => {
         defaultValue: 0,
       },
       percentage_fee: {
-        type: DataTypes.DECIMAL(5, 4),
+        type: DataTypes.DECIMAL(6, 2),
         allowNull: false,
         defaultValue: 0,
       },

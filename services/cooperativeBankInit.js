@@ -1,8 +1,26 @@
 /**
  * Inisialisasi tabel dan mock data rekening koperasi untuk pembayaran manual
  */
+const widenPaymentFeePercentage = async (db) => {
+  if (!db.PaymentFeeConfig) return;
+  const [columns] = await db.sequelize.query("SHOW COLUMNS FROM `payment_fee_configs` LIKE 'percentage_fee'");
+  const columnType = String(columns?.[0]?.Type || "").toLowerCase();
+  if (columnType === "decimal(5,4)") {
+    await db.sequelize.query(
+      "ALTER TABLE `payment_fee_configs` MODIFY COLUMN `percentage_fee` DECIMAL(6,2) NOT NULL DEFAULT 0"
+    );
+    console.log("percentage_fee widened to DECIMAL(6,2)");
+  }
+};
+
 export const initCooperativeBanks = async (db) => {
   try {
+    try {
+      await widenPaymentFeePercentage(db);
+    } catch (feeErr) {
+      console.error("Gagal menyesuaikan kolom percentage_fee:", feeErr.message || feeErr);
+    }
+
     // 1. Sync tabel cooperative_bank_accounts jika belum ada
     if (db.CooperativeBankAccount) {
       await db.CooperativeBankAccount.sync({ alter: false });

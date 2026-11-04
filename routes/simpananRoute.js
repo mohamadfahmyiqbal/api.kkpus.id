@@ -17,11 +17,13 @@ import { getSimpananConfig, updateSimpananConfig } from "../controllers/savings/
 
 const router = express.Router();
 
+const configWriterRoles = ["Admin", "Super Admin", "Bendahara"];
+
 // Route untuk Master Data Produk (Tab Navigasi)
 router.get("/products", MidAnggota, getSavingsProducts);
-router.put("/products/:id/akad", MidAnggota, updateSavingsAkad);
+router.put("/products/:id/akad", MidAnggota, MidRole(configWriterRoles), updateSavingsAkad);
 router.get("/features", MidAnggota, getFeatures);
-router.put("/features/:id/akad", MidAnggota, updateFeatureAkad);
+router.put("/features/:id/akad", MidAnggota, MidRole(configWriterRoles), updateFeatureAkad);
 router.get("/account-detail", MidAnggota, getAccountDetail);
 // Route untuk Riwayat & Transaksi
 router.get("/riwayat", MidAnggota, getSavingsHistory);
@@ -37,7 +39,7 @@ router.post(
 );
 
 // Route for Simpanan Config
-router.get("/config", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas', 'Admin', 'admin']), getSimpananConfig);
-router.put("/config", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas', 'Admin', 'admin']), updateSimpananConfig);
+router.get("/config", MidAnggota, MidRole(["Admin", "Super Admin", "Bendahara", "Ketua", "Pengawas"]), getSimpananConfig);
+router.put("/config", MidAnggota, MidRole(configWriterRoles), updateSimpananConfig);
 
 export default router;

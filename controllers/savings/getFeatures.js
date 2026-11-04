@@ -13,7 +13,6 @@ export const getFeatures = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "Gagal mendapatkan data fitur",
-      error: error.message,
     });
   }
 };

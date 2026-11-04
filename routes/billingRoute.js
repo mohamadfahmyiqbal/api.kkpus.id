@@ -22,8 +22,8 @@ import {
 
 const router = express.Router();
 
-router.get("/payment-fees", getPaymentFeeConfigs);
-router.put("/payment-fees", MidAnggota, MidRole(["Admin", "Super Admin"]), updatePaymentFeeConfigs);
+router.get("/payment-fees", MidAnggota, getPaymentFeeConfigs);
+router.put("/payment-fees", MidAnggota, MidRole(["Admin", "Super Admin", "Bendahara"]), updatePaymentFeeConfigs);
 
 // Daftar Rekening Koperasi untuk Pembayaran Manual
 router.get("/cooperative-banks", getCooperativeBankAccounts);

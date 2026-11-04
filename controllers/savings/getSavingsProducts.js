@@ -37,7 +37,6 @@ export const getSavingsProducts = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "Gagal mengambil data produk",
-      error: error.message,
     });
   }
 };

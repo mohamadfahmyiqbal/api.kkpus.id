@@ -1,4 +1,5 @@
 import db from "../../models/index.js";
+import { parsePaymentFeeInput } from "../savings/configValidation.js";
 
 // Fetch Payment Fee Configs
 export const getPaymentFeeConfigs = async (req, res) => {
@@ -17,50 +18,79 @@ export const getPaymentFeeConfigs = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Gagal mengambil konfigurasi biaya admin",
-      error: error.message,
     });
   }
 };
 
 // Update Payment Fee Configs
 export const updatePaymentFeeConfigs = async (req, res) => {
-  const transaction = await db.sequelize.transaction();
   try {
-    const { configs } = req.body; // Expecting [{ id, fee_type, flat_fee, percentage_fee }]
+    const { configs } = req.body;
 
-    if (!configs || !Array.isArray(configs)) {
-      await transaction.rollback();
+    if (!configs || !Array.isArray(configs) || configs.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Format data tidak valid. Diharapkan array configs.",
       });
     }
 
-    // Update each config within transaction
+    const parsedConfigs = [];
     for (const conf of configs) {
-      await db.PaymentFeeConfig.update(
-        { 
-          fee_type: conf.fee_type,
-          flat_fee: parseFloat(conf.flat_fee || 0),
-          percentage_fee: parseFloat(conf.percentage_fee || 0)
-        },
-        { where: { id: conf.id }, transaction }
-      );
+      const parsed = parsePaymentFeeInput(conf);
+      if (!parsed) {
+        return res.status(400).json({
+          success: false,
+          message: "Data biaya admin tidak valid",
+        });
+      }
+      parsedConfigs.push(parsed);
     }
 
-    await transaction.commit();
+    const transaction = await db.sequelize.transaction();
+    try {
+      for (const parsed of parsedConfigs) {
+        const existing = await db.PaymentFeeConfig.findByPk(parsed.id, { transaction });
+        if (!existing) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: "Konfigurasi biaya tidak ditemukan",
+          });
+        }
 
-    res.status(200).json({
-      success: true,
-      message: "Konfigurasi biaya admin berhasil diperbarui",
-    });
+        await existing.update(
+          {
+            fee_type: parsed.fee_type,
+            flat_fee: parsed.flat_fee,
+            percentage_fee: parsed.percentage_fee,
+          },
+          { transaction }
+        );
+
+        console.info("[config] payment fee updated", {
+          actor: req.userId || null,
+          id: parsed.id,
+          feeType: parsed.fee_type,
+          flatFee: parsed.flat_fee,
+          percentageFee: parsed.percentage_fee,
+        });
+      }
+
+      await transaction.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Konfigurasi biaya admin berhasil diperbarui",
+      });
+    } catch (error) {
+      if (transaction) await transaction.rollback();
+      throw error;
+    }
   } catch (error) {
-    if (transaction) await transaction.rollback();
     console.error("Error updating payment fee configs:", error);
     res.status(500).json({
       success: false,
       message: "Gagal memperbarui konfigurasi biaya admin",
-      error: error.message,
     });
   }
 };
