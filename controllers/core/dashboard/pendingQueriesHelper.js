@@ -11,7 +11,7 @@ export const fetchPendingWithdrawals = async (approvalIncludes) => {
   return db.SavingsWithdrawal.findAll({
     where: {
       status: "PENDING",
-      member_saving_target_id: { [Op.is]: null },
+      member_saving_target_id: null,
     },
     include: [
       {
