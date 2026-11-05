@@ -9,6 +9,8 @@ const {
   BusinessProfile,
   MemberEmergencyContact,
   MemberBankAccount,
+  MemberRoleAssignment,
+  UserRole,
   sequelize
 } = db;
 
@@ -27,12 +29,14 @@ export const importAnggota = async (req, res) => {
       return res.status(400).json({ success: false, message: "File Excel kosong" });
     }
 
-    // Get Active Status ID
-    let activeStatus = await MemberStatus.findOne({ where: { status_name: "Aktif" } });
-    if (!activeStatus) {
-      activeStatus = await MemberStatus.findOne({ where: { status_name: "Active" } });
-    }
-    const statusId = activeStatus ? activeStatus.status_id : null;
+    // Pre-fetch All Member Statuses & Default Member Role
+    const allStatuses = await MemberStatus.findAll();
+    const statusReguler = allStatuses.find((s) => s.status_name === "Anggota Reguler") ||
+      allStatuses.find((s) => s.status_name === "Aktif") ||
+      allStatuses[0] || null;
+    const statusLuarBiasa = allStatuses.find((s) => s.status_name === "Anggota Luar Biasa") || statusReguler;
+
+    const memberRole = await UserRole.findOne({ where: { role_name: "Anggota" } });
 
     const successData = [];
     const errorData = [];
@@ -132,14 +136,57 @@ export const importAnggota = async (req, res) => {
         continue;
       }
 
-      // Check if member already exists
-      const existingMember = await Member.findOne({
-        where: { member_no: String(memberNo) }
-      });
-
-      if (existingMember) {
-        errorData.push({ row: i + 2, reason: `No. Anggota ${memberNo} sudah terdaftar` });
+      // Validate member_no format (alphanumeric, 1-20 chars)
+      if (!/^[a-zA-Z0-9]{1,20}$/.test(String(memberNo).trim())) {
+        errorData.push({ row: i + 2, reason: `No. Anggota "${memberNo}" format tidak valid (hanya alfanumerik)` });
         continue;
+      }
+
+      // Validate full_name (alphanumeric and common punctuation, 1-100 chars)
+      if (!/^[a-zA-Z0-9\s.,'\\-]{1,100}$/.test(String(fullName).trim())) {
+        errorData.push({ row: i + 2, reason: `Nama "${fullName}" format tidak valid (hanya alfanumerik dan tanda baca)` });
+        continue;
+      }
+
+      // Validate email format if provided
+      const trimmedEmail = email ? String(email).trim().toLowerCase() : null;
+      if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        errorData.push({ row: i + 2, reason: `Format email "${email}" tidak valid` });
+        continue;
+      }
+
+      // Validate NIK (must be 16 digits) if provided
+      const trimmedNik = nik ? String(nik).trim() : null;
+      if (trimmedNik && !/^[0-9]{16}$/.test(trimmedNik)) {
+        errorData.push({ row: i + 2, reason: `NIK KTP "${nik}" harus 16 digit angka` });
+        continue;
+      }
+
+      // Check duplicate member_no
+      const existingMemberNo = await Member.findOne({
+        where: { member_no: String(memberNo).trim() }
+      });
+      if (existingMemberNo) {
+        errorData.push({ row: i + 2, reason: `No. Anggota "${memberNo}" sudah terdaftar` });
+        continue;
+      }
+
+      // Check duplicate email
+      if (trimmedEmail) {
+        const existingEmail = await Member.findOne({ where: { email: trimmedEmail } });
+        if (existingEmail) {
+          errorData.push({ row: i + 2, reason: `Email "${email}" sudah terdaftar` });
+          continue;
+        }
+      }
+
+      // Check duplicate NIK
+      if (trimmedNik) {
+        const existingNik = await Member.findOne({ where: { nik_ktp: trimmedNik } });
+        if (existingNik) {
+          errorData.push({ row: i + 2, reason: `NIK "${nik}" sudah terdaftar` });
+          continue;
+        }
       }
 
       let transaction;
@@ -155,23 +202,36 @@ export const importAnggota = async (req, res) => {
         const parsedBirthDate = parseExcelDate(birthDateRaw);
         const parsedJoinDate = parseExcelDate(joinDateRaw) || new Date();
 
+        const isLuarBiasa = String(type || "").toLowerCase().includes("luar biasa");
+        const assignedStatus = isLuarBiasa ? statusLuarBiasa : statusReguler;
+        const normalizedMemberType = isLuarBiasa ? "Anggota Luar Biasa" : "Anggota Reguler";
+
         const newMember = await Member.create({
-          member_no: String(memberNo),
-          full_name: fullName,
-          email: email || null,
+          member_no: String(memberNo).trim(),
+          full_name: String(fullName).trim(),
+          email: trimmedEmail,
           password_hash: password_hash,
-          phone_number: phone ? String(phone) : null,
-          nik_ktp: nik ? String(nik) : null,
-          member_type: type || "Reguler",
+          phone_number: phone ? String(phone).trim() : null,
+          nik_ktp: trimmedNik,
+          member_type: normalizedMemberType,
           gender: gender || null,
           date_of_brith: parsedBirthDate,
           join_date: parsedJoinDate,
-          rt: rt ? String(rt) : null,
-          rw: rw ? String(rw) : null,
+          rt: rt ? String(rt).trim() : null,
+          rw: rw ? String(rw).trim() : null,
           address: address || null,
-          status_id: statusId,
+          status_id: assignedStatus ? assignedStatus.status_id : null,
           is_registration_done: 1,
         }, { transaction });
+
+        // Role Assignment (default to "Anggota" role)
+        if (memberRole) {
+          await MemberRoleAssignment.create({
+            member_id: newMember.member_id,
+            role_id: memberRole.role_id,
+            start_date: new Date(),
+          }, { transaction });
+        }
 
         // Employment
         if (occupation || employerName || employerAddress) {

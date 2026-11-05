@@ -15,12 +15,13 @@ export const getAllMembers = async (req, res) => {
     const whereClause = {};
     
     if (search) {
+      const safeSearch = `%${search}%`;
       whereClause[Op.or] = [
-        { full_name: { [Op.like]: `%${search}%` } },
-        { member_no: { [Op.like]: `%${search}%` } },
-        { nik_ktp: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
-        { phone_number: { [Op.like]: `%${search}%` } }
+        { full_name: { [Op.like]: safeSearch } },
+        { member_no: { [Op.like]: safeSearch } },
+        { nik_ktp: { [Op.like]: safeSearch } },
+        { email: { [Op.like]: safeSearch } },
+        { phone_number: { [Op.like]: safeSearch } }
       ];
     }
     
