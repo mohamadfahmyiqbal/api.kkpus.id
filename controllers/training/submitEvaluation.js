@@ -23,34 +23,57 @@ const submitEvaluation = async (req, res) => {
       });
     }
 
-    // Calculate score (simplified logic - in real implementation, compare with correct answers)
-    const totalQuestions = answers.length;
-    const correctAnswers = answers.filter(a => a.is_correct).length;
-    const score = Math.round((correctAnswers / totalQuestions) * 100);
+    // Calculate score based on actual correct answers from quiz_questions in DB
+    const questions = Array.isArray(material.quiz_questions) ? material.quiz_questions : [];
+    const totalQuestions = questions.length > 0 ? questions.length : (answers.length || 1);
+
+    let correctCount = 0;
+    const validatedAnswers = [];
+
+    if (questions.length > 0) {
+      questions.forEach((q, idx) => {
+        const studentAns = answers.find(a => a.question_id === q.id || a.question_index === idx);
+        const actualCorrect = (q.correct_answer || q.correctAnswer || "").trim().toUpperCase();
+        const selected = (studentAns?.selected_option || "").trim().toUpperCase();
+        const isCorrect = selected !== "" && selected === actualCorrect;
+
+        if (isCorrect) correctCount++;
+
+        validatedAnswers.push({
+          question_id: q.id || idx + 1,
+          selected_option: selected,
+          is_correct: isCorrect
+        });
+      });
+    } else {
+      // Fallback if no questions configured in material
+      correctCount = answers.filter(a => a.is_correct).length;
+      validatedAnswers.push(...answers);
+    }
+
+    const score = Math.round((correctCount / totalQuestions) * 100);
     const passed = score >= 70;
 
-    // Save evaluation
+    // Check if member has previously passed this material
+    const previousPassed = await db.Evaluation.findOne({
+      where: {
+        member_id: memberId,
+        material_id: material_id,
+        passed: true
+      }
+    });
+
+    // Save evaluation record
     const evaluation = await db.Evaluation.create({
       member_id: memberId,
       material_id: material_id,
       score: score,
       passed: passed,
-      answers: answers
+      answers: validatedAnswers
     });
 
-    // If passed, unlock next material
-    if (passed) {
-      const nextMaterial = await db.Material.findOne({
-        where: {
-          curriculum_id: material.curriculum_id,
-          order_index: material.order_index + 1
-        }
-      });
-
-      if (nextMaterial) {
-        await nextMaterial.update({ is_unlocked: true });
-      }
-
+    // If passed and never passed before, update ranking without score inflation
+    if (passed && !previousPassed) {
       // Update ranking
       const [ranking] = await db.Ranking.findOrCreate({
         where: { member_id: memberId },

@@ -21,7 +21,7 @@ const Material = (sequelize) => {
         allowNull: false,
       },
       material_type: {
-        type: DataTypes.ENUM("AUDIO", "VIDEO", "DOCUMENT"),
+        type: DataTypes.ENUM("AUDIO", "VIDEO", "DOCUMENT", "ARTICLE"),
         allowNull: false,
       },
       content_url: {

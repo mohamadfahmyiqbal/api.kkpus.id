@@ -77,10 +77,18 @@ const getMaterialDetail = async (req, res) => {
       });
     }
 
+    const sanitizedMaterial = material.toJSON ? material.toJSON() : { ...material };
+    if (Array.isArray(sanitizedMaterial.quiz_questions)) {
+      sanitizedMaterial.quiz_questions = sanitizedMaterial.quiz_questions.map((q) => {
+        const { correct_answer, correctAnswer, ...safeQuestion } = q;
+        return safeQuestion;
+      });
+    }
+
     return res.status(200).json({
       status: true,
       message: "Detail materi berhasil diambil",
-      data: material
+      data: sanitizedMaterial
     });
 
   } catch (error) {

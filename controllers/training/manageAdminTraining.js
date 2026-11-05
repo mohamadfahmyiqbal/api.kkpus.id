@@ -54,7 +54,7 @@ export const deleteCurriculum = async (req, res) => {
 
 export const getAdminMaterials = async (req, res) => {
   try {
-    const materials = await Material.findAll({ order: [["sequence_no", "ASC"]] });
+    const materials = await Material.findAll({ order: [["order_index", "ASC"]] });
     res.status(200).json({ status: true, data: materials });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -63,9 +63,14 @@ export const getAdminMaterials = async (req, res) => {
 
 export const createMaterial = async (req, res) => {
   try {
-    const { curriculum_id, material_name, material_type, content, media_url, sequence_no } = req.body;
+    const { curriculum_id, material_title, material_name, material_type, description, content, content_url, media_url, order_index, sequence_no } = req.body;
     const material = await Material.create({
-      curriculum_id, material_name, material_type, content, media_url, sequence_no
+      curriculum_id,
+      material_title: material_title || material_name,
+      material_type,
+      description: description || content,
+      content_url: content_url || media_url,
+      order_index: order_index !== undefined ? order_index : (sequence_no || 0)
     });
     res.status(201).json({ status: true, message: "Material created", data: material });
   } catch (error) {
@@ -76,11 +81,18 @@ export const createMaterial = async (req, res) => {
 export const updateMaterial = async (req, res) => {
   try {
     const { id } = req.params;
-    const { curriculum_id, material_name, material_type, content, media_url, sequence_no } = req.body;
+    const { curriculum_id, material_title, material_name, material_type, description, content, content_url, media_url, order_index, sequence_no } = req.body;
     const material = await Material.findByPk(id);
     if (!material) return res.status(404).json({ status: false, message: "Material not found" });
 
-    await material.update({ curriculum_id, material_name, material_type, content, media_url, sequence_no });
+    await material.update({
+      curriculum_id: curriculum_id || material.curriculum_id,
+      material_title: material_title || material_name || material.material_title,
+      material_type: material_type || material.material_type,
+      description: description !== undefined ? description : (content !== undefined ? content : material.description),
+      content_url: content_url !== undefined ? content_url : (media_url !== undefined ? media_url : material.content_url),
+      order_index: order_index !== undefined ? order_index : (sequence_no !== undefined ? sequence_no : material.order_index)
+    });
     res.status(200).json({ status: true, message: "Material updated", data: material });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -102,7 +114,29 @@ export const deleteMaterial = async (req, res) => {
 
 export const getAdminEvaluations = async (req, res) => {
   try {
-    const evaluations = await Evaluation.findAll({ order: [["created_at", "DESC"]] });
+    const materials = await Material.findAll({
+      attributes: ["material_id", "material_title", "quiz_questions"],
+      order: [["created_at", "DESC"]]
+    });
+
+    const evaluations = [];
+    materials.forEach((mat) => {
+      if (Array.isArray(mat.quiz_questions)) {
+        mat.quiz_questions.forEach((q, idx) => {
+          evaluations.push({
+            evaluation_id: `${mat.material_id}_${idx}`,
+            material_id: mat.material_id,
+            material_name: mat.material_title,
+            question_index: idx,
+            question: q.question,
+            options: q.options || {},
+            correct_answer: q.correct_answer || q.correctAnswer,
+            points: q.points || 10
+          });
+        });
+      }
+    });
+
     res.status(200).json({ status: true, data: evaluations });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -112,8 +146,22 @@ export const getAdminEvaluations = async (req, res) => {
 export const createEvaluation = async (req, res) => {
   try {
     const { material_id, question, options, correct_answer, points } = req.body;
-    const evaluation = await Evaluation.create({ material_id, question, options, correct_answer, points });
-    res.status(201).json({ status: true, message: "Evaluation created", data: evaluation });
+    const material = await Material.findByPk(material_id);
+    if (!material) return res.status(404).json({ status: false, message: "Material not found" });
+
+    const currentQuestions = Array.isArray(material.quiz_questions) ? [...material.quiz_questions] : [];
+    const newQuestion = {
+      id: currentQuestions.length + 1,
+      question,
+      options,
+      correct_answer,
+      points: Number(points) || 10
+    };
+
+    currentQuestions.push(newQuestion);
+    await material.update({ quiz_questions: currentQuestions });
+
+    res.status(201).json({ status: true, message: "Soal evaluasi berhasil ditambahkan", data: newQuestion });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
@@ -123,11 +171,32 @@ export const updateEvaluation = async (req, res) => {
   try {
     const { id } = req.params;
     const { material_id, question, options, correct_answer, points } = req.body;
-    const evaluation = await Evaluation.findByPk(id);
-    if (!evaluation) return res.status(404).json({ status: false, message: "Evaluation not found" });
 
-    await evaluation.update({ material_id, question, options, correct_answer, points });
-    res.status(200).json({ status: true, message: "Evaluation updated", data: evaluation });
+    let targetMaterialId = material_id;
+    let questionIndex = -1;
+
+    if (id && id.includes("_")) {
+      const parts = id.split("_");
+      targetMaterialId = targetMaterialId || parts[0];
+      questionIndex = parseInt(parts[1], 10);
+    }
+
+    const material = await Material.findByPk(targetMaterialId);
+    if (!material) return res.status(404).json({ status: false, message: "Material not found" });
+
+    const currentQuestions = Array.isArray(material.quiz_questions) ? [...material.quiz_questions] : [];
+    if (questionIndex >= 0 && questionIndex < currentQuestions.length) {
+      currentQuestions[questionIndex] = {
+        ...currentQuestions[questionIndex],
+        question: question || currentQuestions[questionIndex].question,
+        options: options || currentQuestions[questionIndex].options,
+        correct_answer: correct_answer || currentQuestions[questionIndex].correct_answer,
+        points: points !== undefined ? Number(points) : currentQuestions[questionIndex].points
+      };
+      await material.update({ quiz_questions: currentQuestions });
+    }
+
+    res.status(200).json({ status: true, message: "Soal evaluasi diperbarui" });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
@@ -136,11 +205,23 @@ export const updateEvaluation = async (req, res) => {
 export const deleteEvaluation = async (req, res) => {
   try {
     const { id } = req.params;
-    const evaluation = await Evaluation.findByPk(id);
-    if (!evaluation) return res.status(404).json({ status: false, message: "Evaluation not found" });
+    if (!id || !id.includes("_")) {
+      return res.status(400).json({ status: false, message: "Invalid question id" });
+    }
 
-    await evaluation.destroy();
-    res.status(200).json({ status: true, message: "Evaluation deleted" });
+    const [material_id, indexStr] = id.split("_");
+    const questionIndex = parseInt(indexStr, 10);
+
+    const material = await Material.findByPk(material_id);
+    if (!material) return res.status(404).json({ status: false, message: "Material not found" });
+
+    const currentQuestions = Array.isArray(material.quiz_questions) ? [...material.quiz_questions] : [];
+    if (questionIndex >= 0 && questionIndex < currentQuestions.length) {
+      currentQuestions.splice(questionIndex, 1);
+      await material.update({ quiz_questions: currentQuestions });
+    }
+
+    res.status(200).json({ status: true, message: "Soal evaluasi berhasil dihapus" });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
@@ -150,11 +231,11 @@ export const getAdminRankings = async (req, res) => {
   try {
     const rankings = await Ranking.findAll({
       include: [
-        { model: db.User, as: 'user', attributes: ["user_id", "nama_lengkap", "email", "profile_picture"] }
+        { model: db.Member, as: 'member', attributes: ["member_id", "full_name", "member_no"] }
       ],
       order: [
         ["total_score", "DESC"],
-        ["materials_completed", "DESC"],
+        ["completed_materials", "DESC"],
         ["updated_at", "ASC"]
       ]
     });
