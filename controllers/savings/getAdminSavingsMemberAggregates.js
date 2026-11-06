@@ -89,43 +89,11 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       return memberMap.get(mem.member_id);
     };
 
-    // Proses data Savings
-    for (const s of savings) {
-      if (!s.member) continue;
-      const m = getOrCreate(s.member);
-      const amt = parseFloat(s.amount) || 0;
-      const isPaid = ["COMPLETED", "APPROVED", "PAID", "SELESAI"].includes(
-        (s.status || "").toUpperCase()
-      );
-
-      m.total_count += 1;
-      m.total_amount += amt;
-      if (isPaid) {
-        m.paid_count += 1;
-        m.paid_amount += amt;
-      } else {
-        m.unpaid_count += 1;
-        m.unpaid_amount += amt;
-      }
-
-      m.transactions.push({
-        id: s.savings_id,
-        source: "savings",
-        date: s.transaction_date || s.created_at,
-        type: "Setoran",
-        product_name: `Simpanan ${savType === "POKOK" ? "Pokok" : "Wajib"}`,
-        description: s.description || "Setoran Simpanan",
-        amount: amt,
-        status: isPaid ? "Selesai" : s.status || "Pending",
-        raw_status: s.status,
-        is_paid: isPaid,
-      });
-    }
-
-    // Hindari double-count antara BillItem dan Transaction
+    // Hindari duplikasi antara Savings, Transaction, dan BillItem
     const processedBillIds = new Set();
+    const recordedTxKeys = new Set();
 
-    // Proses data Transaction
+    // 1. Prioritaskan data Transaction (transaksi pembayaran nyata / hasil import)
     for (const t of transactions) {
       if (!t.member) continue;
       if (t.bill_id) processedBillIds.add(t.bill_id);
@@ -134,6 +102,11 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       const isPaid = ["PAID", "COMPLETED", "SETTLED", "APPROVED"].includes(
         (t.status || "").toUpperCase()
       );
+
+      // Record key untuk deduplikasi terhadap tabel Savings
+      const tDate = t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : "";
+      recordedTxKeys.add(`${t.member_id}_${amt}_${tDate}`);
+      recordedTxKeys.add(`${t.member_id}_${amt}`);
 
       m.total_count += 1;
       m.total_amount += amt;
@@ -162,7 +135,47 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       });
     }
 
-    // Proses data BillItem (hanya yang belum masuk dari transaksi)
+    // 2. Proses data Savings (hanya yang belum tercatat di Transaction)
+    for (const s of savings) {
+      if (!s.member) continue;
+      const amt = parseFloat(s.amount) || 0;
+      const sDate = s.transaction_date || (s.created_at ? new Date(s.created_at).toISOString().split("T")[0] : "");
+      
+      // Jika transaksi ini sudah tercatat via Transaction (misal auto-repair / billing), lewati agar tidak dobel
+      if (recordedTxKeys.has(`${s.member_id}_${amt}_${sDate}`) || recordedTxKeys.has(`${s.member_id}_${amt}`)) {
+        continue;
+      }
+
+      const m = getOrCreate(s.member);
+      const isPaid = ["COMPLETED", "APPROVED", "PAID", "SELESAI"].includes(
+        (s.status || "").toUpperCase()
+      );
+
+      m.total_count += 1;
+      m.total_amount += amt;
+      if (isPaid) {
+        m.paid_count += 1;
+        m.paid_amount += amt;
+      } else {
+        m.unpaid_count += 1;
+        m.unpaid_amount += amt;
+      }
+
+      m.transactions.push({
+        id: s.savings_id,
+        source: "savings",
+        date: s.transaction_date || s.created_at,
+        type: "Setoran",
+        product_name: `Simpanan ${savType === "POKOK" ? "Pokok" : "Wajib"}`,
+        description: s.description || "Setoran Simpanan",
+        amount: amt,
+        status: isPaid ? "Selesai" : s.status || "Pending",
+        raw_status: s.status,
+        is_paid: isPaid,
+      });
+    }
+
+    // 3. Proses data BillItem (hanya tagihan yang belum dibayar / belum masuk transaksi)
     for (const b of billItems) {
       if (!b.member) continue;
       if (b.bill_id && processedBillIds.has(b.bill_id)) continue;
