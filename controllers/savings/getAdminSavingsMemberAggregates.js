@@ -92,6 +92,7 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
     // Hindari duplikasi antara Savings, Transaction, dan BillItem
     const processedBillIds = new Set();
     const recordedTxKeys = new Set();
+    const memberPaidBillAmounts = new Map(); // Untuk deduplikasi saldo import simpanan yang sudah di-generate jadi bill_items PAID
 
     // 1. Prioritaskan data Transaction (transaksi pembayaran nyata / hasil import)
     for (const t of transactions) {
@@ -135,7 +136,17 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       });
     }
 
-    // 2. Proses data Savings (hanya yang belum tercatat di Transaction)
+    // 2. Hitung total bill_items PAID per member untuk deduplikasi dengan savings import
+    for (const b of billItems) {
+      if (!b.member) continue;
+      const isPaid = (b.status || "").toUpperCase() === "PAID";
+      if (isPaid) {
+        const prev = memberPaidBillAmounts.get(b.member_id) || 0;
+        memberPaidBillAmounts.set(b.member_id, prev + (parseFloat(b.amount) || 0));
+      }
+    }
+
+    // 3. Proses data Savings (hanya yang belum tercatat di Transaction / belum di-breakdown ke bill_items)
     for (const s of savings) {
       if (!s.member) continue;
       const amt = parseFloat(s.amount) || 0;
@@ -143,6 +154,13 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       
       // Jika transaksi ini sudah tercatat via Transaction (misal auto-repair / billing), lewati agar tidak dobel
       if (recordedTxKeys.has(`${s.member_id}_${amt}_${sDate}`) || recordedTxKeys.has(`${s.member_id}_${amt}`)) {
+        continue;
+      }
+
+      // Jika anggota sudah memiliki bill_items yang berstatus PAID senilai saldo simpanan ini (hasil generate tagihan bulanan),
+      // lewati agar tidak terjadi double counting saldo simpanan pokok / wajib
+      const paidBillsTotal = memberPaidBillAmounts.get(s.member_id) || 0;
+      if (paidBillsTotal >= amt && amt > 0) {
         continue;
       }
 
@@ -175,7 +193,7 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       });
     }
 
-    // 3. Proses data BillItem (hanya tagihan yang belum dibayar / belum masuk transaksi)
+    // 4. Proses data BillItem (hanya tagihan yang belum dibayar / belum masuk transaksi)
     for (const b of billItems) {
       if (!b.member) continue;
       if (b.bill_id && processedBillIds.has(b.bill_id)) continue;
