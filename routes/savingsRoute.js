@@ -47,6 +47,7 @@ import { getAdminSavingsMemberAggregates } from "../controllers/savings/getAdmin
 import { getAdminSavingsReport } from "../controllers/savings/getAdminSavingsReport.js";
 import { exportAdminSavings } from "../controllers/savings/exportAdminSavings.js";
 import { importSimpanan } from "../controllers/savings/importSimpanan.js";
+import { repairImportedData } from "../controllers/savings/repairImportedData.js";
 import { downloadTemplateSimpanan } from "../controllers/savings/downloadTemplateSimpanan.js";
 
 router.get("/admin-summary", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsSummary);
@@ -57,6 +58,7 @@ router.get("/admin-export", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas
 
 router.get("/template-import", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), downloadTemplateSimpanan);
 router.post("/import", MidAnggota, MidRole(['Ketua', 'Bendahara']), upload.single("file"), importSimpanan);
+router.post("/repair-imported-data", MidAnggota, MidRole(['Ketua', 'Bendahara']), repairImportedData);
 
 /**
  * Endpoint: GET /savings/:id
