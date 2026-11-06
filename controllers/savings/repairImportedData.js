@@ -109,7 +109,7 @@ export const repairImportedData = async (req, res) => {
             description: `Repair Simpanan ${s.savings_type}`,
             amount: parseFloat(s.amount),
             due_date: new Date(),
-            status: "PAID",
+            status: "paid",
           }, { transaction: t });
           targetBillId = newBill.bill_id;
         }
@@ -138,8 +138,8 @@ export const repairImportedData = async (req, res) => {
           midtrans_order_id: midtransOrderId,
           amount: parseFloat(s.amount),
           tx_type: "SETORAN",
-          tx_category: `Repair Simpanan ${s.savings_type === "POKOK" ? "Pokok" : s.savings_type === "WAJIB" ? "Wajib" : "Sukarela"}`,
-          status: "COMPLETED",
+          tx_category: `Simpanan ${s.savings_type === "POKOK" ? "Pokok" : s.savings_type === "WAJIB" ? "Wajib" : "Sukarela"}`,
+          status: "PAID",
           is_ledger_recorded: true,
           created_at: new Date(),
           updated_at: new Date(),

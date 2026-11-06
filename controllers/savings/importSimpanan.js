@@ -188,7 +188,7 @@ export const importSimpanan = async (req, res) => {
                 description: keterangan || `Setoran Simpanan ${jenisSimpanan}`,
                 amount: numAmount,
                 due_date: txDate,
-                status: "PAID",
+                status: "paid",
               }, { transaction });
               targetBillId = newBill.bill_id;
             }
@@ -218,7 +218,7 @@ export const importSimpanan = async (req, res) => {
               amount: numAmount,
               tx_type: "SETORAN",
               tx_category: `Simpanan ${jenisSimpanan === "POKOK" ? "Pokok" : jenisSimpanan === "WAJIB" ? "Wajib" : "Sukarela"}`,
-              status: "COMPLETED",
+              status: "PAID",
               is_ledger_recorded: true, // Saldo ledger sudah diupdate via script import
               created_at: txDate,
               updated_at: txDate,
