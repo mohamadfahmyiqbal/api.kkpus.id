@@ -31,7 +31,7 @@ const mapSavingsStatuses = (statusFilter) => {
 
 export const getAdminSavingsTransactions = async (req, res) => {
   try {
-    const { type, tx_category, page = 1, limit = 10, search = "", status = "", date = "", amount = "" } = req.query;
+    const { type, tx_category, page = 1, limit = 10, search = "", status = "", date = "", amount = "", member_id } = req.query;
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.max(1, parseInt(limit) || 10);
     const offset = (pageNum - 1) * limitNum;
@@ -45,6 +45,9 @@ export const getAdminSavingsTransactions = async (req, res) => {
       const txWhere = {
         status: { [Op.in]: mapTransactionStatuses(status) },
       };
+      if (member_id) {
+        txWhere.member_id = member_id;
+      }
       if (date) {
         txWhere.created_at = { [Op.like]: `%${date}%` };
       }
@@ -124,6 +127,9 @@ export const getAdminSavingsTransactions = async (req, res) => {
       let sCount = 0;
       if (db.Savings) {
         const savingsWhere = {};
+        if (member_id) {
+          savingsWhere.member_id = member_id;
+        }
         if (type) {
           savingsWhere.savings_type = type.toUpperCase();
         }

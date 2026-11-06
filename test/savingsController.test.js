@@ -63,3 +63,8 @@ test("Tabungan - applySavingsTarget rejects zero term duration", async () => {
   assert.equal(responseData?.status, false);
   assert.match(responseData?.message, /Data pengajuan tidak lengkap atau nominal\/durasi tidak valid/);
 });
+
+test("Savings - getAdminSavingsMemberAggregates module exports handler", async () => {
+  const { getAdminSavingsMemberAggregates } = await import("../controllers/savings/getAdminSavingsMemberAggregates.js");
+  assert.equal(typeof getAdminSavingsMemberAggregates, "function");
+});

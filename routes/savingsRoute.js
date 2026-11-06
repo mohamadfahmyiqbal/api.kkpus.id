@@ -43,6 +43,7 @@ router.get("/summary", MidAnggota, getSavingsSummary);
  */
 import { getAdminSavingsSummary } from "../controllers/savings/getAdminSavingsSummary.js";
 import { getAdminSavingsTransactions } from "../controllers/savings/getAdminSavingsTransactions.js";
+import { getAdminSavingsMemberAggregates } from "../controllers/savings/getAdminSavingsMemberAggregates.js";
 import { getAdminSavingsReport } from "../controllers/savings/getAdminSavingsReport.js";
 import { exportAdminSavings } from "../controllers/savings/exportAdminSavings.js";
 import { importSimpanan } from "../controllers/savings/importSimpanan.js";
@@ -50,6 +51,7 @@ import { downloadTemplateSimpanan } from "../controllers/savings/downloadTemplat
 
 router.get("/admin-summary", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsSummary);
 router.get("/admin-transactions", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsTransactions);
+router.get("/admin-member-aggregates", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsMemberAggregates);
 router.get("/admin-report", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), getAdminSavingsReport);
 router.get("/admin-export", MidAnggota, MidRole(['Ketua', 'Bendahara', 'Pengawas']), exportAdminSavings);
 
