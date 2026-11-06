@@ -81,17 +81,31 @@ const getBillingHistory = async (req, res) => {
           limit: historyLimit
         });
 
-        const extraItems = directSavings.map(s => ({
+        // Deduplicate against billing items (match by amount and date)
+        const existingKeys = new Set(
+          rows.map(r => {
+            const dateStr = r.updated_at || r.createdAt ? new Date(r.updated_at || r.createdAt).toISOString().split('T')[0] : '';
+            return `${parseFloat(r.amount || 0)}_${dateStr}`;
+          })
+        );
+
+        const filteredDirectSavings = directSavings.filter(s => {
+          const sDate = s.transaction_date || (s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '');
+          const key = `${parseFloat(s.amount || 0)}_${sDate}`;
+          return !existingKeys.has(key);
+        });
+
+        const extraItems = filteredDirectSavings.map(s => ({
           id: s.savings_id,
           bill_item_id: s.savings_id,
           category_code: category,
-          description: s.description || `Simpanan ${s.savings_type}`,
+          description: s.description || `Simpanan ${s.savings_type.charAt(0).toUpperCase() + s.savings_type.slice(1).toLowerCase()}`,
           amount: parseFloat(s.amount || 0),
           status: "PAID",
           createdAt: s.transaction_date || s.created_at,
           updated_at: s.updated_at || s.created_at,
           type: {
-            type_name: `Simpanan ${s.savings_type}`,
+            type_name: `Simpanan ${s.savings_type.charAt(0).toUpperCase() + s.savings_type.slice(1).toLowerCase()}`,
             category_map: category
           }
         }));

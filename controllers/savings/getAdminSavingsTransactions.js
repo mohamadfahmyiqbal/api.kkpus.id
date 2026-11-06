@@ -122,7 +122,8 @@ export const getAdminSavingsTransactions = async (req, res) => {
         };
       });
 
-      // Also query db.Savings (historical/import records) so they are not hidden
+      // Also query db.Savings (historical/import records) so they are not hidden,
+      // but exclude records that already exist in billing transactions to prevent duplication
       let directSavingsItems = [];
       let sCount = 0;
       if (db.Savings) {
@@ -169,20 +170,39 @@ export const getAdminSavingsTransactions = async (req, res) => {
           order: [["transaction_date", "DESC"], ["created_at", "DESC"]],
         });
 
-        sCount = sc;
-        directSavingsItems = directSavings.map(s => ({
-          id: s.savings_id,
-          date: s.transaction_date || s.created_at,
-          member: s.member?.full_name || "Anggota",
-          member_id: s.member_id,
-          member_no: s.member?.member_no || "-",
-          type: "Setoran",
-          amount: parseFloat(s.amount) || 0,
-          balance: "-",
-          status: s.status === "COMPLETED" ? "Selesai" : (s.status === "APPROVED" ? "Disetujui" : s.status),
-          raw_status: s.status,
-          product_name: s.savings_type
-        }));
+        // Deduplicate against billingItems (match by member_id, amount, and date)
+        const billingKeys = new Set(
+          billingItems.map(b => {
+            const dateStr = b.date ? new Date(b.date).toISOString().split('T')[0] : '';
+            return `${b.member_id}_${parseFloat(b.amount || 0)}_${dateStr}`;
+          })
+        );
+
+        const filteredDirectSavings = directSavings.filter(s => {
+          const sDate = s.transaction_date || (s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '');
+          const key = `${s.member_id}_${parseFloat(s.amount || 0)}_${sDate}`;
+          return !billingKeys.has(key);
+        });
+
+        sCount = filteredDirectSavings.length;
+        directSavingsItems = filteredDirectSavings.map(s => {
+          const formattedType = s.savings_type 
+            ? `Simpanan ${s.savings_type.charAt(0).toUpperCase() + s.savings_type.slice(1).toLowerCase()}` 
+            : type;
+          return {
+            id: s.savings_id,
+            date: s.transaction_date || s.created_at,
+            member: s.member?.full_name || "Anggota",
+            member_id: s.member_id,
+            member_no: s.member?.member_no || "-",
+            type: "Setoran",
+            amount: parseFloat(s.amount) || 0,
+            balance: "-",
+            status: s.status === "COMPLETED" ? "Selesai" : (s.status === "APPROVED" ? "Disetujui" : s.status),
+            raw_status: s.status,
+            product_name: formattedType
+          };
+        });
       }
 
       const allMerged = [...billingItems, ...directSavingsItems];
