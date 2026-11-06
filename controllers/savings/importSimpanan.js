@@ -5,6 +5,10 @@ import { syncFinancialSummary } from "../../services/financialSummarySyncService
 const Member = db.Member;
 const Savings = db.Savings;
 const Account = db.Account;
+const Bill = db.Bill;
+const BillItem = db.BillItem;
+const BillType = db.BillType;
+const Transaction = db.Transaction;
 
 export const importSimpanan = async (req, res) => {
   let transaction;
@@ -33,6 +37,9 @@ export const importSimpanan = async (req, res) => {
 
     const successData = [];
     const errorData = [];
+    let totalBillsPaid = 0;
+    let totalBillsCreated = 0;
+    let totalTransactionsCreated = 0;
 
     // Format Excel: No. Anggota, Jenis Simpanan, Nominal, Tanggal Transaksi, Keterangan
     for (let i = 0; i < data.length; i++) {
@@ -136,6 +143,89 @@ export const importSimpanan = async (req, res) => {
             }
           }
         }
+
+        // Bill & Transaction Management
+        if (BillItem) {
+          const billTypeCode = jenisSimpanan === "POKOK" ? "SW_POKOK" : jenisSimpanan === "WAJIB" ? "SW_WAJIB" : "SS_SUKARELA";
+          let billType = null;
+          if (BillType) {
+            billType = await BillType.findOne({
+              where: { type_code: billTypeCode },
+              transaction,
+            });
+          }
+
+          let targetBillId = null;
+
+          // 1. Cek apakah ada tagihan UNPAID untuk member dan jenis simpanan ini
+          let matchedUnpaidItem = null;
+          if (jenisSimpanan === "POKOK" || jenisSimpanan === "WAJIB") {
+            matchedUnpaidItem = await BillItem.findOne({
+              where: {
+                member_id: existingMember.member_id,
+                category_code: billTypeCode,
+                status: "UNPAID",
+              },
+              order: [["due_date", "ASC"]],
+              transaction,
+            });
+          }
+
+          if (matchedUnpaidItem) {
+            // Update tagihan UNPAID menjadi PAID
+            await matchedUnpaidItem.update({
+              status: "PAID",
+              due_date: txDate,
+            }, { transaction });
+            targetBillId = matchedUnpaidItem.bill_id;
+            totalBillsPaid++;
+          } else {
+            // 2. Buat Bill baru jika belum ada
+            if (Bill) {
+              const newBill = await Bill.create({
+                member_id: existingMember.member_id,
+                bill_type_id: billType ? billType.bill_type_id : null,
+                description: keterangan || `Setoran Simpanan ${jenisSimpanan}`,
+                amount: numAmount,
+                due_date: txDate,
+                status: "PAID",
+              }, { transaction });
+              targetBillId = newBill.bill_id;
+            }
+
+            // Buat BillItem baru berstatus PAID
+            await BillItem.create({
+              bill_id: targetBillId,
+              member_id: existingMember.member_id,
+              bill_type_id: billType ? billType.bill_type_id : null,
+              category_code: billTypeCode,
+              description: keterangan || `Setoran Simpanan ${jenisSimpanan}`,
+              amount: numAmount,
+              due_date: txDate,
+              status: "PAID",
+            }, { transaction });
+            totalBillsCreated++;
+          }
+
+          // 3. Catat di tabel Transaction agar riwayat invoice/transaksi lengkap
+          if (Transaction) {
+            const shortMemberId = existingMember.member_id.substring(0, 8);
+            const midtransOrderId = `IMP-${billTypeCode}-${shortMemberId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            await Transaction.create({
+              member_id: existingMember.member_id,
+              bill_id: targetBillId,
+              midtrans_order_id: midtransOrderId,
+              amount: numAmount,
+              tx_type: "SETORAN",
+              tx_category: `Simpanan ${jenisSimpanan === "POKOK" ? "Pokok" : jenisSimpanan === "WAJIB" ? "Wajib" : "Sukarela"}`,
+              status: "COMPLETED",
+              is_ledger_recorded: true, // Saldo ledger sudah diupdate via script import
+              created_at: txDate,
+              updated_at: txDate,
+            }, { transaction });
+            totalTransactionsCreated++;
+          }
+        }
       } catch (err) {
         errorData.push({ row: i + 2, reason: err.message });
       }
@@ -202,6 +292,9 @@ export const importSimpanan = async (req, res) => {
         errors: errorData,
         ledgerUpdated: updatedAccounts.length,
         membersSyncCount: successData.length,
+        totalBillsPaid,
+        totalBillsCreated,
+        totalTransactionsCreated,
       }
     });
 
