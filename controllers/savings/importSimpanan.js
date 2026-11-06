@@ -1,7 +1,10 @@
 import xlsx from "xlsx";
 import db from "../../models/index.js";
+import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
+import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 const Member = db.Member;
 const Savings = db.Savings;
+const Account = db.Account;
 
 export const importSimpanan = async (req, res) => {
   let transaction;
@@ -140,13 +143,65 @@ export const importSimpanan = async (req, res) => {
 
     await transaction.commit();
 
+    // Sync: Account ledger (SW_POKOK / SW_WAJIB / SS_SUKARELA / SAVINGS)
+    const updatedAccounts = [];
+    const processedMemberIds = new Set();
+
+    for (const s of successData) {
+      if (!s.member_id) continue;
+      processedMemberIds.add(s.member_id);
+      const billTypeCode = s.savings_type === "POKOK" ? "SW_POKOK" : s.savings_type === "WAJIB" ? "SW_WAJIB" : "SS_SUKARELA";
+
+      try {
+        if (Account) {
+          const typeAcc = await Account.findOrCreate({
+            where: { member_id: s.member_id, account_type: billTypeCode },
+            defaults: { account_no: `ACC-${billTypeCode}-${s.member_id.toString().substring(0, 8)}`, current_balance: 0 },
+          });
+          if (typeAcc && typeAcc[0]) {
+            await typeAcc[0].increment("current_balance", { by: parseFloat(s.amount) });
+            updatedAccounts.push({ type: billTypeCode, member_id: s.member_id });
+          }
+
+          const mainAcc = await Account.findOrCreate({
+            where: { member_id: s.member_id, account_type: "SAVINGS" },
+            defaults: { account_no: `ACC-TOTAL-${s.member_id.toString().substring(0, 8)}`, current_balance: 0 },
+          });
+          if (mainAcc && mainAcc[0]) {
+            await mainAcc[0].increment("current_balance", { by: parseFloat(s.amount) });
+            updatedAccounts.push({ type: "SAVINGS", member_id: s.member_id });
+          }
+        }
+      } catch (err) {
+        console.error(`[Import] Ledger update failed for ${s.savings_id}:`, err.message);
+      }
+    }
+
+    // Sync: Savings report list for all members (admin dashboard annual report)
+    try {
+      await syncSavingsReportList(db.sequelize);
+    } catch (err) {
+      console.error("[Import] syncSavingsReportList failed:", err.message);
+    }
+
+    // Sync: Financial summary for each imported member (member profile dashboard)
+    for (const mId of processedMemberIds) {
+      try {
+        await syncFinancialSummary(db.sequelize, mId);
+      } catch (err) {
+        console.error(`[Import] syncFinancialSummary failed for member ${mId}:`, err.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: "Proses import simpanan selesai",
       data: {
         totalImported: successData.length,
         totalFailed: errorData.length,
-        errors: errorData
+        errors: errorData,
+        ledgerUpdated: updatedAccounts.length,
+        membersSyncCount: successData.length,
       }
     });
 
