@@ -30,22 +30,31 @@ const MidRole = (allowedRoleNames = []) => {
         return !endDate || endDate > now;
       });
 
-      if (activeAssignments.length === 0) {
+      // Fallback ke token jika query database tidak menghasilkan roles (misal relasi kosong atau user baru login)
+      let userRoles = activeAssignments.map((a) => a.role?.role_name).filter(Boolean);
+      let userRoleIds = activeAssignments.map((a) => a.role?.role_id).filter(Boolean);
+
+      if (userRoles.length === 0 && req.user) {
+        if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
+          userRoles = req.user.roles;
+        } else if (req.user.role) {
+          userRoles = [req.user.role];
+        }
+      }
+
+      if (userRoles.length === 0) {
         return res.status(403).json({
           success: false,
           message: "Akses Ditolak. Tidak ada peran aktif.",
         });
       }
-
-      const userRoles = activeAssignments.map((a) => a.role.role_name);
-      const userRoleIds = activeAssignments.map((a) => a.role.role_id);
       
       req.roles = userRoles;
       req.userRoleIds = userRoleIds;
 
       if (allowedRoleNames.length > 0) {
         const allowedUpper = allowedRoleNames.map(r => r.toUpperCase());
-        const hasRequiredRole = userRoles.some((role) => allowedUpper.includes(role.toUpperCase()));
+        const hasRequiredRole = userRoles.some((role) => role && allowedUpper.includes(role.trim().toUpperCase()));
         if (!hasRequiredRole) {
           return res.status(403).json({
             success: false,
