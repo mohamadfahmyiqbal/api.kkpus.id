@@ -160,7 +160,6 @@ export const accountLogin = async (req, res) => {
 
     const token = jwt.sign(tokenPayload, getJwtSecret(), {
       algorithm: "HS512", // Explicitly use HMAC SHA-512 for maximum security
-      expiresIn: "24h",
     });
 
     // 6. Log successful login
