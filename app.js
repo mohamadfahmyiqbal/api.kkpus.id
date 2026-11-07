@@ -173,8 +173,9 @@ app.use(
       // Izinkan request tanpa origin (curl, health check, mobile non-browser)
       if (!origin) return callback(null, true);
 
-      const isSubdomain = origin.match(/^https?:\/\/(.*\.)?kkpus\.id$/);
-      if (allowedOrigins.indexOf(origin) !== -1 || isSubdomain) {
+      // Izinkan origin dari domain kkpus.id (termasuk subdomain seperti admin.kkpus.id)
+      const isKkpusOrigin = origin.match(/^https?:\/\/.+\.?kkpus\.id$/);
+      if (isKkpusOrigin || allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         console.warn(`[CORS] Rejected origin: ${origin}`);
