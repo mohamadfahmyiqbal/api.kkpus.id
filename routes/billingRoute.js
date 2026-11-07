@@ -18,6 +18,8 @@ import {
   submitManualPayment,
   verifyManualPayment,
   getPendingVerificationPayments,
+  manualPaymentSecurityMiddleware,
+  manualPaymentSignatureMiddleware,
 } from "../controllers/billing/manualPaymentController.js";
 
 const router = express.Router();

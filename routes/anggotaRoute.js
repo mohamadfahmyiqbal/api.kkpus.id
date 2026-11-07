@@ -16,6 +16,7 @@ import { downloadTemplateAnggota } from "../controllers/core/anggota/downloadTem
 import { updateRole } from "../controllers/core/anggota/updateRole.js";
 import { getRoles } from "../controllers/core/anggota/getRoles.js";
 import { deleteMember, deleteBatchMembers } from "../controllers/core/anggota/deleteMember.js";
+import { runDataLifecycleClean } from "../controllers/core/anggota/dataLifecycleController.js";
 import MidRole from "../middleware/MidRole.js";
 
 const router = express.Router();
@@ -39,6 +40,7 @@ router.post("/import", MidAnggota, upload.single("file"), MidRole(ADMIN_MANAGE_R
 router.put("/:member_id/role", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), updateRole);
 router.get("/roles", MidAnggota, MidRole(BACKOFFICE_ROLES), getRoles);
 router.post("/batch-delete", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteBatchMembers);
+router.post("/data-lifecycle/clean", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), runDataLifecycleClean);
 router.delete("/:member_id", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteMember);
 
 export default router;

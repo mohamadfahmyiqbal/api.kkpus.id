@@ -1,4 +1,5 @@
 import db from "../../../models/index.js";
+import { triggerDataCleanupForMember } from "../../../services/dataLifecycleCleaner.js";
 
 const confirmTermination = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -59,6 +60,13 @@ const confirmTermination = async (req, res) => {
       activity_datetime: new Date(),
       detail: `Anggota mengonfirmasi penerimaan dana berhenti keanggotaan. Akun dinonaktifkan.`
     }, { transaction: t });
+
+    // Trigger Right to be Forgotten cleanup secara asinkron
+    // Pekerjaan berjalan secara asinkron, tidak berpengaruh pada response API
+    triggerDataCleanupForMember(memberId, false).catch((err) => {
+      console.error("[confirmTermination] triggerDataCleanupForMember gagal (telah dicatat):", err.message);
+      // Tidak melempar error ke client - biarkan pekerjaan ini di background
+    });
 
     await t.commit();
 
