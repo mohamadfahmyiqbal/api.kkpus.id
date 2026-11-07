@@ -21,6 +21,71 @@ export const initCooperativeBanks = async (db) => {
       console.error("Gagal menyesuaikan kolom percentage_fee:", feeErr.message || feeErr);
     }
 
+    // Initialize essential roles for system functionality
+    if (db.UserRole) {
+      console.log("🐝 Memeriksa dan membuat peran sistem yang diperlukan...");
+      
+      // ADMIN role - required for admin dashboard
+      const adminRole = await db.UserRole.findOne({
+        where: { role_name: "ADMIN" }
+      });
+      
+      if (!adminRole) {
+        await db.UserRole.create({
+          role_name: "ADMIN",
+        });
+        console.log("✅ Peran ADMIN berhasil dibuat.");
+      }
+
+      // Ketua role - required for admin dashboard
+      const ketuaRole = await db.UserRole.findOne({
+        where: { role_name: "Ketua" }
+      });
+      
+      if (!ketuaRole) {
+        await db.UserRole.create({
+          role_name: "Ketua",
+        });
+        console.log("✅ Peran Ketua berhasil dibuat.");
+      }
+
+      // Bendahara role - required for admin dashboard
+      const bendaharaRole = await db.UserRole.findOne({
+        where: { role_name: "Bendahara" }
+      });
+      
+      if (!bendaharaRole) {
+        await db.UserRole.create({
+          role_name: "Bendahara",
+        });
+        console.log("✅ Peran Bendahara berhasil dibuat.");
+      }
+
+      // Pengawas role - required for admin dashboard
+      const pengawasRole = await db.UserRole.findOne({
+        where: { role_name: "Pengawas" }
+      });
+      
+      if (!pengawasRole) {
+        await db.UserRole.create({
+          role_name: "Pengawas",
+        });
+        console.log("✅ Peran Pengawas berhasil dibuat.");
+      }
+
+      // Anggota role - default for regular members
+      const anggotaRole = await db.UserRole.findOne({
+        where: { role_name: "Anggota" }
+      });
+      
+      if (!anggotaRole) {
+        await db.UserRole.create({
+          role_name: "Anggota",
+        });
+        console.log("✅ Peran Anggota berhasil dibuat.");
+      }
+    }
+
     // 1. Sync tabel cooperative_bank_accounts jika belum ada
     if (db.CooperativeBankAccount) {
       await db.CooperativeBankAccount.sync({ alter: false });
