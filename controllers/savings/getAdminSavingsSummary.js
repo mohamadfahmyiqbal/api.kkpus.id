@@ -22,18 +22,36 @@ export const getAdminSavingsSummary = async (req, res) => {
         raw: true
       });
 
+      // 1b. Cek jika ada bill_items PAID untuk SW_WAJIB agar nilainya konsisten dengan member aggregates
+      let billWajibPaid = 0;
+      if (db.BillItem) {
+        const biPaid = await db.BillItem.findAll({
+          attributes: [[Sequelize.fn("SUM", Sequelize.col("amount")), "total_paid"]],
+          where: {
+            category_code: "SW_WAJIB",
+            status: "PAID"
+          },
+          raw: true
+        });
+        billWajibPaid = parseFloat(biPaid[0]?.total_paid) || 0;
+      }
+
       if (savingsGroup && savingsGroup.length > 0) {
         savingsGroup.forEach(item => {
           const amount = parseFloat(item.total_amount) || 0;
           const type = (item.savings_type || "").toUpperCase();
 
-          totalSemua += amount;
           if (type === "POKOK") {
             totalPokok += amount;
+            totalSemua += amount;
           } else if (type === "WAJIB") {
-            totalWajib += amount;
+            // Gunakan nilai bill_items PAID jika ada agar konsisten dengan ringkasan anggota
+            const effectiveWajib = billWajibPaid > 0 ? billWajibPaid : amount;
+            totalWajib += effectiveWajib;
+            totalSemua += effectiveWajib;
           } else {
             totalSukarela += amount;
+            totalSemua += amount;
           }
         });
       }
