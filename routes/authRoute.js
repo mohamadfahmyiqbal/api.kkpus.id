@@ -2,6 +2,7 @@ import express from "express";
 import { registerAccount } from "../controllers/core/auth/registerAccount.js";
 import { accountLogin } from "../controllers/core/auth/accountLogin.js";
 import { logout } from "../controllers/core/auth/logout.js";
+import { getCurrentUser } from "../controllers/core/auth/me.js";
 import { authLimiter, loginLimiter } from "../middleware/rateLimitMiddleware.js";
 import { MidAnggota } from "../middleware/MidAnggota.js";
 
@@ -24,5 +25,12 @@ router.post("/accountLogin", loginLimiter, accountLogin);
  * Digunakan untuk logout anggota
  */
 router.post("/logout", MidAnggota, logout);
+
+/**
+ * Path lengkap: /api/auth/me
+ * Digunakan untuk mendapatkan detail pengguna saat ini dari cookie
+ * Used by frontend after cookie-based authentication
+ */
+router.get("/me", getCurrentUser);
 
 export default router;

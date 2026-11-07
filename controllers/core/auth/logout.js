@@ -26,6 +26,15 @@ const logout = async (req, res) => {
       }
     }
 
+    // Clear the auth_token cookie
+    res.clearCookie("auth_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" || req.secure || req.headers['x-forwarded-proto'] === 'https',
+      sameSite: "Strict",
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    });
+
     return res.status(200).json({
       status: true,
       message: "Logout berhasil"

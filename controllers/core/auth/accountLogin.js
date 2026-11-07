@@ -162,12 +162,22 @@ export const accountLogin = async (req, res) => {
     // 6. Log successful login
     // await logLoginAttempt(req, true, member.member_id, "Login successful");
 
-    // 7. Respon Sukses
+    // 7. Set secure HTTP-only cookie with token
+    const isSecure = process.env.NODE_ENV === "production" || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    });
+
+    // 8. Respon Sukses (no token in response body for security)
     return res.status(200).json({
       success: true,
       message: "Login berhasil!",
       data: {
-        token: token,
         user: userResponse, // Mengembalikan data member
       },
     });
