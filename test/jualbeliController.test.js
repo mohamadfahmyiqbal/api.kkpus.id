@@ -1,47 +1,47 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import { getTransactionOptions } from "../controllers/jualbeli/jualbeliController.js";
 
-test("Jual Beli Controller - getTransactionOptions returns valid list", async () => {
-  let responseData = null;
-  let statusCode = null;
+describe("Jual Beli Controller", () => {
+  it("getTransactionOptions returns valid list", async () => {
+    let responseData = null;
+    let statusCode = null;
 
-  const mockReq = {};
-  const mockRes = {
-    status(code) {
-      statusCode = code;
-      return this;
-    },
-    json(payload) {
-      responseData = payload;
-      return this;
-    },
-  };
+    const mockReq = {};
+    const mockRes = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(payload) {
+        responseData = payload;
+        return this;
+      },
+    };
 
-  await getTransactionOptions(mockReq, mockRes);
+    await getTransactionOptions(mockReq, mockRes);
 
-  assert.equal(statusCode, 200);
-  assert.equal(responseData?.status, true);
-  assert.ok(Array.isArray(responseData?.data?.transaction_types));
-  assert.ok(Array.isArray(responseData?.data?.categories));
-  assert.ok(responseData.data.transaction_types.some((t) => t.value === "PEMBELIAN"));
-});
+    expect(statusCode).toBe(200);
+    expect(responseData?.status).toBe(true);
+    expect(Array.isArray(responseData?.data?.transaction_types)).toBe(true);
+    expect(Array.isArray(responseData?.data?.categories)).toBe(true);
+    expect(responseData.data.transaction_types.some((t) => t.value === "PEMBELIAN")).toBe(true);
+  });
 
-test("Jual Beli Financial Integrity - Recalculates margin and prevents tampering", () => {
-  // Simulates server-side calculation logic implemented in createFinancingApplication
-  const harga = 10000000;
-  const dp = 2000000;
-  const tenure = 12;
-  const marginPercentAnggota = 10; // 10%
-  const attackerMarginPercent = 0; // Attacker tries to pass 0%
+  it("Financial Integrity - Recalculates margin and prevents tampering", () => {
+    const harga = 10000000;
+    const dp = 2000000;
+    const tenure = 12;
+    const marginPercentAnggota = 10; // 10%
+    const attackerMarginPercent = 0; // Attacker tries to pass 0%
 
-  // Server ignores client percentage and recalculates
-  const safeMarginAmount = Math.round(harga * (marginPercentAnggota / 100));
-  const safeTotalTagihan = harga + safeMarginAmount;
-  const safeMonthlyInstallment = Math.ceil((safeTotalTagihan - dp) / tenure);
+    // Server ignores client percentage and recalculates
+    const safeMarginAmount = Math.round(harga * (marginPercentAnggota / 100));
+    const safeTotalTagihan = harga + safeMarginAmount;
+    const safeMonthlyInstallment = Math.ceil((safeTotalTagihan - dp) / tenure);
 
-  assert.equal(safeMarginAmount, 1000000);
-  assert.equal(safeTotalTagihan, 11000000);
-  assert.equal(safeMonthlyInstallment, 750000);
-  assert.notEqual(safeMarginAmount, attackerMarginPercent);
+    expect(safeMarginAmount).toBe(1000000);
+    expect(safeTotalTagihan).toBe(11000000);
+    expect(safeMonthlyInstallment).toBe(750000);
+    expect(safeMarginAmount).not.toBe(attackerMarginPercent);
+  });
 });
