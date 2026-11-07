@@ -1,60 +1,34 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import db from "../../models/index.js";
 
 const { Member } = db;
 
 export const downloadTemplateInvestasi = async (req, res) => {
   try {
-    const workbook = xlsx.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Template_Import_Investasi");
 
-    // Ambil daftar anggota aktif dari database
-    const members = await Member.findAll({
-      attributes: ["member_no", "full_name"],
-      order: [["member_no", "ASC"]],
-    });
-
-    let templateData = [];
-
-    if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Nama Produk Investasi": "",
-        "Nilai Investasi (Rp)": 0,
-        "Durasi (Bulan)": 12,
-        "Proyeksi Bagi Hasil (%)": 10,
-        "Keterangan": "",
-      }));
-    } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Nama Produk Investasi": "Sukuk Ritel 001",
-          "Nilai Investasi (Rp)": 10000000,
-          "Durasi (Bulan)": 12,
-          "Proyeksi Bagi Hasil (%)": 10,
-          "Keterangan": "Investasi jangka pendek",
-        },
-      ];
-    }
-
-    const worksheet = xlsx.utils.json_to_sheet(templateData);
-
-    // Set lebar kolom
-    worksheet["!cols"] = [
-      { wch: 15 }, // No. Anggota
-      { wch: 25 }, // Nama Anggota (Referensi)
-      { wch: 30 }, // Nama Produk Investasi
-      { wch: 25 }, // Nilai Investasi (Rp)
-      { wch: 18 }, // Durasi (Bulan)
-      { wch: 25 }, // Proyeksi Bagi Hasil (%)
-      { wch: 30 }, // Keterangan
+    worksheet.columns = [
+      { header: "No. Anggota", key: "member_no", width: 15 },
+      { header: "Nama Anggota (Referensi)", key: "full_name", width: 25 },
+      { header: "Nama Produk Investasi", key: "nama_produk", width: 30 },
+      { header: "Nilai Investasi (Rp)", key: "nilai_investasi", width: 25 },
+      { header: "Durasi (Bulan)", key: "durasi", width: 15 },
+      { header: "Proyeksi Bagi Hasil (%)", key: "profit_rate", width: 25 },
+      { header: "Keterangan", key: "keterangan", width: 30 },
     ];
 
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Investasi");
+    worksheet.addRow({
+      member_no: "A001",
+      full_name: "Contoh Anggota 1",
+      nama_produk: "Reksa Dana Pasar Uang Syariah",
+      nilai_investasi: 5000000,
+      durasi: 12,
+      profit_rate: 8,
+      keterangan: "Investasi Halal Umum",
+    });
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
@@ -62,7 +36,7 @@ export const downloadTemplateInvestasi = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=Template_Import_Investasi.xlsx"
+      `attachment; filename=Template_Import_Investasi.xlsx`
     );
 
     return res.send(buffer);
@@ -71,7 +45,6 @@ export const downloadTemplateInvestasi = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Gagal membuat template Excel.",
-      error: error.message,
     });
   }
 };

@@ -7,14 +7,16 @@
     "start": "node app.js",
     "kill-port": "npx kill-port 3000",
     "dev": "nodemon",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
-    "test": "node --test test/*.test.js"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "node --test test/*.test.js",
+    "test:pure": "node --test test/configControllers.test.js test/savingsDeduplication.test.js"
   },
   "devDependencies": {
     "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.6.2"
+    "eslint-config-prettier": "^9.1.2",
+    "prettier": "^3.6.2",
+    "sequelize-cli": "^6.6.3"
   },
   "eslintConfig": {
     "extends": [
@@ -77,10 +79,6 @@
     "sharp": "^0.34.3",
     "socket.io": "^4.8.3",
     "unique-names-generator": "^4.7.1",
-    "web-push": "^3.6.7",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "sequelize-cli": "^6.6.3"
+    "web-push": "^3.6.7"
   }
 }

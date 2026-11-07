@@ -237,8 +237,12 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
         total_count: m.paid_count,
         total_amount: m.paid_amount,
       }));
-    } else {
-      allMembers = allMembers;
+    } else if (Array.isArray(allMembers)) {
+      allMembers = allMembers.map((m) => ({
+        ...m,
+        total_count: m.paid_count,
+        total_amount: m.paid_amount,
+      }));
     }
 
     // Filter pencarian

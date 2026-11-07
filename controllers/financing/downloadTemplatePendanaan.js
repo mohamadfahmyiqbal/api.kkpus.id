@@ -1,60 +1,53 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import db from "../../models/index.js";
 
 const { Member } = db;
 
 export const downloadTemplatePendanaan = async (req, res) => {
   try {
-    const workbook = xlsx.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Template_Pendanaan");
 
-    // Ambil daftar anggota aktif dari database
+    worksheet.columns = [
+      { header: "No. Anggota", key: "member_no", width: 15 },
+      { header: "Nama Anggota (Referensi)", key: "full_name", width: 25 },
+      { header: "Nama Pendanaan", key: "nama_pendanaan", width: 30 },
+      { header: "Jumlah Pendanaan (Rp)", key: "jumlah_pendanaan", width: 25 },
+      { header: "Margin/Bagi Hasil (Rp)", key: "margin", width: 25 },
+      { header: "Tenor (Bulan)", key: "tenor", width: 15 },
+      { header: "Keterangan", key: "keterangan", width: 30 },
+    ];
+
     const members = await Member.findAll({
       attributes: ["member_no", "full_name"],
       order: [["member_no", "ASC"]],
     });
 
-    let templateData = [];
-
     if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Nama Pendanaan": "",
-        "Jumlah Pendanaan (Rp)": 0,
-        "Margin/Bagi Hasil (Rp)": 0,
-        "Tenor (Bulan)": 12,
-        "Keterangan": "",
-      }));
+      members.forEach((m) => {
+        worksheet.addRow({
+          member_no: m.member_no,
+          full_name: m.full_name,
+          nama_pendanaan: "",
+          jumlah_pendanaan: 0,
+          margin: 0,
+          tenor: 12,
+          keterangan: "",
+        });
+      });
     } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Nama Pendanaan": "Modal Usaha Warung Tegal",
-          "Jumlah Pendanaan (Rp)": 15000000,
-          "Margin/Bagi Hasil (Rp)": 1500000,
-          "Tenor (Bulan)": 12,
-          "Keterangan": "Pendanaan UMKM",
-        },
-      ];
+      worksheet.addRow({
+        member_no: "A001",
+        full_name: "Contoh Anggota 1",
+        nama_pendanaan: "Modal Usaha Warung Tegal",
+        jumlah_pendanaan: 15000000,
+        margin: 1500000,
+        tenor: 12,
+        keterangan: "Pendanaan UMKM",
+      });
     }
 
-    const worksheet = xlsx.utils.json_to_sheet(templateData);
-
-    // Set lebar kolom
-    worksheet["!cols"] = [
-      { wch: 15 }, // No. Anggota
-      { wch: 25 }, // Nama Anggota (Referensi)
-      { wch: 30 }, // Nama Pendanaan
-      { wch: 25 }, // Jumlah Pendanaan (Rp)
-      { wch: 25 }, // Margin/Bagi Hasil (Rp)
-      { wch: 15 }, // Tenor (Bulan)
-      { wch: 30 }, // Keterangan
-    ];
-
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Pendanaan");
-
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",

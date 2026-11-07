@@ -1,4 +1,4 @@
-import xlsx from "xlsx";
+import { readExcelBuffer } from "../../utils/excelGenerator.js";
 import db from "../../models/index.js";
 
 const { Member, FinancingApplication } = db;
@@ -9,10 +9,7 @@ export const importPendanaan = async (req, res) => {
       return res.status(400).json({ success: false, message: "Tidak ada file yang diunggah" });
     }
 
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    const data = await readExcelBuffer(req.file.buffer);
 
     if (data.length === 0) {
       return res.status(400).json({ success: false, message: "File Excel kosong" });

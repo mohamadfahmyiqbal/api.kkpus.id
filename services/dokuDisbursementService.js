@@ -41,7 +41,6 @@ const BANK_CODE_MAP = {
   "MAYBANK": "016",
   "SINARMAS": "153",
   "BANK SINARMAS": "153",
-  "BSI": "451",
   "NEO": "490",
   "BANK NEO COMMERCE": "490",
   "SEABANK": "535",

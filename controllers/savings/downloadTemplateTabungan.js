@@ -1,4 +1,4 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import db from "../../models/index.js";
 
 const { Member, SavingTarget, MemberSavingTarget } = db;
@@ -6,13 +6,19 @@ const { Member, SavingTarget, MemberSavingTarget } = db;
 export const downloadTemplateTabungan = async (req, res) => {
   try {
     const { type } = req.query; // 'master' atau 'transaksi'
-    const workbook = xlsx.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const sheetName = type === "transaksi" ? "Template_Transaksi_Tabungan" : "Template_Master_Tabungan";
+    const worksheet = workbook.addWorksheet(sheetName);
 
-    // Ambil daftar anggota aktif dari database
-    const members = await Member.findAll({
-      attributes: ["member_no", "full_name"],
-      order: [["member_no", "ASC"]],
-    });
+    worksheet.columns = [
+      { header: "No. Anggota", key: "no_anggota", width: 15 },
+      { header: "Nama Anggota (Referensi)", key: "nama_anggota", width: 25 },
+      { header: "Nama Program", key: "nama_program", width: 28 },
+      { header: "Nominal", key: "nominal", width: 18 },
+      { header: "Tanggal Transaksi (YYYY-MM-DD)", key: "tanggal_transaksi", width: 25 },
+      { header: "Keterangan", key: "keterangan", width: 35 },
+      { header: "Status (PAID/UNPAID)", key: "status", width: 22 }
+    ];
 
     if (type === "transaksi") {
       // Ambil juga data tabungan anggota yang sudah terdaftar sebagai referensi
@@ -32,105 +38,101 @@ export const downloadTemplateTabungan = async (req, res) => {
         order: [["created_at", "DESC"]],
       });
 
-      let templateData = [];
       if (registeredTargets && registeredTargets.length > 0) {
-        templateData = registeredTargets.map((item) => ({
-          "No. Anggota": item.member?.member_no || "",
-          "Nama Anggota (Referensi)": item.member?.full_name || "",
-          "Nama Program": item.savingTarget?.target_name || "Tabungan Umum",
-          "Nominal": item.savingTarget?.min_monthly_deposit || item.monthly_deposit || 100000,
-          "Tanggal Transaksi (YYYY-MM-DD)": new Date().toISOString().split("T")[0],
-          "Keterangan": `Setoran Tabungan ${item.savingTarget?.target_name || ""}`.trim(),
-          "Status (PAID/UNPAID)": "PAID",
-        }));
+        registeredTargets.forEach((item) => {
+          worksheet.addRow({
+            no_anggota: item.member?.member_no || "",
+            nama_anggota: item.member?.full_name || "",
+            nama_program: item.savingTarget?.target_name || "Tabungan Umum",
+            nominal: item.savingTarget?.min_monthly_deposit || item.monthly_deposit || 100000,
+            tanggal_transaksi: new Date().toISOString().split("T")[0],
+            keterangan: `Setoran Tabungan ${item.savingTarget?.target_name || ""}`.trim(),
+            status: "PAID",
+          });
+        });
       } else {
-        templateData = [
-          {
-            "No. Anggota": members?.[0]?.member_no || "A001",
-            "Nama Anggota (Referensi)": members?.[0]?.full_name || "Nama Anggota",
-            "Nama Program": "Tabungan Pendidikan",
-            "Nominal": 200000,
-            "Tanggal Transaksi (YYYY-MM-DD)": new Date().toISOString().split("T")[0],
-            "Keterangan": "Setoran Tabungan Bulan Ini",
-            "Status (PAID/UNPAID)": "PAID",
-          },
-        ];
+        const members = await Member.findAll({
+          attributes: ["member_no", "full_name"],
+          order: [["member_no", "ASC"]],
+        });
+
+        if (members && members.length > 0) {
+          members.forEach((m) => {
+            worksheet.addRow({
+              no_anggota: m.member_no,
+              nama_anggota: m.full_name,
+              nama_program: "Tabungan Pendidikan",
+              nominal: 200000,
+              tanggal_transaksi: new Date().toISOString().split("T")[0],
+              keterangan: "Setoran Tabungan Bulan Ini",
+              status: "PAID",
+            });
+          });
+        } else {
+          worksheet.addRow({
+            no_anggota: "A001",
+            nama_anggota: "Nama Anggota",
+            nama_program: "Tabungan Pendidikan",
+            nominal: 200000,
+            tanggal_transaksi: new Date().toISOString().split("T")[0],
+            keterangan: "Setoran Tabungan Bulan Ini",
+            status: "PAID",
+          });
+        }
       }
-
-      const worksheet = xlsx.utils.json_to_sheet(templateData);
-      worksheet["!cols"] = [
-        { wch: 15 }, // No. Anggota
-        { wch: 25 }, // Nama Anggota
-        { wch: 28 }, // Nama Program
-        { wch: 18 }, // Nominal
-        { wch: 25 }, // Tanggal Transaksi
-        { wch: 35 }, // Keterangan
-        { wch: 22 }, // Status
-      ];
-
-      xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Transaksi_Tabungan");
-
-      const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=Template_Import_Transaksi_Tabungan.xlsx"
-      );
-      return res.send(buffer);
     }
 
     // Default: Master Tabungan
-    let templateData = [];
-    if (members && members.length > 0) {
-      templateData = members.map((m) => ({
-        "No. Anggota": m.member_no,
-        "Nama Anggota (Referensi)": m.full_name,
-        "Kategori Tabungan": "Umum",
-        "Nama Program": "",
-        "Saldo Saat Ini (Rp)": 0,
-        "Target (Rp)": 0,
-        "Jangka Waktu (Bulan)": 12,
-      }));
-    } else {
-      templateData = [
-        {
-          "No. Anggota": "A001",
-          "Nama Anggota (Referensi)": "Contoh Anggota 1",
-          "Kategori Tabungan": "Pendidikan",
-          "Nama Program": "Tabungan Anak Sekolah",
-          "Saldo Saat Ini (Rp)": 500000,
-          "Target (Rp)": 10000000,
-          "Jangka Waktu (Bulan)": 24,
-        },
-      ];
+    let masters = [];
+    const masterMembers = await Member.findAll({
+      attributes: ["member_no", "full_name"],
+      order: [["member_no", "ASC"]],
+    });
+
+    if (masterMembers && masterMembers.length > 0) {
+      masterMembers.forEach((m) => {
+        masters.push({
+          no_anggota: m.member_no,
+          nama_anggota: m.full_name,
+          kategori_tabungan: "Umum",
+          nama_program: "",
+          saldo_saat_ini: 0,
+          target: 0,
+          jangka_waktu: 12,
+        });
+      });
     }
 
-    const worksheet = xlsx.utils.json_to_sheet(templateData);
-    worksheet["!cols"] = [
-      { wch: 15 },
-      { wch: 25 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 25 },
-      { wch: 20 },
-      { wch: 25 },
-    ];
+    if (!masters || masters.length === 0) {
+      masters.push({
+        no_anggota: "A001",
+        nama_anggota: "Contoh Anggota 1",
+        kategori_tabungan: "Pendidikan",
+        nama_program: "Tabungan Anak Sekolah",
+        saldo_saat_ini: 500000,
+        target: 10000000,
+        jangka_waktu: 24,
+      });
+    }
 
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template_Master_Tabungan");
+    masters.forEach((item) => {
+      worksheet.addRow(item);
+    });
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
+
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=Template_Import_Master_Tabungan.xlsx"
+      type === "transaksi"
+        ? "attachment; filename=Template_Import_Transaksi_Tabungan.xlsx"
+        : "attachment; filename=Template_Import_Master_Tabungan.xlsx"
     );
-    return res.send(buffer);
+
+    res.send(buffer);
   } catch (error) {
     console.error("Download Template Tabungan Error:", error);
     return res.status(500).json({

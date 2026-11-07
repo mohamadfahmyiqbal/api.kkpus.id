@@ -1,81 +1,75 @@
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 
 export const downloadTemplateAnggota = async (req, res) => {
   try {
-    const data = [
-      {
-        "No. Anggota": "A001",
-        "Nama Lengkap": "John Doe",
-        "Email": "john@example.com",
-        "Password": "Password123!",
-        "No. HP": "081234567890",
-        "NIK KTP": "3201010101010001",
-        "Jenis Anggota": "Reguler",
-        "Jenis Kelamin": "Laki-laki",
-        "Tanggal Lahir (YYYY-MM-DD)": "1990-01-01",
-        "Tanggal Bergabung (YYYY-MM-DD)": "2023-01-01",
-        "RT": "001",
-        "RW": "002",
-        "Provinsi": "Jawa Barat",
-        "Kabupaten/Kota": "Bandung",
-        "Kecamatan": "Sumur Bandung",
-        "Kelurahan": "Braga",
-        "Alamat": "Jl. Merdeka No. 1",
-        "Pekerjaan": "Pegawai Swasta",
-        "Nama Tempat Bekerja": "PT. Angin ribut",
-        "Alamat Tempat Bekerja": "Jl. Industri",
-        "Nama Usaha": "Warung Makan John",
-        "Alamat Usaha": "Depan Stasiun",
-        "Omzet Per Bulan (Rp)": 5000000,
-        "Nama Kontak Darurat": "Jane Doe",
-        "No HP Kontak Darurat": "0811111111",
-        "Hubungan": "Istri",
-        "Nama Bank": "BCA",
-        "Nomor Rekening": "123456789",
-        "Nama Pemilik Rekening": "John Doe"
-      }
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Template Anggota");
+
+    worksheet.columns = [
+      { header: "No. Anggota", key: "no_anggota", width: 15 },
+      { header: "Nama Lengkap", key: "nama_lengkap", width: 25 },
+      { header: "Email", key: "email", width: 25 },
+      { header: "Password", key: "password", width: 20 },
+      { header: "No. HP", key: "no_hp", width: 15 },
+      { header: "NIK KTP", key: "nik_ktp", width: 20 },
+      { header: "Jenis Anggota", key: "jenis_anggota", width: 15 },
+      { header: "Jenis Kelamin", key: "jenis_kelamin", width: 15 },
+      { header: "Tanggal Lahir (YYYY-MM-DD)", key: "tanggal_lahir", width: 25 },
+      { header: "Tanggal Bergabung (YYYY-MM-DD)", key: "tanggal_bergabung", width: 25 },
+      { header: "RT", key: "rt", width: 10 },
+      { header: "RW", key: "rw", width: 10 },
+      { header: "Provinsi", key: "provinsi", width: 20 },
+      { header: "Kabupaten/Kota", key: "kabupaten_kota", width: 20 },
+      { header: "Kecamatan", key: "kecamatan", width: 20 },
+      { header: "Kelurahan", key: "kelurahan", width: 20 },
+      { header: "Alamat", key: "alamat", width: 30 },
+      { header: "Pekerjaan", key: "pekerjaan", width: 20 },
+      { header: "Nama Tempat Bekerja", key: "nama_tempat_bekerja", width: 25 },
+      { header: "Alamat Tempat Bekerja", key: "alamat_tempat_bekerja", width: 30 },
+      { header: "Nama Usaha", key: "nama_usaha", width: 25 },
+      { header: "Alamat Usaha", key: "alamat_usaha", width: 30 },
+      { header: "Omzet Per Bulan (Rp)", key: "omzet_per_bulan", width: 25 },
+      { header: "Nama Kontak Darurat", key: "nama_kontak_darurat", width: 25 },
+      { header: "No HP Kontak Darurat", key: "no_hp_kontak_darurat", width: 20 },
+      { header: "Hubungan", key: "hubungan", width: 15 },
+      { header: "Nama Bank", key: "nama_bank", width: 20 },
+      { header: "Nomor Rekening", key: "nomor_rekening", width: 20 },
+      { header: "Nama Pemilik Rekening", key: "nama_pemilik_rekening", width: 25 }
     ];
 
-    const ws = xlsx.utils.json_to_sheet(data);
-    
-    // Auto-size columns
-    const wscols = [
-      { wch: 15 }, // No. Anggota
-      { wch: 25 }, // Nama Lengkap
-      { wch: 25 }, // Email
-      { wch: 20 }, // Password
-      { wch: 15 }, // No. HP
-      { wch: 20 }, // NIK KTP
-      { wch: 15 }, // Jenis Anggota
-      { wch: 15 }, // Jenis Kelamin
-      { wch: 25 }, // Tanggal Lahir
-      { wch: 25 }, // Tanggal Bergabung
-      { wch: 10 }, // RT
-      { wch: 10 }, // RW
-      { wch: 20 }, // Provinsi
-      { wch: 20 }, // Kabupaten/Kota
-      { wch: 20 }, // Kecamatan
-      { wch: 20 }, // Kelurahan
-      { wch: 30 }, // Alamat
-      { wch: 20 }, // Pekerjaan
-      { wch: 25 }, // Nama Tempat Bekerja
-      { wch: 30 }, // Alamat Tempat Bekerja
-      { wch: 25 }, // Nama Usaha
-      { wch: 30 }, // Alamat Usaha
-      { wch: 25 }, // Omzet
-      { wch: 25 }, // Nama Kontak Darurat
-      { wch: 20 }, // No HP Darurat
-      { wch: 15 }, // Hubungan
-      { wch: 20 }, // Nama Bank
-      { wch: 20 }, // Nomor Rekening
-      { wch: 25 }, // Nama Pemilik Rekening
-    ];
-    ws["!cols"] = wscols;
+    worksheet.addRow({
+      no_anggota: "A001",
+      nama_lengkap: "John Doe",
+      email: "john@example.com",
+      password: "Password123!",
+      no_hp: "081234567890",
+      nik_ktp: "3201010101010001",
+      jenis_anggota: "Reguler",
+      jenis_kelamin: "Laki-laki",
+      tanggal_lahir: "1990-01-01",
+      tanggal_bergabung: "2023-01-01",
+      rt: "001",
+      rw: "002",
+      provinsi: "Jawa Barat",
+      kabupaten_kota: "Bandung",
+      kecamatan: "Sumur Bandung",
+      kelurahan: "Braga",
+      alamat: "Jl. Merdeka No. 1",
+      pekerjaan: "Pegawai Swasta",
+      nama_tempat_bekerja: "PT. Angin ribut",
+      alamat_tempat_bekerja: "Jl. Industri",
+      nama_usaha: "Warung Makan John",
+      alamat_usaha: "Depan Stasiun",
+      omzet_per_bulan: 5000000,
+      nama_kontak_darurat: "Jane Doe",
+      no_hp_kontak_darurat: "0811111111",
+      hubungan: "Istri",
+      nama_bank: "BCA",
+      nomor_rekening: "123456789",
+      nama_pemilik_rekening: "John Doe"
+    });
 
-    const wb = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(wb, ws, "Template Anggota");
-
-    const buffer = xlsx.write(wb, { type: "buffer", bookType: "xlsx" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
