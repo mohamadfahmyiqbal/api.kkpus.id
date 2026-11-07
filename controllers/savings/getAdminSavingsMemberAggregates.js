@@ -3,13 +3,13 @@ import { Op } from "sequelize";
 
 export const getAdminSavingsMemberAggregates = async (req, res) => {
   try {
-    const {
-      type = "POKOK",
-      search = "",
-      page = 1,
-      limit = 10,
-      sortBy = "name",
-      sortDir = "asc",
+    const { 
+      type = "POKOK", 
+      search = "", 
+      page = 1, 
+      limit = 10, 
+      sortBy = "name", 
+      sortDir = "asc", 
     } = req.query;
 
     const savType = (type || "POKOK").toUpperCase();
@@ -151,7 +151,7 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       if (!s.member) continue;
       const amt = parseFloat(s.amount) || 0;
       const sDate = s.transaction_date || (s.created_at ? new Date(s.created_at).toISOString().split("T")[0] : "");
-      
+
       // Jika transaksi ini sudah tercatat via Transaction (misal auto-repair / billing), lewati agar tidak dobel
       if (recordedTxKeys.has(`${s.member_id}_${amt}_${sDate}`) || recordedTxKeys.has(`${s.member_id}_${amt}`)) {
         continue;
@@ -202,9 +202,10 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       const amt = parseFloat(b.amount) || 0;
       const isPaid = (b.status || "").toUpperCase() === "PAID";
 
-      m.total_count += 1;
-      m.total_amount += amt;
+      // Khusus Simpanan Wajib & Pokok, Total Transaksi harus merefleksikan setoran yang sudah dibayarkan (PAID)
       if (isPaid) {
+        m.total_count += 1;
+        m.total_amount += amt;
         m.paid_count += 1;
         m.paid_amount += amt;
       } else {
@@ -228,6 +229,17 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
 
     // Convert map ke array
     let allMembers = Array.from(memberMap.values());
+
+    // Normalisasi untuk Simpanan Pokok & Wajib: Total Transaksi hanya mencerminkan setoran yang sudah dibayarkan (PAID)
+    if (savType === "POKOK" || savType === "WAJIB") {
+      allMembers = allMembers.map((m) => ({
+        ...m,
+        total_count: m.paid_count,
+        total_amount: m.paid_amount,
+      }));
+    } else {
+      allMembers = allMembers;
+    }
 
     // Filter pencarian
     if (search && search.trim()) {
@@ -282,9 +294,7 @@ export const getAdminSavingsMemberAggregates = async (req, res) => {
       } else if (sortBy === "unpaid_amount") {
         valA = a.unpaid_amount;
         valB = b.unpaid_amount;
-      }
-
-      if (typeof valA === "string") {
+      } else if (typeof valA === "string") {
         valA = valA.toLowerCase();
         valB = (valB || "").toLowerCase();
         return sortDir === "desc"
