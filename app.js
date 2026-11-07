@@ -174,7 +174,7 @@ app.use(
       if (!origin) return callback(null, true);
 
       // Izinkan origin dari domain kkpus.id (termasuk subdomain seperti admin.kkpus.id)
-      const isKkpusOrigin = origin.match(/^https?:\/\/.+\.?kkpus\.id$/);
+      const isKkpusOrigin = origin === 'https://kkpus.id' || (origin.startsWith('https://') && origin.endsWith('.kkpus.id'));
       if (isKkpusOrigin || allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
