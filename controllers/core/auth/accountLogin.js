@@ -144,7 +144,7 @@ export const accountLogin = async (req, res) => {
       });
     }
 
-    // 5. Generate JWT Token (menyertakan roles agar sinkron dengan socket & middleware)
+    // 5. Generate Secure JWT Token using HMAC SHA-512
     const tokenPayload = {
       member_id: member.member_id,
       member_no: member.member_no,
@@ -153,10 +153,14 @@ export const accountLogin = async (req, res) => {
       status_id: member.status_id,
       roles: userResponse.roles,
       role: userResponse.roles[0] || "member",
+      // Issued at (Unix timestamp for anti-replay protection)
+      iat: Math.floor(Date.now() / 1000) - 60, // 60 seconds ago to account for clock skew
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours from now
     };
 
     const token = jwt.sign(tokenPayload, getJwtSecret(), {
-      expiresIn: "1d",
+      algorithm: "HS512", // Explicitly use HMAC SHA-512 for maximum security
+      expiresIn: "24h",
     });
 
     // 6. Log successful login

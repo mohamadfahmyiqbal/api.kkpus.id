@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { isTokenBlacklisted } from "../utils/tokenBlacklist.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -10,22 +11,53 @@ const getJwtSecret = () => {
     if (process.env.NODE_ENV === "production") {
       throw new Error("JWT_SECRET tidak diatur di environment variable");
     }
-    return "default_jwt_secret_dev_32_characters_min_len";
+    // Generate a secure default secret for development (16 bytes = 128 bits)
+    return crypto.randomBytes(16).toString('hex');
   }
   return secret;
 };
 
-export const MidAnggota = async (req, res, next) => {
-  const authHeader = req.headers.authorization || req.headers.Authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: "Akses Ditolak. Token tidak ditemukan.",
+/**
+ * Verify token signature using HMAC SHA-512 (modern security standard)
+ * Ensures token has been signed by the server and not tampered with
+ */
+export const verifySecureToken = (token) => {
+  const secret = getJwtSecret();
+  try {
+    return jwt.verify(token, secret, { 
+      algorithms: ['HS512'], // Explicitly require HS512 algorithm
+      clockTolerance: 300, // 5 minutes tolerance for clock skew
+      maxAge: '24h' // Token expires after 24 hours
     });
+  } catch (error) {
+    // Log security event for failed token verification attempts
+    console.warn(`[Security] Failed token verification: ${error.message}`);
+    return null;
+  }
+};
+
+export const MidAnggota = async (req, res, next) => {
+  let token = null;
+
+  // 1. Prioritaskan HttpOnly cookie (PCI-DSS & OWASP best practice)
+  if (req.cookies && req.cookies.auth_token) {
+    token = req.cookies.auth_token;
   }
 
-  const token = authHeader.split(' ')[1];
+  // 2. Fallback ke Authorization: Bearer <token> header jika cookie tidak disertakan
+  if (!token) {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Akses Ditolak. Sesi otentikasi tidak ditemukan.",
+    });
+  }
 
   // Check token blacklist (logout invalidation)
   if (isTokenBlacklisted(token)) {

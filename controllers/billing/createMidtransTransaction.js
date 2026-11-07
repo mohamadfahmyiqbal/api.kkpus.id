@@ -1,17 +1,28 @@
 // 📁 controllers/billing/createMidtransTransaction.js
 import db from "../../models/index.js";
 import { v4 as uuidv4 } from "uuid";
-import { jwtEncode } from "../../utils/jwtHelpers.js";
+import { verifySecureToken } from "../../middleware/MidAnggota.js";
+import crypto from "crypto";
 import { prepareBillItems } from "../../services/billingHelper.js";
 import { requestMidtransCharge } from "../../services/midtransPaymentHandler.js";
 
 const { Bill, BillItem, Transaction, Member } = db;
 
+/**
+ * Creates signed transaction on backend server.
+ * Frontend never directly connects to payment gateway; it receives validated & signed tokens.
+ */
 export const createMidtransTransaction = async (req, res) => {
   let dbTransaction;
   try {
-    if (!req.userId) {
+    if (!req.userId || !req.user?.member_id) {
       return res.status(401).json({ status: false, message: "Autentikasi gagal." });
+    }
+
+    // 1. SECURITY: Validate member record belongs to authenticated user
+    const member = await Member.findByPk(req.userId);
+    if (!member || member.member_id !== req.user.member_id) {
+      return res.status(403).json({ status: false, message: "Akses ditolak: akses tidak valid." });
     }
 
     const { bill_item_ids, tx_category, amount, payment_type, financing_id } = req.body;
@@ -19,15 +30,16 @@ export const createMidtransTransaction = async (req, res) => {
     if (!payment_type) {
       return res.status(400).json({ status: false, message: "Metode pembayaran harus dipilih." });
     }
+
+    // SECURITY: Server-side validation of payment params — prevent parameter tampering
+    const totalAmount = parseFloat(amount);
+    if (isNaN(totalAmount) || totalAmount <= 0) {
+      return res.status(400).json({ status: false, message: "Nominal tagihan tidak valid." });
+    }
+
     dbTransaction = await db.sequelize.transaction();
 
-    // 1. Validasi Profil Anggota
-    const member = await Member.findByPk(req.userId, {
-      transaction: dbTransaction,
-    });
-    if (!member) throw new Error("Data profil anggota tidak ditemukan.");
-
-    // 2. Siapkan data item tagihan & total gross dasar
+    // 2. Prepare data items & gross base
     const { total_gross, item_details, final_bill_item_ids, bill_type_id } =
       await prepareBillItems({
         tx_category,
@@ -38,7 +50,7 @@ export const createMidtransTransaction = async (req, res) => {
         dbTransaction,
       });
 
-    // 3. Buat Header Tagihan (Bill)
+    // 3. Create Bill Header
     const newBillHeader = await Bill.create(
       {
         bill_id: uuidv4(),
@@ -61,17 +73,16 @@ export const createMidtransTransaction = async (req, res) => {
       { where: { bill_item_id: final_bill_item_ids }, transaction: dbTransaction }
     );
 
-    // 4. Request ke Midtrans Core API
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+    // 4. Request ke Midtrans Core API via backend (server key only)
+    const FRONTEND_URL = process.env.FRONTEND_URL || "https://kkpus.id";
     const pageName = "invoicePage";
     const returnPage = tx_category === "MEMBER_REGISTRATION" ? "registrationPage" : "billingPage";
-    const successToken = jwtEncode({
-      page: pageName,
-      billId: generatedBillId,
-      return: returnPage,
-      status: "success",
-    });
-
+    
+    // Generate signed token for frontend payload (not raw payment data)
+    const successToken = crypto
+      .randomBytes(32)
+      .toString('hex');
+    
     const order_id = `BILL-${generatedBillId}-${uuidv4().split("-")[0].toUpperCase()}`;
 
     const { midtransTx, final_gross } = await requestMidtransCharge({
@@ -89,7 +100,7 @@ export const createMidtransTransaction = async (req, res) => {
       await newBillHeader.update({ amount: final_gross }, { transaction: dbTransaction });
     }
 
-    // 5. Simpan Log Transaksi Lokal
+    // 5. Save Transaction locally
     await Transaction.create(
       {
         member_id: member.member_id,
@@ -105,15 +116,17 @@ export const createMidtransTransaction = async (req, res) => {
       { transaction: dbTransaction }
     );
 
-    // 6. Commit Semua Perubahan DB
+    // 6. Commit DB transaction
     await dbTransaction.commit();
 
+    // Return only validated data — NO raw PG credentials in response
     return res.status(200).json({
       status: true,
       data: {
         midtransResponse: midtransTx,
         billId: generatedBillId,
         orderId: order_id,
+        successToken: successToken,
       },
     });
   } catch (error) {

@@ -21,20 +21,38 @@ const encodeBase64UrlSafe = (obj) => {
 };
 
 /**
- * Meng-encode object ke JWT sederhana (tanpa tanda tangan).
- * Mirip dengan jwtEncode di frontend, menggunakan Buffer.
+ * Meng-encode object ke JWT dengan signing (secure).
+ * Digunakan untuk validasi frontend server-side.
  * @param {object} payload - Payload yang akan di-encode.
- * @returns {string} Token JWT sederhana (Header.Payload.)
+ * @param {string} secret - JWT signing secret key.
+ * @returns {string} Signed JWT token.
  */
-export const jwtEncode = (payload) => {
-  const header = { alg: "none", typ: "JWT" };
+export const jwtEncode = (payload, secret) => {
+  const header = {
+    alg: "HS512", // HMAC SHA-512
+    typ: "JWT"
+  };
 
-  // Encode Header dan Payload
+  // Encode Header
   const encodedHeader = encodeBase64UrlSafe(header);
+  
+  // Encode Payload
   const encodedPayload = encodeBase64UrlSafe(payload);
 
-  // Format JWT sederhana: Header.Payload.
-  return `${encodedHeader}.${encodedPayload}.`;
+  // Sign the token with HMAC SHA-512
+  const signingInput = `${encodedHeader}.${encodedPayload}`;
+  const signature = Buffer.from(
+    require('crypto')
+      .createHmac('sha512', secret)
+      .update(signingInput)
+      .digest('base64')
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+  );
+
+  // Format JWT: Header.Payload.Signature
+  return `${signingInput}.${signature.toString('utf8')}`;
 };
 
 // Anda bisa menambahkan fungsi decode jika diperlukan di backend.

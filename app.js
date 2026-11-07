@@ -9,6 +9,7 @@ import cors from "cors";
 import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
+import cookieParser from "cookie-parser";
 import router from "./routes/routes.js";
 import { initSocket, users } from "./utils/socket.js";
 import ErrorHandler from "./middleware/ErrorHandler.js";
@@ -30,7 +31,7 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     hsts: {
-      maxAge: 31536000, // 1 year in seconds
+      maxAge: 31536000, // 働1 year in seconds
       includeSubDomains: true,
       preload: true,
     },
@@ -49,6 +50,9 @@ app.use(
     },
   }),
 );
+
+// Parse cookies for secure session management
+app.use(cookieParser());
 
 // Fallback explicit headers in case helmet gets overridden
 app.use((req, res, next) => {

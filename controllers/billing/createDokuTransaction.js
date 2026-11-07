@@ -1,7 +1,7 @@
 // 📁 controllers/billing/createDokuTransaction.js
 import db from "../../models/index.js";
 import { v4 as uuidv4 } from "uuid";
-import { jwtEncode } from "../../utils/jwtHelpers.js";
+import crypto from "crypto";
 import { prepareBillItems, calculatePaymentFee } from "../../services/billingHelper.js";
 import { requestDokuPayment } from "../../services/dokuPaymentHandler.js";
 
@@ -10,8 +10,14 @@ const { Bill, BillItem, Transaction, Member } = db;
 export const createDokuTransaction = async (req, res) => {
   let dbTransaction;
   try {
-    if (!req.userId) {
+    if (!req.userId || !req.user?.member_id) {
       return res.status(401).json({ status: false, message: "Autentikasi gagal." });
+    }
+
+    // 1. SECURITY: Server-side validation of member
+    const member = await Member.findByPk(req.userId);
+    if (!member || member.member_id !== req.user.member_id) {
+      return res.status(403).json({ status: false, message: "Data profil anggota tidak valid." });
     }
 
     const { bill_item_ids, tx_category, amount, payment_type, financing_id } = req.body;
@@ -19,13 +25,14 @@ export const createDokuTransaction = async (req, res) => {
     if (!payment_type) {
       return res.status(400).json({ status: false, message: "Metode pembayaran harus dipilih." });
     }
-    dbTransaction = await db.sequelize.transaction();
 
-    // 1. Validasi Profil Anggota
-    const member = await Member.findByPk(req.userId, {
-      transaction: dbTransaction,
-    });
-    if (!member) throw new Error("Data profil anggota tidak ditemukan.");
+    // SECURITY: Parameter tampering defense
+    const totalAmount = parseFloat(amount);
+    if (isNaN(totalAmount) || totalAmount <= 0) {
+      return res.status(400).json({ status: false, message: "Nominal transaksi tidak valid." });
+    }
+
+    dbTransaction = await db.sequelize.transaction();
 
     // 2. Siapkan data item tagihan & total gross dasar
     let { total_gross, final_bill_item_ids, bill_type_id } = await prepareBillItems({
@@ -83,16 +90,9 @@ export const createDokuTransaction = async (req, res) => {
       { transaction: dbTransaction }
     );
 
-    // 6. Request ke DOKU API
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-    const pageName = "invoicePage";
-    const returnPage = tx_category === "MEMBER_REGISTRATION" ? "registrationPage" : "billingPage";
-    const successToken = jwtEncode({
-      page: pageName,
-      billId: generatedBillId,
-      return: returnPage,
-      status: "success",
-    });
+    // 6. Request ke DOKU API via backend server
+    const FRONTEND_URL = process.env.FRONTEND_URL || "https://kkpus.id";
+    const successToken = crypto.randomBytes(32).toString('hex');
 
     const paymentInstruction = await requestDokuPayment({
       pType,
@@ -111,7 +111,7 @@ export const createDokuTransaction = async (req, res) => {
     return res.status(200).json({
       status: true,
       data: {
-        midtransResponse: paymentInstruction, // Tetap gunakan key ini agar kompatibel dengan frontend
+        midtransResponse: paymentInstruction,
         billId: generatedBillId,
         orderId: order_id,
         dokuData: paymentInstruction,

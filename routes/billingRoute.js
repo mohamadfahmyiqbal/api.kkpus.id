@@ -39,7 +39,7 @@ router.post("/invoice/details", getInvoiceDetail);
 router.post("/create-voluntary-bill", createVoluntaryBill);
 router.post("/create-deposit", createDepositSukarela);
 router.post("/process-payment", MidAnggota, createDokuTransaction);
-router.post("/manual-payment", uploadPaymentProofMiddleware, submitManualPayment);
+router.post("/manual-payment", uploadPaymentProofMiddleware, manualPaymentSecurityMiddleware, manualPaymentSignatureMiddleware, submitManualPayment);
 router.post("/process-savings", processSavingsPayment);
 router.post("/sync-status", syncMidtransStatus);
 router.post("/manual-sync-summary", manualSyncSummary);
