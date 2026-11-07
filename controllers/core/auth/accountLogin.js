@@ -177,12 +177,13 @@ export const accountLogin = async (req, res) => {
       domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
-    // 8. Respon Sukses (no token in response body for security)
+    // 8. Respon Sukses (include token for socket registration)
     return res.status(200).json({
       success: true,
       message: "Login berhasil!",
       data: {
-        user: userResponse, // Mengembalikan data member
+        user: userResponse,
+        token: token,
       },
     });
   } catch (error) {
