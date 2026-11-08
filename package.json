@@ -81,6 +81,7 @@
     "sequelize": "^6.37.7",
     "sharp": "^0.34.3",
     "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "unique-names-generator": "^4.7.1",
     "web-push": "^3.6.7"
   }
