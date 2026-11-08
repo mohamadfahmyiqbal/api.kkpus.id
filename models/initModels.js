@@ -20,6 +20,7 @@ import Savings from "./savings/savings.js";
 import Article from "./content/articles.js";
 import Notification from "./content/notifications.js";
 import ActivityLog from "./content/activity_logs.js";
+import AuditLog from "./content/audit_logs.js";
 import BusinessProfile from "./financing/business_profiles.js";
 import FinancingApplication from "./financing/financing_applications.js";
 import FinancingCategory from "./financing/financing_categories.js";
@@ -94,6 +95,7 @@ export default function initModels(db, sequelizeInstance, DataTypes) {
   db.Article = Article(sequelizeInstance, DataTypes);
   db.Notification = Notification(sequelizeInstance, DataTypes);
   db.ActivityLog = ActivityLog(sequelizeInstance, DataTypes);
+  db.AuditLog = AuditLog(sequelizeInstance, DataTypes);
   db.BusinessProfile = BusinessProfile(sequelizeInstance, DataTypes);
   db.FinancingApplication = FinancingApplication(sequelizeInstance, DataTypes);
   db.FinancingCategory = FinancingCategory(sequelizeInstance, DataTypes);

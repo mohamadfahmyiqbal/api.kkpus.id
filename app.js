@@ -14,6 +14,7 @@ import router from "./routes/routes.js";
 import { initSocket, users } from "./utils/socket.js";
 import ErrorHandler from "./middleware/ErrorHandler.js";
 import { initCronJobs } from "./services/cron.js";
+import { auditLoggingMiddleware, applyAuditLoggingMiddleware } from "./middleware/auditLogger.js";
 // Trigger restart for CORS config and dashboard update: 2026-10-18T09:07:00
 console.log("✅ App starting...");
 console.log("✅ Router imported:", typeof router);
@@ -85,6 +86,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Apply audit logging middleware
+applyAuditLoggingMiddleware(app);
 
 let sslOptions = null;
 try {
@@ -208,6 +212,9 @@ app.use((req, res, next) => {
 console.log("🔄 Mounting router...");
 app.use(router);
 console.log("✅ Router mounted");
+
+// Apply audit logging after router to capture all API requests
+applyAuditLoggingMiddleware(app);
 
 app.use(ErrorHandler);
 
