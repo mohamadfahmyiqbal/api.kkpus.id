@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import db from "../../../models/index.js";
-// import { logLoginAttempt, checkAccountLockout } from "../../../services/authLoggingService.js";
+import { logLoginAttempt, checkAccountLockout } from "../../../services/authLoggingService.js";
 
 // Hapus referensi ke MemberRegistration
 const Member = db.Member;
@@ -28,7 +28,7 @@ export const accountLogin = async (req, res) => {
 
   // 1. Validasi Input Dasar
   if (!emailHp || !password) {
-    // await logLoginAttempt(req, false, null, "Missing credentials");
+    await logLoginAttempt(req, false, null, "Missing credentials");
     return res.status(400).json({
       success: false,
       message: "Email/Nomor Handphone dan Password wajib diisi.",
@@ -37,14 +37,14 @@ export const accountLogin = async (req, res) => {
 
   try {
     // 2. Cek Account Lockout
-    // const lockoutCheck = await checkAccountLockout(emailHp);
-    // if (lockoutCheck.locked) {
-    //   await logLoginAttempt(req, false, null, "Account locked");
-    //   return res.status(429).json({
-    //     success: false,
-    //     message: lockoutCheck.message,
-    //   });
-    // }
+    const lockoutCheck = await checkAccountLockout(emailHp);
+    if (lockoutCheck.locked) {
+      await logLoginAttempt(req, false, null, "Account locked");
+      return res.status(429).json({
+        success: false,
+        message: lockoutCheck.message,
+      });
+    }
     // 2. CARI AKUN di tabel 'members'
     // Mencari berdasarkan email, phone_number, atau member_no
     const member = await Member.findOne({
@@ -86,7 +86,7 @@ export const accountLogin = async (req, res) => {
 
     // 3. Cek Keberadaan Member
     if (!member) {
-      // await logLoginAttempt(req, false, null, "User not found");
+      await logLoginAttempt(req, false, null, "User not found");
       return res.status(401).json({
         success: false,
         message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
@@ -100,7 +100,7 @@ export const accountLogin = async (req, res) => {
     );
 
     if (!isMatch) {
-      // await logLoginAttempt(req, false, member.member_id, "Invalid password");
+      await logLoginAttempt(req, false, member.member_id, "Invalid password");
       return res.status(401).json({
         success: false,
         message: "Kredensial tidak valid. Email/Nomor HP atau Password salah.",
@@ -163,7 +163,7 @@ export const accountLogin = async (req, res) => {
     });
 
     // 6. Log successful login
-    // await logLoginAttempt(req, true, member.member_id, "Login successful");
+    await logLoginAttempt(req, true, member.member_id, "Login successful");
 
     // 7. Set secure HTTP-only cookie with token
     const isSecure = process.env.NODE_ENV === "production" || req.secure || req.headers['x-forwarded-proto'] === 'https';
