@@ -1,6 +1,7 @@
 // PATH: controllers/core/dashboard/getAdminDashboard.js
 
 import db from "../../../models/index.js";
+import { maskMemberData } from "../../../utils/dataMasking.js";
 import { fetchAdminDashboardStats } from "./dashboardStatsHelper.js";
 import { fetchPendingApprovals } from "./dashboardPendingHelper.js";
 
@@ -57,11 +58,20 @@ export const getAdminDashboard = async (req, res) => {
       investasi: pendingCategorized.investasi?.length,
     });
 
+    // Mask sensitive fields in pending approvals for admin privacy compliance (HIPAA dynamic data masking)
+    const maskedPending = { ...pendingCategorized };
+    if (Array.isArray(maskedPending.registration)) {
+      maskedPending.registration = maskedPending.registration.map(r => maskMemberData(r, true));
+    }
+    if (Array.isArray(maskedPending.simpanan)) {
+      maskedPending.simpanan = maskedPending.simpanan.map(s => maskMemberData(s, true));
+    }
+
     return res.status(200).json({
       success: true,
       data: {
         stats,
-        pendingCategorized,
+        pendingCategorized: maskedPending,
         notifications,
       },
     });

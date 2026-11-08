@@ -1,6 +1,8 @@
 // 📁 controllers/anggota/getAnggotaProfile.js
 
 import db from "../../../models/index.js";
+import { maskMemberData } from "../../../utils/dataMasking.js";
+import { maskMemberData } from "../../../utils/dataMasking.js";
 
 export const getAnggotaProfile = async (req, res) => {
   const memberId = req.userId;
@@ -72,7 +74,7 @@ export const getAnggotaProfile = async (req, res) => {
     }
 
     // Transformasi Data sesuai struktur Database baru
-    const result = {
+    let result = {
       member_id: memberData.member_id,
       member_no: memberData.member_no,
       full_name: memberData.full_name,
@@ -99,6 +101,9 @@ export const getAnggotaProfile = async (req, res) => {
       emergency_contact_info: memberData.emergencyContacts?.[0] || null,
       active_termination: memberData.terminations?.[0] || null,
     };
+
+    // Apply HIPAA-compliant field-level masking (backend before frontend)
+    result = maskMemberData(result, true);
 
     return res.status(200).json({
       success: true,

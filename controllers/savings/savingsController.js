@@ -1,4 +1,5 @@
 import db from "../../models/index.js";
+import { maskMemberData } from "../../utils/dataMasking.js";
 import { sendGlobalNotification } from "../../services/notificationHelper.js";
 import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
@@ -149,11 +150,14 @@ const getSavingsHistory = async (req, res) => {
       offset: offset
     });
 
+    // Apply HIPAA-compliant field-level masking to sensitive fields
+    const maskedSavings = savings.map(s => maskMemberData(s, true));
+
     return res.status(200).json({
       status: true,
       message: "Data simpanan berhasil diambil",
       data: {
-        savings: savings,
+        savings: maskedSavings,
         pagination: {
           current_page: parseInt(page),
           total_pages: Math.ceil(count / limit),
@@ -190,10 +194,13 @@ const getSavingsDetail = async (req, res) => {
       });
     }
 
+    // Apply HIPAA-compliant field-level masking to sensitive fields
+    const maskedSavings = maskMemberData(savings, true);
+
     return res.status(200).json({
       status: true,
       message: "Detail simpanan berhasil diambil",
-      data: savings
+      data: maskedSavings
     });
 
   } catch (error) {

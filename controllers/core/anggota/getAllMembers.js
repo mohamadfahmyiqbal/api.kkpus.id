@@ -1,4 +1,5 @@
 import db from "../../../models/index.js";
+import { maskMemberData } from "../../../utils/dataMasking.js";
 const Member = db.Member;
 const Sequelize = db.Sequelize;
 const Op = Sequelize.Op;
@@ -84,12 +85,24 @@ export const getAllMembers = async (req, res) => {
       order: [['join_date', 'DESC']]
     });
 
+    // Apply HIPAA-compliant data masking for sensitive fields
+    const maskedMembers = rows.map(member => {
+      const maskedMember = maskMemberData(member, true);
+
+      // Mask additional sensitive fields not covered by maskMemberData
+      if (member.nik_ktp) {
+        maskedMember.nik_ktp = maskMemberData({ nik_ktp: member.nik_ktp }).nik_ktp;
+      }
+
+      return maskedMember;
+    });
+
     return res.status(200).json({
       success: true,
       message: "Data anggota berhasil diambil",
       data: {
         totalItems: count,
-        members: rows,
+        members: maskedMembers,
         totalPages: Math.ceil(count / limit),
         currentPage: page
       }
