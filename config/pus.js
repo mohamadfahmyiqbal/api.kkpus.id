@@ -1,36 +1,50 @@
 import { Sequelize } from "sequelize";
 
-// Menggunakan konfigurasi dari environment variables
+// Detect dialect from environment (mysql or sqlite)
+// Default to mysql for production compatibility
+const dialect = process.env.DB_DIALECT || "mysql";
+
+const sequelizeOptions = {
+  dialect: dialect,
+
+  pool: {
+    max: parseInt(process.env.DB_POOL_MAX || "20", 10),
+    min: parseInt(process.env.DB_POOL_MIN || "2", 10),
+    acquire: 60000,
+    idle: 30000,
+  },
+
+  dialectOptions: {
+    dateStrings: true,
+    typeCast: true,
+    timezone: "+07:00",
+    connectTimeout: 10000,
+  },
+
+  timezone: "+07:00",
+  logging: process.env.NODE_ENV === "development" ? console.log : false,
+  retry: {
+    max: 3,
+    timeout: 15000,
+  },
+};
+
+// Add MySQL-specific options
+if (dialect === "mysql") {
+  sequelizeOptions.host = process.env.DB_HOST;
+  sequelizeOptions.port = parseInt(process.env.DB_PORT || "3306", 10);
+}
+
+// Add SQLite-specific options
+if (dialect === "sqlite") {
+  sequelizeOptions.storage = process.env.DB_STORAGE || ":memory:";
+}
+
 const pus = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || "3306", 10),
-    dialect: "mysql",
-
-    pool: {
-      max: parseInt(process.env.DB_POOL_MAX || "20", 10),
-      min: parseInt(process.env.DB_POOL_MIN || "2", 10),
-      acquire: 60000,
-      idle: 30000,
-    },
-
-    dialectOptions: {
-      dateStrings: true,
-      typeCast: true,
-      timezone: "+07:00",
-      connectTimeout: 10000,
-    },
-
-    timezone: "+07:00",
-    logging: process.env.NODE_ENV === "development" ? console.log : false,
-    retry: {
-      max: 3,
-      timeout: 15000,
-    },
-  },
+  sequelizeOptions,
 );
 
 export default pus;

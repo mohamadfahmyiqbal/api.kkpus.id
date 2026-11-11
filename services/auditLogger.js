@@ -2,6 +2,7 @@
 
 import db from "../models/index.js";
 import crypto from "crypto";
+import { sanitizeData } from "../utils/logSanitizer.js";
 
 const generateIntegrityHash = (data) => {
   const str = JSON.stringify({
@@ -12,13 +13,16 @@ const generateIntegrityHash = (data) => {
 };
 
 export const logAuditEvent = async (auditData) => {
+  // Sanitasi detail untuk menghapus PII dan secret
+  const sanitizedDetails = sanitizeData(auditData.details || {});
+
   const auditId = await db.AuditLog.create({
     user_id: auditData.userId,
     actor_role: auditData.actorRole,
     action_type: auditData.actionType,
     entity_type: auditData.entityType,
     entity_id: auditData.entityId,
-    details: auditData.details || {},
+    details: sanitizedDetails,
     ip_address: auditData.ipAddress,
     user_agent: auditData.userAgent,
     session_id: auditData.sessionId,
@@ -29,6 +33,7 @@ export const logAuditEvent = async (auditData) => {
   // Generate integrity hash for tamper detection
   const integrityData = {
     ...auditData,
+    details: sanitizedDetails,
     audit_id: auditId,
     created_at: new Date().toISOString(),
   };

@@ -2,15 +2,22 @@
 
 import db from "../models/index.js";
 import { Op } from "sequelize";
+import { sanitizeData } from "../utils/logSanitizer.js";
+
+// Brute force attempt limiter and account lockout management
 
 const MAX_LOGIN_ATTEMPTS = 5; // Ambang batas untuk mengunci akun
 const LOCKOUT_DURATION = 15; // menit
 
 export const logLoginAttempt = async (req, success, memberId, reason) => {
   try {
+    // Mask/sanitize email or phone sebelum disimpan
+    const rawIdentifier = req.body?.emailHp || null;
+    const maskedIdentifier = rawIdentifier ? sanitizeData(rawIdentifier) : null;
+
     // Simpan attempt ke tabel login_attempts
     const attemptData = {
-      email_or_phone: req.body?.emailHp || null,
+      email_or_phone: maskedIdentifier,
       ip_address: req.ip || req.connection?.remoteAddress || null,
       user_agent: req.headers["user-agent"] || null,
       success: success,
@@ -20,9 +27,9 @@ export const logLoginAttempt = async (req, success, memberId, reason) => {
     
     await db.LoginAttempt.create(attemptData);
 
-    // Perbarui lockouts jika login gagal
-    if (!success && attemptData.email_or_phone) {
-      await updateAccountLockout(attemptData.email_or_phone, reason);
+    // Perbarui lockouts jika login gagal menggunakan identifier asli
+    if (!success && rawIdentifier) {
+      await updateAccountLockout(rawIdentifier, reason);
     }
 
     return attemptData;
