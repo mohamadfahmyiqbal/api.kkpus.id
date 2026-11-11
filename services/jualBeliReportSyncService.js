@@ -1,4 +1,5 @@
-import db from "../models/index.js";
+// Lazy import of db to avoid circular dependency during module initialization
+let db = null;
 
 /**
  * Synchronize Jual Beli report for a specific member.
@@ -10,11 +11,17 @@ import db from "../models/index.js";
 export const syncJualBeliReport = async (sequelize, member_id) => {
   if (!member_id) return;
 
+  // Lazy access to db models after initialization to avoid circular dependency
+  if (!db) {
+    db = await import("../models/index.js");
+  }
+
+  // Import models inside the function to avoid circular dependency
   const FinancingApplication = db.FinancingApplication;
   const BillItem = db.BillItem;
-  const JualBeliReport = db.JualBeliReport;
   const LoanProduct = db.LoanProduct;
   const Op = db.Sequelize.Op;
+  const JualBeliReport = db.JualBeliReport;
 
   try {
     // Get valid loan product names to distinguish Jual Beli from Pinjaman/Program
