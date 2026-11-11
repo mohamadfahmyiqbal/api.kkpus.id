@@ -19,6 +19,10 @@ import LoginAttempt from "./billing/login_attempts.js";
 import AccountLockout from "./billing/account_lockouts.js";
 import JualBeliReport from "./jualbeli/jual_beli_report.js";
 import Savings from "./savings/savings.js";
+
+// Debug: Check if JualBeliReport is properly imported
+console.log("Importing JualBeliReport from ./jualbeli/jual_beli_report.js");
+console.log("JualBeliReport:", JualBeliReport);
 import Article from "./content/articles.js";
 import Notification from "./content/notifications.js";
 import ActivityLog from "./content/activity_logs.js";
