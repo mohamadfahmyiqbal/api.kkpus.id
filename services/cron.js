@@ -1,9 +1,21 @@
 import cron from 'node-cron';
 import { backupDatabase } from './drive_backup.js';
+import { dailyLocalBackup } from './drive_backup.js';
 import { anonymizeDataForInactiveMembers } from './dataLifecycleCleaner.js';
 
 export const initCronJobs = () => {
   console.log('Initializing cron jobs...');
+
+  // Schedule daily local database backup at 01:30 AM (after midnight, before data lifecycle cleaner)
+  cron.schedule('30 1 * * *', async () => {
+    console.log('Running scheduled daily local database backup...');
+    try {
+      await dailyLocalBackup();
+      console.log('Daily local backup completed successfully.');
+    } catch (error) {
+      console.error('Daily local backup failed:', error);
+    }
+  });
 
   // Schedule backup for the 1st of every month at 00:00
   // cron expression: '0 0 1 * *'

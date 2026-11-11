@@ -158,7 +158,7 @@ export const checkAccountLockout = async (emailOrPhone) => {
       );
       return {
         locked: true,
-        message: `Akun terkunci. Coba lagi dalam ${remainingMinutes} menit.", lockout_reason: lockout.lockout_reason,
+        message: `Akun terkunci. Coba lagi dalam ${remainingMinutes} menit.`, lockout_reason: lockout.lockout_reason,
         lockout_end: lockout.lockout_end,
         failed_attempts: lockout.failed_attempts,
       };

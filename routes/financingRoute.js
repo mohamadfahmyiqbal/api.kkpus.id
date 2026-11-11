@@ -35,7 +35,21 @@ import { downloadTemplateInvestasi } from "../controllers/financing/downloadTemp
 import multer from "multer";
 
 const router = express.Router();
-const upload = multer();
+const upload = multer({
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    const isAllowedExt = file.originalname?.match(/\.(xlsx|xls)$/i);
+    if (allowedMimes.includes(file.mimetype) || isAllowedExt) {
+      cb(null, true);
+    } else {
+      cb(new Error("Format file tidak didukung. Harap unggah file spreadsheet Excel (.xlsx/.xls)."));
+    }
+  },
+});
 
 // Public route - no authentication required for loan products
 router.get("/loan-products", getLoanProducts);

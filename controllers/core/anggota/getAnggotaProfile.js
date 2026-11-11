@@ -2,7 +2,6 @@
 
 import db from "../../../models/index.js";
 import { maskMemberData } from "../../../utils/dataMasking.js";
-import { maskMemberData } from "../../../utils/dataMasking.js";
 
 export const getAnggotaProfile = async (req, res) => {
   const memberId = req.userId;

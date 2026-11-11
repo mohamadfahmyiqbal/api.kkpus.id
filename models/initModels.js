@@ -28,8 +28,6 @@ import FinancingApplication from "./financing/financing_applications.js";
 import FinancingCategory from "./financing/financing_categories.js";
 import FinancingTerm from "./financing/financing_terms.js";
 import SukukIssue from "./financing/sukuk_issues.js";
-import LoginAttempt from "./billing/login_attempts.js";
-import AccountLockout from "./billing/account_lockouts.js";
 import SukukOrder from "./financing/sukuk_orders.js";
 import LoanProduct from "./loan/loan_products.js";
 import MemberLoan from "./loan/member_loans.js";

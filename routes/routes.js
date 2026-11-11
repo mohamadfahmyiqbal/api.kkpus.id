@@ -1,4 +1,9 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import yaml from "yaml";
+import swaggerUi from "swagger-ui-express";
 import authRoute from "./authRoute.js";
 import forgotPasswordRoute from "./forgotPasswordRoute.js";
 import approvalsRoute from "./approvalsRoute.js";
@@ -21,7 +26,19 @@ import trainingRoute from "./trainingRoute.js";
 import landingRoute from "./landingRoute.js";
 import tabunganRoute from "./tabunganRoute.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const openapiPath = path.resolve(__dirname, "../openapi.yaml");
+const openapiSpec = yaml.parse(fs.readFileSync(openapiPath, "utf8"));
+
 const router = express.Router();
+
+// API Documentation (Swagger UI)
+router.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiSpec, {
+  customSiteTitle: "KKPUS Ecosystem API Documentation",
+  customCss: ".swagger-ui .topbar { display: none; }",
+}));
 
 // API Routes
 router.use("/webhooks", webhookRoute);

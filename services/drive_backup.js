@@ -38,7 +38,7 @@ export const backupDatabase = () => {
     const filePath = path.join(backupDir, fileName);
 
     // Adjust this dump command if needed (e.g. adding path to mysqldump)
-    let dumpCommand = `mysqldump -h ${DB_HOST} -u ${DB_USER}`;
+    let dumpCommand = `mysqldump -h ${DB_HOST} -P ${process.env.DB_PORT || "3306"} -u ${DB_USER}`;
     if (DB_PASSWORD) {
         dumpCommand += ` -p${DB_PASSWORD}`;
     }
@@ -93,6 +93,63 @@ export const backupDatabase = () => {
         console.error('Error uploading to Google Drive:', uploadError);
         reject(uploadError);
       }
+    });
+  });
+};
+
+export const dailyLocalBackup = () => {
+  return new Promise((resolve, reject) => {
+    console.log('Starting daily local database backup...');
+    
+    const { DB_USER, DB_PASSWORD, DB_NAME, DB_HOST } = process.env;
+    if (!DB_USER || !DB_NAME || !DB_HOST) {
+      return reject(new Error('Missing database environment variables'));
+    }
+
+    const date = new Date();
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const fileName = `backup-${DB_NAME}-${dateString}.sql.gz`;
+    const backupDir = path.join(__dirname, '../backups/daily');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const filePath = path.join(backupDir, fileName);
+
+    // Dump and compress in one pipe
+    let dumpCommand = `mysqldump -h ${DB_HOST} -P ${process.env.DB_PORT || "3306"} -u ${DB_USER}`;
+    if (DB_PASSWORD) {
+        dumpCommand += ` -p${DB_PASSWORD}`;
+    }
+    dumpCommand += ` ${DB_NAME} | gzip > ${filePath}`;
+
+    console.log('Executing daily dump and compress...');
+    exec(dumpCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing daily backup: ${error.message}`);
+        return reject(error);
+      }
+
+      console.log(`Daily backup saved locally to ${filePath}`);
+
+      // Cleanup old daily backups (keep last 7 days)
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+      const now = Date.now();
+      fs.readdir(backupDir, (err, files) => {
+        if (err) {
+          console.warn('Could not read backup dir for cleanup:', err);
+        } else {
+          files.forEach(file => {
+            const fileFullPath = path.join(backupDir, file);
+            const stats = fs.statSync(fileFullPath);
+            if (now - stats.mtimeMs > maxAge) {
+              fs.unlinkSync(fileFullPath);
+              console.log(`Deleted old daily backup: ${file}`);
+            }
+          });
+        }
+      });
+
+      resolve(filePath);
     });
   });
 };

@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: KKPUS Ecosystem API
+  description: >
+    Dokumentasi resmi API KKPUS Ecosystem (Koperasi Syariah).
+    Mendukung operasional Core Auth, Manajemen Anggota (KYC), Simpanan & Tabungan Syariah,
+    Pembiayaan Syariah (LOS), Kasir/POS Jual Beli, Investasi Sukuk, Payment Gateway,
+    dan Laporan Keuangan/RAT.
+  version: 1.0.0
+  contact:
+    name: Tim Pengembang KKPUS
+    email: dev@kkpus.id
+    url: https://kkpus.id
+
+servers:
+  - url: https://api.kkpus.id
+    description: Production Server
+  - url: http://localhost:5000
+    description: Development / Local Server
+
+tags:
+  - name: Auth
+    description: Autentikasi anggota dan pengurus, registrasi, OTP, refresh token
+  - name: Anggota
+    description: Profil anggota, verifikasi berkas KYC, status keanggotaan
+  - name: Simpanan
+    description: Simpanan pokok, wajib, dan sukarela (Wadiah/Mudharabah)
+  - name: Tabungan
+    description: Tabungan program terencana dan autodebet
+  - name: Pembiayaan
+    description: Pengajuan pembiayaan syariah (Murabahah, Mudharabah, Ijarah, Qardh)
+  - name: Jual Beli
+    description: Kasir POS, katalog produk koperasi, checkout dan inventaris
+  - name: Investasi
+    description: Portofolio sukuk/investasi syariah, pembelian unit dan dividen
+  - name: Billing & Payment
+    description: Tagihan berkala, Midtrans Snap VA/QRIS, dan DOKU checkout
+  - name: Approvals
+    description: Antrean persetujuan berjenjang (multi-level committee)
+  - name: Dashboard & Laporan
+    description: Agregasi metrik eksekutif, akuntansi, dan RAT
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registrasi anggota baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - full_name
+                - phone_number
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                full_name:
+                  type: string
+                phone_number:
+                  type: string
+      responses:
+        '201':
+          description: Berhasil registrasi akun
+        '400':
+          description: Data input tidak valid / duplikasi identitas
+
+  /api/auth/accountLogin:
+    post:
+      tags:
+        - Auth
+      summary: Login akun anggota/pengurus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login berhasil, menghasilkan JWT token & cookie session
+        '401':
+          description: Email atau kata sandi tidak valid
+
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Ambil data identitas login saat ini
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Data user saat ini
+        '401':
+          description: Tidak terautentikasi
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout dan bersihkan sesi/token
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Berhasil logout
+
+  /api/anggota/profile:
+    get:
+      tags:
+        - Anggota
+      summary: Ambil profil dan status KYC anggota
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Detail profil anggota
+
+  /api/savings/request-withdrawal:
+    post:
+      tags:
+        - Simpanan
+      summary: Ajukan penarikan dana simpanan sukarela
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - category
+                - method
+              properties:
+                amount:
+                  type: number
+                  example: 100000
+                category:
+                  type: string
+                  example: SS_SUKARELA
+                method:
+                  type: string
+                  enum: [TRANSFER, TUNAI]
+                bank_name:
+                  type: string
+                bank_account_no:
+                  type: string
+      responses:
+        '200':
+          description: Pengajuan penarikan diterima dan masuk antrean approval
+
+  /api/savings/disburse/{withdrawal_id}:
+    post:
+      tags:
+        - Simpanan
+      summary: Eksekusi pencairan penarikan (Bendahara/Admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: withdrawal_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                manual:
+                  type: boolean
+                  example: true
+                transfer_proof_path:
+                  type: string
+      responses:
+        '200':
+          description: Pencairan berhasil dikonfirmasi
+
+  /api/financing/apply:
+    post:
+      tags:
+        - Pembiayaan
+      summary: Pengajuan pembiayaan syariah baru
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+                - amount_requested
+                - tenor_months
+              properties:
+                product_id:
+                  type: integer
+                amount_requested:
+                  type: number
+                tenor_months:
+                  type: integer
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Pengajuan pembiayaan berhasil dibuat
+
+  /api/jualbeli/checkout:
+    post:
+      tags:
+        - Jual Beli
+      summary: Checkout keranjang belanja produk / transaksi kasir POS
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                      quantity:
+                        type: integer
+      responses:
+        '200':
+          description: Transaksi berhasil diproses dan stok dikurangi
+
+  /api/dashboard/stats:
+    get:
+      tags:
+        - Dashboard & Laporan
+      summary: Ambil ringkasan indikator performa dan statistik keuangan harian
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Metrik keuangan harian, saldo total, NPL, dan antrean
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: token

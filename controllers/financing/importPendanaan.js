@@ -82,10 +82,11 @@ export const importPendanaan = async (req, res) => {
 
   } catch (error) {
     console.error("Import Pendanaan Error:", error);
+    // SECURITY: Log error internally, return generic message to client
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server saat import Pendanaan",
-      error: error.message
+      error: undefined
     });
   }
 };

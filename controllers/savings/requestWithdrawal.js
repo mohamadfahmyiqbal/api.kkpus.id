@@ -17,7 +17,8 @@ const requestWithdrawal = async (req, res) => {
     } = req.body;
 
     // Validasi input awal (Defensive programming)
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    const withdrawalAmount = parseFloat(amount);
+    if (!amount || isNaN(withdrawalAmount) || withdrawalAmount <= 0 || !Number.isFinite(withdrawalAmount)) {
         return res.status(400).json({
             status: false,
             message: "Nominal penarikan harus berupa angka lebih besar dari 0."
