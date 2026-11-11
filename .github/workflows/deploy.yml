@@ -1,4 +1,4 @@
-name: Deploy API to VPS
+name: Deploy API to Local Host
 
 on:
   push:
@@ -8,37 +8,39 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     
-    environment: 
-      name: VPS_HOST 
-
+    environment:
+      name: LOCAL_HOST
+    
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Set up SSH Key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Debug and Deploy to VPS
-      run: |
-        echo "Port: '${{ secrets.VPS_PORT }}'"
-        echo "Username: '${{ secrets.VPS_USERNAME }}'"
-        echo "Host: '${{ secrets.VPS_HOST }}'"
+      - name: Checkout Code
+        uses: actions/checkout@v4
         
-        ssh -p "${{ secrets.VPS_PORT }}" -o StrictHostKeyChecking=no "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm ci --production
+      
+    - name: Debug and Deploy Locally
+      run: |
+        echo "Port: '3445'"
+        echo "Username: 'admin'"
+        echo "Host: 'localhost'"
+        
+        ssh -p 3445 -o StrictHostKeyChecking=no admin@localhost << 'EOF'
           # Load NVM and user profile paths
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$HOME/.profile" ] && \. "$HOME/.profile"
-          [ -s "$HOME/.bashrc" ] && \. "$HOME/.bashrc"
           export PATH="$PATH:/usr/local/bin:$HOME/.npm-global/bin"
-
-          cd /var/www/api.kkpus.id
+          
+          cd /d/kkpus/api.kkpus.id
           git fetch origin master
           git reset --hard origin/master
           npm install --production
-
+          
           # Restart PM2 using direct command or npx fallback
           if command -v pm2 &> /dev/null; then
             pm2 reload app || pm2 restart app
