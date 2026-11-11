@@ -89,7 +89,7 @@ describe("Auth Module Tests", () => {
 
     const res = await request(app)
       .post("/api/auth/logout")
-      .set("Authorization", `Bearer ${token}")
+      .set("Authorization", `Bearer ${token}`)
       .expect(200);
 
     expect(res.body.success).toBe(true);

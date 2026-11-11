@@ -40,12 +40,6 @@
       ]
     }
   },
-  "eslintIgnore": [
-    "node_modules/",
-    "dist/",
-    "build/",
-    "uploads/"
-  ],
   "prettier": {
     "trailingComma": "es5",
     "tabWidth": 2,

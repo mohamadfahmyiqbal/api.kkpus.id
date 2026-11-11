@@ -7,9 +7,10 @@ id_deploy.pub
 *.pem
 *.key
 *.crt
+config/certs/
+credentials/
 uploads/
 backups/
-credentials/
 socket.log
 *.log
 coverage/
