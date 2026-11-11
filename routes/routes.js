@@ -1,3 +1,4 @@
+// routes/routes.js
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -25,6 +26,7 @@ import dashboardRoute from "./dashboardRoute.js";
 import trainingRoute from "./trainingRoute.js";
 import landingRoute from "./landingRoute.js";
 import tabunganRoute from "./tabunganRoute.js";
+import healthRoute from "./healthRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,8 +66,10 @@ router.use("/api/training", trainingRoute);
 router.use("/api/landing", landingRoute);
 router.use("/api/tabungan", tabunganRoute);
 
+// Health check endpoint (without API prefix)
+router.use("/health", healthRoute);
+
 // Direct alias for push notification subscribe
 router.use("/push", pushRoutes);
 
 export default router;
-

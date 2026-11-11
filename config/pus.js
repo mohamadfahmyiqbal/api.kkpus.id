@@ -14,14 +14,14 @@ const sequelizeOptions = {
     idle: 30000,
   },
 
+  // SQLite doesn't support timezone configuration
+  // Only set timezone for MySQL
   dialectOptions: {
     dateStrings: true,
     typeCast: true,
-    timezone: "+07:00",
     connectTimeout: 10000,
   },
 
-  timezone: "+07:00",
   logging: process.env.NODE_ENV === "development" ? console.log : false,
   retry: {
     max: 3,
@@ -29,15 +29,16 @@ const sequelizeOptions = {
   },
 };
 
-// Add MySQL-specific options
+// MySQL specific options
 if (dialect === "mysql") {
   sequelizeOptions.host = process.env.DB_HOST;
   sequelizeOptions.port = parseInt(process.env.DB_PORT || "3306", 10);
+  sequelizeOptions.timezone = "+07:00";
 }
 
-// Add SQLite-specific options
+// SQLite specific options
 if (dialect === "sqlite") {
-  sequelizeOptions.storage = process.env.DB_STORAGE || ":memory:";
+  sequelizeOptions.storage = process.env.DB_STORAGE || "./database/local-dev.sqlite";
 }
 
 const pus = new Sequelize(
