@@ -351,6 +351,8 @@ setInterval(() => {
     console.warn(
       `🚨 [ALERT] High Memory Warning: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap Used=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
     );
+    // Tambahkan alert ke monitoring system (contoh: external service)
+    // alertService.logHighMemoryUsage(memUsage);
   }
 
   // Auto restart jika heap used > 512MB

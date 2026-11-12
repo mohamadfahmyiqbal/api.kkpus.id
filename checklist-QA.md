@@ -7,10 +7,10 @@
 ## 🔴 Blocker – Kritis (Selesaikan Segera)
 
 ### 1. Hapus/kunci kriptografi dari git
-- [x] **Private key** di `credentials/private_key.pem:1` → TIDAK DITEMUKAN, perlu mencari di tempat lain
-- [x] **SSL keys/certs** di `config/certs/production/{kkpusid.key, kkpus_id.crt, ca.crt}` → Hapus dari git, simpan di AWS Secrets Manager/Vault
-- [x] **Google service account credentials** di `credentials/google-credentials.json:1` → Hapus dari git
-- [ ] `.env.backup:5` (berisi DB_PASSWORD) → TIDAK DITEMUKAN, perlu mencari
+- [x] **Private key** di `credentials/private_key.pem:1` → Dibuat dummy/template di `credentials/private_key.pem`, diabaikan dari git tracking (.gitignore)
+- [x] **SSL keys/certs** di `config/certs/production/{kkpusid.key, kkpus_id.crt, ca.crt}` → Tidak lagi tertrack di git repo (dikonfirmasi lewat `git ls-files`)
+- [x] **Google service account credentials** di `credentials/google-credentials.json:1` → Hapus dari git / sudah tidak tertrack
+- [x] `.env.backup:5` (berisi DB_PASSWORD) → Tidak ditemukan di repository atau commit history terkini
 
 ### 2. Ganti JWT_SECRET & DB_PASSWORD di `.env` dan `.env.example`
 - [x] Ganti placeholder `JWT_SECRET=CHANGE_ME_MINIMUM_32_CHARACTERS` dengan varian dari secrets manager
@@ -23,8 +23,8 @@
 - [ ] Perbaiki 14 kerentanan (lodash, tar, tmp, validator, …)
 
 ### 5. Hapus file kredensial dari `credentials/` dan `backups/`
-- [ ] Hapus `google-credentials.json` dari `credentials/`
-- [ ] Cari dan hapus file `.env.backup` jika ditemukan
+- [x] Hapus `google-credentials.json` dari `credentials/`
+- [x] Cari dan hapus file `.env.backup` jika ditemukan
 
 ---
 

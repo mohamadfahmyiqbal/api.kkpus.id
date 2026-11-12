@@ -6,7 +6,7 @@ async function testDBConnection() {
     const sequelize = new Sequelize(
       process.env.DB_NAME || 'koperasi',
       process.env.DB_USER || 'admin',
-      process.env.DB_PASSWORD || 'qwerty123!!',
+      process.env.DB_PASSWORD,
       {
         host: process.env.DB_HOST || '202.52.147.193',
         port: parseInt(process.env.DB_PORT || '3306'),
