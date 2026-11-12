@@ -116,8 +116,7 @@ export const verifyApprovalChain = (entityRef) => async (req, res, next) => {
     console.error("Verify Approval Chain Error:", error.message);
     return res.status(500).json({ 
       success: false, 
-      message: "Internal server error",
-      details: error.message 
+      message: "Terjadi kesalahan server internal.",
     });
   }
 };

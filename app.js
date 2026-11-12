@@ -348,14 +348,14 @@ startServer();
 setInterval(() => {
   const memUsage = process.memoryUsage();
   if (memUsage.heapUsed > 256 * 1024 * 1024) {
-    console.log(
-      `📊 High Memory Warning: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap Used=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+    console.warn(
+      `🚨 [ALERT] High Memory Warning: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap Used=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
     );
   }
 
   // Auto restart jika heap used > 512MB
   if (memUsage.heapUsed > 512 * 1024 * 1024) {
-    console.warn("🚨 Memory usage too high, shutting down gracefully...");
+    console.error("🚨 [CRITICAL ALERT] Memory usage too high, shutting down gracefully...");
     shutdown("SIGTERM");
   }
 }, 60000);

@@ -156,7 +156,7 @@ export const registerAccount = async (req, res) => {
         nik_ktp: nik_ktp,
         gender: gender || null,
         address: address || null,
-        date_of_brith: date_of_birth || null,
+        date_of_birth: date_of_birth || null,
         province_id: province_id || null,
         city_id: city_id || null,
         district_id: district_id || null,

@@ -68,7 +68,9 @@ export const MidAnggota = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, getJwtSecret());
+    const decoded = jwt.verify(token, getJwtSecret(), {
+      algorithms: ["HS512", "HS256"],
+    });
 
     if (!decoded.member_id) {
       return res.status(403).json({

@@ -50,6 +50,28 @@ export const loginLimiter = rateLimit({
 });
 
 /**
+ * Stricter rate limiter for upload attempts
+ */
+export const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { ...standardMessage, message: 'Terlalu banyak percobaan upload yang gagal. Silakan coba lagi setelah 15 menit.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Stricter rate limiter for payment attempts
+ */
+export const paymentLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: { ...standardMessage, message: 'Terlalu banyak percobaan pembayaran yang gagal. Silakan coba lagi setelah 5 menit.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * OTP-specific rate limiter
  */
 export const otpLimiter = rateLimit({
@@ -65,6 +87,24 @@ export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: passwordResetMax,
   message: { ...standardMessage, message: 'Terlalu banyak percobaan reset password, silakan coba 1 jam lagi.' },
+});
+
+/**
+ * Upload-specific rate limiter
+ */
+export const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { ...standardMessage, message: 'Terlalu banyak permintaan upload file, silakan coba lagi setelah 15 menit.' },
+});
+
+/**
+ * Payment-specific rate limiter
+ */
+export const paymentLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: { ...standardMessage, message: 'Terlalu banyak permintaan pembayaran, silakan coba lagi setelah 5 menit.' },
 });
 
 /**

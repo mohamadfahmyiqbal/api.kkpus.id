@@ -26,7 +26,7 @@ jobs:
       - name: Deploy to VPS
         env:
           VPS_USER: kkpusid
-          VPS_PASS: qwerty123!!
+          VPS_PASS: ${VPS_PASS}
           VPS_PORT: 2222
         run: |
           echo "Port: $VPS_PORT"
