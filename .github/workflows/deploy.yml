@@ -31,7 +31,7 @@ jobs:
           DB_PORT: 3306
           DB_NAME: koperasi
           DB_USER: kkpusid
-          DB_PASSWORD: qwerty123!!
+          DB_PASSWORD: 'qwerty123!!'
           JWT_SECRET: "test_jwt_secret_key_minimum_32_characters_long"
         run: npm run test:ci
 
@@ -67,7 +67,4 @@ jobs:
           echo "Host: kkpus.id"
 
           # SSH connection script
-          cat <<'SSHEOF' | ssh -p $VPS_PORT -i ~/.ssh/id_rsa kkpus.id@kkpus.id
-            echo "Connected to VPS"
-            # VPS deployment commands would go here
-SSHEOF
+          ssh -p $VPS_PORT -i ~/.ssh/id_rsa kkpus.id@kkpus.id 'echo "Connected to VPS"'
