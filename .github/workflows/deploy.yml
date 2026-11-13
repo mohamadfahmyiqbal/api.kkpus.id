@@ -23,15 +23,29 @@ jobs:
       - name: Lint & Fix
         run: npm run lint:fix
 
+      - name: Start MySQL
+        run: |
+          sudo systemctl start mysql
+          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root_password'; FLUSH PRIVILEGES;"
+
+      - name: Create test database
+        run: |
+          sudo mysql -uroot -proot_password -e "
+          CREATE DATABASE IF NOT EXISTS koperasi;
+          CREATE USER IF NOT EXISTS 'kkpusid'@'localhost' IDENTIFIED BY 'test_password';
+          GRANT ALL PRIVILEGES ON koperasi.* TO 'kkpusid'@'localhost';
+          FLUSH PRIVILEGES;
+          "
+
       - name: Test CI
         env:
           NODE_ENV: test
           DB_DIALECT: mysql
-          DB_HOST: kkpus.id
+          DB_HOST: localhost
           DB_PORT: 3306
           DB_NAME: koperasi
           DB_USER: kkpusid
-          DB_PASSWORD: 'qwerty123!!'
+          DB_PASSWORD: test_password
           JWT_SECRET: "test_jwt_secret_key_minimum_32_characters_long"
         run: npm run test:ci
 
