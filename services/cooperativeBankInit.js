@@ -1,7 +1,12 @@
 /**
  * Inisialisasi tabel dan mock data rekening koperasi untuk pembayaran manual
+ * Dilancar hanya di production (MySQL). Di test dengan SQLite, dilewati.
  */
 const widenPaymentFeePercentage = async (db) => {
+  // MySQL-specific syntax; SQLite tidak mendukung SHOW COLUMNS / ALTER TABLE seperti ini
+  if (process.env.DB_DIALECT === "sqlite") {
+    return;
+  }
   if (!db.PaymentFeeConfig) return;
   const [columns] = await db.sequelize.query("SHOW COLUMNS FROM `payment_fee_configs` LIKE 'percentage_fee'");
   const columnType = String(columns?.[0]?.Type || "").toLowerCase();
@@ -14,6 +19,13 @@ const widenPaymentFeePercentage = async (db) => {
 };
 
 export const initCooperativeBanks = async (db) => {
+  // Skip entirely in test environment with SQLite in-memory
+  // These operations are MySQL-specific and tables may not exist yet in test env
+  if (process.env.NODE_ENV === "test" && process.env.DB_DIALECT === "sqlite") {
+    console.log("⚠️ Skip initCooperativeBanks: test environment with SQLite dialect");
+    return;
+  }
+
   try {
     try {
       await widenPaymentFeePercentage(db);

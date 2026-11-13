@@ -12,6 +12,10 @@ db.Sequelize = Sequelize;
 initModels(db, sequelizeInstance, Sequelize.DataTypes);
 defineAssociations(db);
 
+// Sync all tables in the database (required for SQLite in-memory tests)
+// This creates all model tables (Member, UserRole, CooperativeBankAccount, etc.)
+db.sequelize.sync({ force: true });
+
 // Otomatis sinkronisasi tabel rekening koperasi & buat mock data saat inisialisasi DB
 initCooperativeBanks(db);
 
