@@ -33,14 +33,23 @@ describe("Members Module Test", () => {
   it("POST /anggota - creates new member", async () => {
     const newMember = {
       email: "newmember@example.com",
-      phoneNumber: "081234567890",
-      fullName: "New Member",
-      nikKtp: "1234567890123456",
+      phone_number: "081234567890",
+      full_name: "New Member",
+      nik_ktp: "1234567890123456",
       address: "Test Address",
-      memberType: "REGULER",
+      member_type: "REGULER",
       gender: "L",
-      dateOfBirth: "1990-01-01",
-      joinDate: "2024-01-01",
+      date_of_birth: "1990-01-01",
+      join_date: "2024-01-01",
+      province_id: "11",
+      city_id: "1107",
+      district_id: "1107-01",
+      subdistrict_id: "1107-01-001",
+      nama_usaha: "Test Business",
+      jenis_usaha: "Retail",
+      lama_usaha: "5",
+      omzet: "50000000",
+      password: "adminPassword123",
     };
 
     const res = await request(app)
@@ -57,8 +66,8 @@ describe("Members Module Test", () => {
     const password = "adminPassword123";
 
     const res = await request(app)
-      .delete(`/api/anggota/${memberId}`)
-      .send({ password })
+      .delete(`/api/anggota/${memberId}")
+      .send({ password }")
       .expect(200);
 
     expect(res.body.success).toBe(true);

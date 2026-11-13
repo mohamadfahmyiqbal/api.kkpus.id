@@ -15,15 +15,28 @@ beforeEach(() => {
 describe("Auth Module Tests", () => {
   it("register - valid credentials returns token", async () => {
     const req = {
+      full_name: "Test User",
       email: "test@example.com",
       password: "secure123",
-      phoneNumber: "081234567890",
-      fullName: "Test User",
+      phone_number: "081234567890",
+      nik_ktp: "1234567890123456",
+      gender: "L",
+      address: "Test Address",
+      date_of_birth: "1990-01-01",
+      join_date: "2024-01-01",
+      province_id: "11",
+      city_id: "1107",
+      district_id: "1107-01",
+      subdistrict_id: "1107-01-001",
+      nama_usaha: "Test Business",
+      jenis_usaha: "Retail",
+      lama_usaha: "5",
+      omzet: "50000000",
     };
     const res = await request(app)
       .post("/api/auth/register")
       .send(req)
-      .expect(200);
+      .expect(201);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty("token");
@@ -37,7 +50,7 @@ describe("Auth Module Tests", () => {
     };
 
     const res = await request(app)
-      .post("/api/auth/login")
+      .post("/api/auth/accountLogin")
       .send(credentials)
       .expect(200);
 
@@ -52,7 +65,7 @@ describe("Auth Module Tests", () => {
     };
 
     const res = await request(app)
-      .post("/api/auth/login")
+      .post("/api/auth/accountLogin")
       .send(credentials)
       .expect(401);
 
