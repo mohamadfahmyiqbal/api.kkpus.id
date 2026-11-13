@@ -1,8 +1,8 @@
 import { Sequelize } from "sequelize";
 
 // Detect dialect from environment (mysql or sqlite)
-// Default to sqlite for test compatibility (override by env var in production)
-const dialect = process.env.DB_DIALECT || (process.env.NODE_ENV === "production" ? "mysql" : "sqlite");
+// Default to mysql for production compatibility
+const dialect = process.env.DB_DIALECT || "mysql";
 
 const sequelizeOptions = {
   dialect: dialect,

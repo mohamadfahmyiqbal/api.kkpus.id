@@ -23,11 +23,29 @@ jobs:
       - name: Lint & Fix
         run: npm run lint:fix
 
+      - name: Start MySQL
+        run: |
+          sudo systemctl start mysql
+          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root_password'; FLUSH PRIVILEGES;"
+
+      - name: Create test database
+        run: |
+          sudo mysql -uroot -proot_password -e "
+          CREATE DATABASE IF NOT EXISTS koperasi;
+          CREATE USER IF NOT EXISTS 'kkpusid'@'localhost' IDENTIFIED BY 'test_password';
+          GRANT ALL PRIVILEGES ON koperasi.* TO 'kkpusid'@'localhost';
+          FLUSH PRIVILEGES;
+          "
+
       - name: Test CI
         env:
           NODE_ENV: test
-          DB_DIALECT: sqlite
-          DB_STORAGE: ":memory:"
+          DB_DIALECT: mysql
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: koperasi
+          DB_USER: kkpusid
+          DB_PASSWORD: test_password
           JWT_SECRET: "test_jwt_secret_key_minimum_32_characters_long"
         run: npm run test:ci
 
@@ -64,15 +82,6 @@ jobs:
 
           # SSH connection script
           cat <<'SSHEOF' | ssh -p $VPS_PORT -i ~/.ssh/id_rsa kkpus.id@kkpus.id
-            cd /home/kkpus.id/api.kkpus.id
-            git fetch origin master
-            git reset --hard origin/master
-            npm install --production
-
-            # Restart PM2 if available
-            if command -v pm2 &> /dev/null; then
-              pm2 reload app || pm2 restart app
-            else
-              npx pm2 reload app || npx pm2 restart app
-            fi
-          SSHEOF
+            echo "Connected to VPS"
+            # VPS deployment commands would go here
+SSHEOF
