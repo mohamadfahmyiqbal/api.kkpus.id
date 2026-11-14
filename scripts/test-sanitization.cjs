@@ -27,8 +27,8 @@ async function testSanitization() {
     password_hash: 'hashed_value',
     phone: '+1987654321',
     member_no: 'M123456',
-    credit_card: '4111-1111-1111-1111',
-    api_key: 'sk_test_1234567890abcdef',
+    credit_card: '4111-XXXX-XXXX-1111',
+    api_key: 'dummy_sanitization_test_key',
     normal_field: 'public info',
     nested_object: {
       sensitive_field: 'sensitive_value',
@@ -44,7 +44,7 @@ async function testSanitization() {
   // Test 3: Array sanitization
   console.log('3. Testing array sanitization:');
   const products = [
-    { product_name: 'Product 1', price: 100, credit_card: '4111-1111-1111-1111' },
+    { product_name: 'Product 1', price: 100, credit_card: '4111-XXXX-XXXX-1111' },
     { product_name: 'Product 2', price: 200, password: 'secret' }
   ];
 
