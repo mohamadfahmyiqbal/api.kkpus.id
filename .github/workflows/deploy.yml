@@ -56,26 +56,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install production dependencies
-        run: npm ci --production
-
       - name: Deploy to VPS
         env:
-          VPS_USER: kkpusid
+          VPS_USER: ${{ secrets.VPS_USER || 'kkpusid' }}
+          VPS_HOST: ${{ secrets.VPS_HOST || 'kkpus.id' }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
           VPS_PORT: 2222
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           echo "Port: $VPS_PORT"
-          echo "Username: $VPS_USER"
-          echo "Host: kkpus.id"
+          echo "Host: $VPS_HOST"
 
-          # SSH connection script
-          ssh -p $VPS_PORT -i ~/.ssh/id_rsa kkpus.id@kkpus.id 'echo "Connected to VPS"'
+          mkdir -p ~/.ssh
+          ssh-keyscan -p $VPS_PORT $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          DEPLOY_SCRIPT="
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
+            [ -s \"\$HOME/.profile\" ] && \. \"\$HOME/.profile\"
+            [ -s \"\$HOME/.bashrc\" ] && \. \"\$HOME/.bashrc\"
+            export PATH=\"\$PATH:/usr/local/bin:\$HOME/.npm-global/bin\"
+
+            DEPLOY_DIR=\"\"
+            if [ -d \"/var/www/api.kkpus.id\" ]; then
+              DEPLOY_DIR=\"/var/www/api.kkpus.id\"
+            elif [ -d \"/home/kkpus.id/api.kkpus.id\" ]; then
+              DEPLOY_DIR=\"/home/kkpus.id/api.kkpus.id\"
+            else
+              DEPLOY_DIR=\"/var/www/api.kkpus.id\"
+            fi
+
+            cd \"\$DEPLOY_DIR\"
+            git fetch origin master
+            git reset --hard origin/master
+            npm install --production
+
+            if command -v pm2 &> /dev/null; then
+              pm2 reload app || pm2 restart app
+            else
+              npx pm2 reload app || npx pm2 restart app
+            fi
+          "
+
+          if [ -n "$VPS_SSH_KEY" ]; then
+            echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh -p $VPS_PORT -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $VPS_USER@$VPS_HOST "$DEPLOY_SCRIPT"
+          elif [ -n "$VPS_PASS" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+            sshpass -p "$VPS_PASS" ssh -p $VPS_PORT -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "$DEPLOY_SCRIPT"
+          else
+            echo "Error: Neither SSH key nor VPS_PASS available for deployment."
+            exit 1
+          fi
