@@ -10,7 +10,13 @@ export const ensureTestSchema = async () => {
 
   schemaPromise = (async () => {
     // Sync all defined Sequelize models if tables are missing (e.g. fresh DB container in CI)
-    await db.sequelize.sync();
+    try {
+      await db.sequelize.sync();
+    } catch (syncErr) {
+      if (!syncErr.message?.includes("Duplicate key name")) {
+        throw syncErr;
+      }
+    }
 
     // Ensure default roles exist
     if (db.UserRole) {
