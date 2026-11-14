@@ -143,6 +143,16 @@ export const registerAccount = async (req, res) => {
     // --- 7. Transaksi Database ---
     transaction = await sequelize.transaction();
 
+    // Pastikan status_id valid (ambil status AKTIF jika status_id default numeric)
+    let initialStatusId = req.body.status_id;
+    if (!initialStatusId && db.MemberStatus) {
+      const activeStatus = await db.MemberStatus.findOne({
+        where: { status_name: "AKTIF" },
+        transaction,
+      });
+      initialStatusId = activeStatus ? activeStatus.status_id : null;
+    }
+
     const newMember = await Member.create(
       {
         full_name: full_name.trim(),
@@ -152,7 +162,7 @@ export const registerAccount = async (req, res) => {
         member_no: memberNo,
         join_date: new Date(),
         member_type: "Calon Anggota",
-        status_id: 1,
+        status_id: initialStatusId,
         nik_ktp: nik_ktp,
         gender: gender || null,
         address: address || null,

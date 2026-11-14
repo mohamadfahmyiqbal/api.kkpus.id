@@ -58,15 +58,15 @@ export default function GeneralTransaction(sequelize, Sequelize) {
       updatedAt: "updated_at",
       indexes: [
         {
-          fields: ["member_id"],
-        },
-        {
+          name: "idx_gt_tx_type",
           fields: ["transaction_type"],
         },
         {
+          name: "idx_gt_status",
           fields: ["status"],
         },
         {
+          name: "idx_gt_created_at",
           fields: ["created_at"],
         },
       ],
