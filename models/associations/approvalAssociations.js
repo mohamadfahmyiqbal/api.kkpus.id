@@ -7,6 +7,8 @@ export default function defineApprovalAssociations(db) {
   });
   db.MemberRegistration.belongsTo(db.MemberStatus, {
     foreignKey: "member_type",
+    targetKey: "status_name",
+    constraints: false,
     as: "memberTypeDetail",
   });
   db.MemberRegistration.belongsTo(db.ApprovalStep, {
