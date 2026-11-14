@@ -85,9 +85,14 @@ export const getAllMembers = async (req, res) => {
       order: [['join_date', 'DESC']]
     });
 
-    // Apply HIPAA-compliant data masking for sensitive fields
+    // Apply HIPAA-compliant data masking for sensitive fields (email unmasked for admin view)
     const maskedMembers = rows.map(member => {
       const maskedMember = maskMemberData(member, true);
+
+      // Restore full email for admin operational view
+      if (member.email) {
+        maskedMember.email = member.email;
+      }
 
       // Mask additional sensitive fields not covered by maskMemberData
       if (member.nik_ktp) {

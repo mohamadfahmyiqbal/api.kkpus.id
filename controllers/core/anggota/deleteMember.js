@@ -45,7 +45,7 @@ export const deleteMember = async (req, res) => {
   if (!password) {
     return res.status(400).json({
       success: false,
-      message: "Password administrator wajib diisi untuk konfirmasi penghapusan data.",
+      message: "Password wajib diisi untuk konfirmasi penghapusan data.",
     });
   }
 
@@ -58,7 +58,7 @@ export const deleteMember = async (req, res) => {
       } else {
         return res.status(401).json({
           success: false,
-          message: "Akun administrator tidak valid atau tidak ditemukan.",
+          message: "Akun pengurus tidak valid atau tidak ditemukan.",
         });
       }
     } else {
@@ -66,7 +66,7 @@ export const deleteMember = async (req, res) => {
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: "Password administrator salah. Penghapusan anggota dibatalkan.",
+          message: "Password salah. Penghapusan anggota dibatalkan.",
         });
       }
     }
@@ -161,7 +161,7 @@ export const deleteBatchMembers = async (req, res) => {
   if (!password) {
     return res.status(400).json({
       success: false,
-      message: "Password administrator wajib diisi untuk konfirmasi penghapusan massal.",
+      message: "Password wajib diisi untuk konfirmasi penghapusan massal.",
     });
   }
 
@@ -174,7 +174,7 @@ export const deleteBatchMembers = async (req, res) => {
       } else {
         return res.status(401).json({
           success: false,
-          message: "Akun administrator tidak valid atau tidak ditemukan.",
+          message: "Akun pengurus tidak valid atau tidak ditemukan.",
         });
       }
     } else {
@@ -182,7 +182,7 @@ export const deleteBatchMembers = async (req, res) => {
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: "Password administrator salah. Penghapusan massal dibatalkan.",
+          message: "Password salah. Penghapusan massal dibatalkan.",
         });
       }
     }

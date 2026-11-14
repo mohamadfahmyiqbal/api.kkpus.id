@@ -22,8 +22,9 @@ import MidRole from "../middleware/MidRole.js";
 const router = express.Router();
 const upload = multer();
 
-const BACKOFFICE_ROLES = ["Admin", "Super Admin", "Ketua", "Bendahara", "Pengawas", "admin"];
-const ADMIN_MANAGE_ROLES = ["Admin", "Super Admin", "Ketua", "admin"];
+const BACKOFFICE_ROLES = ["Ketua", "Pengawas", "Bendahara"];
+const ADMIN_MANAGE_ROLES = ["Ketua", "Pengawas", "Bendahara"];
+const DELETE_MEMBER_ROLES = ["Ketua", "Pengawas", "Bendahara"];
 
 router.get("/profil", MidAnggota, getAnggotaProfile);
 router.put("/profil", MidAnggota, updateAnggotaProfile);
@@ -39,8 +40,8 @@ router.get("/template-import", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), download
 router.post("/import", MidAnggota, upload.single("file"), MidRole(ADMIN_MANAGE_ROLES), importAnggota);
 router.put("/:member_id/role", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), updateRole);
 router.get("/roles", MidAnggota, MidRole(BACKOFFICE_ROLES), getRoles);
-router.post("/batch-delete", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteBatchMembers);
+router.post("/batch-delete", MidAnggota, MidRole(DELETE_MEMBER_ROLES), deleteBatchMembers);
 router.post("/data-lifecycle/clean", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), runDataLifecycleClean);
-router.delete("/:member_id", MidAnggota, MidRole(ADMIN_MANAGE_ROLES), deleteMember);
+router.delete("/:member_id", MidAnggota, MidRole(DELETE_MEMBER_ROLES), deleteMember);
 
 export default router;
