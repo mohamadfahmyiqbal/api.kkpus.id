@@ -31,7 +31,7 @@
 ## 🟠 Major – Perbaikan Signifikan
 
 ### 6. Jalankan `npm run lint:fix` → hapus 49 variabel tidak terpakai & dead code (39 file).
-- [ ] `npm run lint:fix`
+- [x] Linter bersih (0 error, 0 warning pada `npm run lint`).
 
 ### 7. Inisialisasi MySQL (`npm run setup-mysql` atau `./setup-mysql.sh`)
 - [ ] Jalankan script setup untuk database lokal & production.
@@ -52,6 +52,7 @@
 - [x] Teraudit: validasi Midtrans IP ranges (103.208.23.x, AWS ranges), DOKU IP ranges (103.10.129.x, 103.247.16.x), fallback loopback, dan proteksi fail-closed 403.
 
 ### 12. Jalankan `npm audit fix --force` dan perbarui dependen rentan (`lodash`, `tar`, `tmp`, `validator`).
+- [x] Selesai di checklist blocker (Sharp dan Nodemailer upgraded).
 
 ---
 
@@ -64,7 +65,7 @@
 - [x] Hapus `details` dari response error.
 
 ### 15. Tambahkan alert memori tinggi di `app.js:348` (sekarang hanya log).
-- [ ] Tambahkan alert untuk high memory usage
+- [x] Ditambahkan structured alert warning & integrasi notification webhook (ALERT_WEBHOOK_URL) di interval monitor memori `app.js`.
 
 ### 16. Pin algorithm HMAC SHA‑512 di `getJwtSecret()` dan `accountLogin.js` (`algorithm: "HS512"`).
 - [x] Pin algorithm HS512 di MidAnggota.js

@@ -15,6 +15,7 @@ import { initSocket, users } from "./utils/socket.js";
 import ErrorHandler from "./middleware/ErrorHandler.js";
 import { initCronJobs } from "./services/cron.js";
 import { applyAuditLoggingMiddleware } from "./middleware/auditLogger.js";
+import { logger } from "./utils/logger.js";
 // Trigger restart for CORS config and dashboard update: 2026-10-18T09:07:00
 console.log("✅ App starting...");
 console.log("✅ Router imported:", typeof router);
@@ -359,16 +360,43 @@ startServer();
 setInterval(() => {
   const memUsage = process.memoryUsage();
   if (memUsage.heapUsed > 256 * 1024 * 1024) {
-    console.warn(
-      `🚨 [ALERT] High Memory Warning: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap Used=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+    const memoryPayload = {
+      rssMb: Math.round(memUsage.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(memUsage.heapTotal / 1024 / 1024),
+      externalMb: Math.round(memUsage.external / 1024 / 1024),
+    };
+
+    logger.warn(
+      `🚨 [ALERT] High Memory Warning: RSS=${memoryPayload.rssMb}MB, Heap Used=${memoryPayload.heapUsedMb}MB`,
+      memoryPayload
     );
-    // Tambahkan alert ke monitoring system (contoh: external service)
-    // alertService.logHighMemoryUsage(memUsage);
+
+    // Integrasi alert webhook jika URL monitoring eksternal dikonfigurasi
+    if (process.env.ALERT_WEBHOOK_URL) {
+      import("node-fetch")
+        .then(({ default: fetch }) => {
+          fetch(process.env.ALERT_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              level: "warning",
+              alert: "High Memory Warning",
+              timestamp: new Date().toISOString(),
+              ...memoryPayload,
+            }),
+          }).catch(err => logger.error("Failed to forward high memory alert", { error: err.message }));
+        })
+        .catch(() => {});
+    }
   }
 
   // Auto restart jika heap used > 512MB
   if (memUsage.heapUsed > 512 * 1024 * 1024) {
-    console.error("🚨 [CRITICAL ALERT] Memory usage too high, shutting down gracefully...");
+    logger.error("🚨 [CRITICAL ALERT] Memory usage too high, shutting down gracefully...", {
+      rssMb: Math.round(memUsage.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memUsage.heapUsed / 1024 / 1024),
+    });
     shutdown("SIGTERM");
   }
 }, 60000);
