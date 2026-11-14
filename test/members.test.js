@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import request from "supertest";
 import express from "express";
 import anggotaRoute from "../routes/anggotaRoute.js";
@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import db from "../models/index.js";
 import crypto from "crypto";
+import { ensureTestSchema } from "./setupDb.js";
 
 dotenv.config();
 
@@ -22,6 +23,10 @@ app.use("/api/anggota", (req, res, next) => {
   next();
 });
 app.use("/api/anggota", anggotaRoute);
+
+beforeAll(async () => {
+  await ensureTestSchema();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

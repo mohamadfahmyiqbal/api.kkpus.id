@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import request from "supertest";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -6,6 +6,7 @@ import authRoute from "../routes/authRoute.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { ensureTestSchema } from "./setupDb.js";
 
 dotenv.config();
 
@@ -26,6 +27,10 @@ vi.mock("../utils/tokenBlacklist", () => ({
   blacklistToken: vi.fn(),
   isTokenBlacklisted: vi.fn(() => false),
 }));
+
+beforeAll(async () => {
+  await ensureTestSchema();
+});
 
 beforeEach(async () => {
   vi.clearAllMocks();
