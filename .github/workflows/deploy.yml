@@ -78,7 +78,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             [ -s "$HOME/.profile" ] && \. "$HOME/.profile"
             [ -s "$HOME/.bashrc" ] && \. "$HOME/.bashrc"
-            export PATH="$PATH:/usr/local/bin:$HOME/.npm-global/bin"
+            export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/usr/local/bin:$PATH"
 
             DEPLOY_DIR=""
             if [ -d "/var/www/api.kkpus.id" ]; then
