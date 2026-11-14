@@ -1,4 +1,4 @@
-// 📁 models/billing/login_attempts.js
+// models/billing/login_attempts.js
 
 import { Sequelize } from "sequelize";
 
@@ -49,11 +49,10 @@ const LoginAttempt = (sequelize) => {
     tableName: "login_attempts",
     timestamps: false,
     indexes: [
-      { fields: ["email_or_phone"] },
-      { fields: ["ip_address"] },
-      { fields: ["created_at"] },
-      { fields: ["success"] },
-      { fields: ["member_id"] },
+      { name: "login_attempts_email_or_phone", fields: ["email_or_phone"] },
+      { name: "login_attempts_ip_address", fields: ["ip_address"] },
+      { name: "login_attempts_created_at", fields: ["created_at"] },
+      { name: "login_attempts_success", fields: ["success"] },
     ],
   });
 
