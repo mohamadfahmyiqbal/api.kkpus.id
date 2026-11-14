@@ -37,18 +37,19 @@
 - [ ] Jalankan script setup untuk database lokal & production.
 
 ### 8. Jalankan semua test (`npx vitest run` / `npm run test:ci`).
-- [ ] Perbaiki 6 test gagal:
-  - 5 di `members.test.js` (koneksi DB → ECONNREFUSED)
-  - 1 di `auth.test.js` (syntax error baris 113)
+- [ ] Perbaiki test gagal:
+  - 5 di `members.test.js` (membutuhkan koneksi DB MySQL aktif)
+  - [x] `auth.test.js` (lulus: 4/4 passing)
 
 ### 9. Sesuaikan rate limiting untuk auth endpoints
-- [ ] `authMax = 10`, `loginMax = 10` terlalu ketat. Atasadanya false positive.
+- [x] Relaksasi default `authMax = 30`, `loginMax = 15` di `rateLimitMiddleware.js` untuk cegah false positive.
 
 ### 10. Tambahkan rate limiting untuk:
-- [ ] Upload file (`middleware/uploadPaymentProof.js`)
-- [ ] Endpoint pembayaran (`controllers/billing/createMidtransTransaction.js`)
+- [x] Upload file (`middleware/uploadPaymentProof.js` via `uploadLimiter` di `billingRoute.js:44`)
+- [x] Endpoint pembayaran (`/process-payment`, `/create-voluntary-bill`, `/create-deposit` via `paymentLimiter` di `billingRoute.js`)
 
 ### 11. Audit webhook middleware (`middleware/webhookSecurity.js`) – verifikasi IP whitelist.
+- [x] Teraudit: validasi Midtrans IP ranges (103.208.23.x, AWS ranges), DOKU IP ranges (103.10.129.x, 103.247.16.x), fallback loopback, dan proteksi fail-closed 403.
 
 ### 12. Jalankan `npm audit fix --force` dan perbarui dependen rentan (`lodash`, `tar`, `tmp`, `validator`).
 

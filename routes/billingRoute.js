@@ -20,6 +20,7 @@ import {
   manualPaymentSecurityMiddleware,
   manualPaymentSignatureMiddleware,
 } from "../controllers/billing/manualPaymentController.js";
+import { uploadLimiter, paymentLimiter } from "../middleware/rateLimitMiddleware.js";
 
 const router = express.Router();
 
@@ -37,10 +38,10 @@ router.use(MidAnggota);
 router.get("/list/pending", getPendingBills);
 router.get("/list/history", getBillingHistory);
 router.post("/invoice/details", getInvoiceDetail);
-router.post("/create-voluntary-bill", createVoluntaryBill);
-router.post("/create-deposit", createDepositSukarela);
-router.post("/process-payment", MidAnggota, createDokuTransaction);
-router.post("/manual-payment", uploadPaymentProofMiddleware, manualPaymentSecurityMiddleware, manualPaymentSignatureMiddleware, submitManualPayment);
+router.post("/create-voluntary-bill", paymentLimiter, createVoluntaryBill);
+router.post("/create-deposit", paymentLimiter, createDepositSukarela);
+router.post("/process-payment", MidAnggota, paymentLimiter, createDokuTransaction);
+router.post("/manual-payment", uploadLimiter, uploadPaymentProofMiddleware, manualPaymentSecurityMiddleware, manualPaymentSignatureMiddleware, submitManualPayment);
 router.post("/process-savings", processSavingsPayment);
 router.post("/sync-status", syncMidtransStatus);
 router.post("/manual-sync-summary", manualSyncSummary);

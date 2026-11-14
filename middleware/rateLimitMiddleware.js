@@ -4,8 +4,8 @@ import rateLimit from 'express-rate-limit';
 // Konfigurasi dari environment variables atau default
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 const generalMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
-const authMax = parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 10;
-const loginMax = parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 10;
+const authMax = parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 30;
+const loginMax = parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 15;
 const otpMax = parseInt(process.env.OTP_RATE_LIMIT_MAX) || 5;
 const passwordResetMax = parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX) || 5;
 
