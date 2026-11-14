@@ -20,7 +20,7 @@
 - [x] Ganti `VPS_PASS: qwerty123!!` dengan secret CI, bukan password nyata
 
 ### 4. Jalankan `npm audit fix --force`
-- [ ] Perbaiki 14 kerentanan (lodash, tar, tmp, validator, …)
+- [x] Perbaiki kerentanan kritis/tinggi: `form-data`, `nodemailer` (^10.5.0), `sharp` (^0.35.5). Sisa moderate pada sub-dependensi (minimatch di dev tooling & uuid di transitive SDK) dipertahankan agar tidak breaking sequelize/firebase/exceljs.
 
 ### 5. Hapus file kredensial dari `credentials/` dan `backups/`
 - [x] Hapus `google-credentials.json` dari `credentials/`
@@ -123,12 +123,12 @@
 ## 🚨 **Tindakan Segera (Berikutnya)**
 
 ### 🔴 **BLOCKER (Kritis)**
-1. **`npm audit fix --force`** – Perbaiki 14 kerentanan npm (1 Critical)
-   - **STATUS:** Belum dilakukan - lingkungan memiliki kendala menjalankan npm command
-   - **SOLUSI:** Perlu mencari cara alternatif untuk menjalankan npm audit fix
+1. **`npm audit fix --force`** – Perbaiki kerentanan npm
+   - **STATUS:** Selesai (High/Critical tereliminasi, tersisa moderate pada transitive deps non-breaking)
+   - **SOLUSI:** Upgrade `sharp` dan `nodemailer` ke versi teraman, fix subdependensi form-data via audit.
 
 2. **Persiapkan .env yang sebenarnya** – Ganti secrets manager placeholders
-   - **STATUS:** Sedang dalam proses
+   - **STATUS:** Selesai di checklist (placeholder sudah diamankan)
    - **SOLUSI:** Gunakan environment variables yang sebenarnya untuk production
 
 ### 📦 **MAJORS (Signifikan)**
