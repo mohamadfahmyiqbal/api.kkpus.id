@@ -80,7 +80,7 @@
 ## 📋 Saran – Peluang Perbaikan (Bukan Blocker)
 
 ### 19. Implement secret scanning di CI/CD (GitHub Actions).
-- [ ] Tambahkan secret scanning di CI/CD
+- [x] Ditambahkan step `gitleaks/gitleaks-action@v2` di `.github/workflows/deploy.yml` untuk memindai credential leaks sebelum tahap deployment.
 
 ### 20. Environment-specific configs (dev/test/prod) untuk `SSL_KEY_PATH`, `SSL_CERT_PATH`, `RATE_LIMIT_MAX_REQUESTS`, dll.
 - [ ] Buat configs untuk environment yang berbeda
