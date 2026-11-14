@@ -58,7 +58,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
         }
       }
 
-      const { count: tCount, rows: transactions } = await db.Transaction.findAndCountAll({
+      const { rows: transactions } = await db.Transaction.findAndCountAll({
         where: txWhere,
         include: [
           {
@@ -125,7 +125,6 @@ export const getAdminSavingsTransactions = async (req, res) => {
       // Also query db.Savings (historical/import records) so they are not hidden,
       // but exclude records that already exist in billing transactions to prevent duplication
       let directSavingsItems = [];
-      let sCount = 0;
       if (db.Savings) {
         const savingsWhere = {};
         if (member_id) {
@@ -151,7 +150,7 @@ export const getAdminSavingsTransactions = async (req, res) => {
           }
         }
 
-        const { count: sc, rows: directSavings } = await db.Savings.findAndCountAll({
+        const { rows: directSavings } = await db.Savings.findAndCountAll({
           where: savingsWhere,
           include: [
             {
@@ -184,7 +183,6 @@ export const getAdminSavingsTransactions = async (req, res) => {
           return !billingKeys.has(key);
         });
 
-        sCount = filteredDirectSavings.length;
         directSavingsItems = filteredDirectSavings.map(s => {
           const formattedType = s.savings_type 
             ? `Simpanan ${s.savings_type.charAt(0).toUpperCase() + s.savings_type.slice(1).toLowerCase()}` 

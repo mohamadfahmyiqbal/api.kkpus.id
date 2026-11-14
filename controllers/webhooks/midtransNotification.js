@@ -9,8 +9,7 @@ import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js"
 import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
 const {
-  Bill, BillItem, BillType, Transaction, Member,
-  Account, MemberSavingsAccount, MemberRegistration, MemberStatus, SavingsProduct
+  Bill, BillItem, Transaction
 } = db;
 
 export const midtransNotification = async (req, res) => {

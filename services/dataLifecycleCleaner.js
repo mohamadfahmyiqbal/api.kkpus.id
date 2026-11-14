@@ -8,7 +8,6 @@
 //   AMEMB --> AUTH/TERM --> Data Lifecycle/Anonymization Worker --> MEMBERS / DBLAYER
 
 import db from "../models/index.js";
-import { Sequelize } from "sequelize";
 import { Op } from "sequelize";
 
 const modelsWithMemberId = [

@@ -1,5 +1,4 @@
 import db from "../models/index.js";
-import { Sequelize } from "sequelize";
 
 /**
  * Synchronize Savings report list for all members.

@@ -8,7 +8,7 @@ import { syncFinancialSummary } from "../../services/financialSummarySyncService
 import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js";
 import { syncSavingsReportList } from "../../services/savingsReportSyncService.js";
 
-const { Bill, BillItem, Transaction, Member } = db;
+const { Bill, BillItem, Transaction } = db;
 
 export const dokuNotification = async (req, res) => {
   const notification = req.body;

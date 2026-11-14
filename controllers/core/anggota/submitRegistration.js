@@ -13,7 +13,6 @@ const {
   MemberEmployment,
   MemberEmergencyContact,
   Member,
-  MemberRoleAssignment,
   ApprovalFlow,
   ApprovalStep,
   ApprovalStatus,
@@ -88,7 +87,7 @@ export const submitRegistration = async (req, res) => {
 
     transaction = await sequelize.transaction();
 
-    const registration = await MemberRegistration.create({
+    await MemberRegistration.create({
       member_id,
       full_name: req.body.full_name,
       email: req.body.email,

@@ -3,8 +3,6 @@ import { sendToUser } from "../utils/socket.js";
 import { sendPushNotification } from "./pushNotificationHelper.js";
 import { NOTIFICATION_STATUS, NOTIFICATION_TYPE, SOCKET_EVENTS } from "../constants/notificationConstants.js";
 
-const { Notification } = db;
-
 /**
  * Fungsi Global untuk mengirim notifikasi (Database + Real-time + Web Push)
  * Dengan proper validation, error handling, dan consistent event names.

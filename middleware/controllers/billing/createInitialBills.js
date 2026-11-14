@@ -1,7 +1,7 @@
 import db from "../../models/index.js";
 import moment from "moment";
 
-const { BillType, BillItem, Bill } = db;
+const { BillType, BillItem } = db;
 
 /**
  * createInitialBills

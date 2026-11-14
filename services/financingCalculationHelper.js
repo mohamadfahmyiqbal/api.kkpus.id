@@ -1,5 +1,3 @@
-import db from "./models/index.js";
-
 export const calculateFlatMargin = (basePrice, marginPercent, downPayment, tenureMonths) => {
   const principal = basePrice - downPayment;
   const marginAmount = Math.round(principal * (marginPercent / 100));

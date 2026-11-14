@@ -66,8 +66,6 @@ async function rollbackTestUser() {
     });
 
     const step1Pengawas = flow.steps.find((s) => s.step_order === 1);
-    const step2Ketua = flow.steps.find((s) => s.step_order === 2);
-    const step3Bendahara = flow.steps.find((s) => s.step_order === 3);
 
     if (!step1Pengawas) {
       throw new Error("Langkah ke-1 (Pengawas) tidak ditemukan dalam flow pendaftaran.");

@@ -17,7 +17,6 @@ const cleanEnv = (val) => {
 export const getSnapTimestamp = () => {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, "0");
-  const padMs = (n) => String(n).padStart(3, "0");
 
   const year = now.getFullYear();
   const month = pad(now.getMonth() + 1);

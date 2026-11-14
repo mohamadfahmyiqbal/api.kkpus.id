@@ -2,8 +2,6 @@ import db from "../../models/index.js";
 import midtransClient from "midtrans-client";
 import { checkDokuTransactionStatus } from "../../services/dokuService.js";
 import { processLedgerRecording } from "../../services/ledgerHelper.js";
-import { sendGlobalNotification } from "../../services/notificationHelper.js";
-import { sendToUser } from "../../utils/socket.js";
 import { syncFinancialSummary } from "../../services/financialSummarySyncService.js";
 import { syncJualBeliReport } from "../../services/jualBeliReportSyncService.js";
 

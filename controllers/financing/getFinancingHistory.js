@@ -149,7 +149,6 @@ const getFinancingHistory = async (req, res) => {
       const appUnpaid = unpaidByApp[data.financing_id] || { total: 0, count: 0, items: [] };
       const allAppItems = (appPayments.items || []).concat(appUnpaid.items || []);
       const hasDPBill = allAppItems.some(item => ['TRANSACTION_DOWN_PAYMENT', 'DP_PEMBIAYAAN'].includes(item.category_code));
-      const hasPaidDP = appPayments.items.some(item => item.category_code === 'TRANSACTION_DOWN_PAYMENT' || item.category_code === 'DP_PEMBIAYAAN');
       
       // Total kewajiban cicilan yang harus dibayar anggota.
       // Prioritaskan total_tagihan (sudah memperhitungkan margin, biaya operasional,

@@ -1,7 +1,4 @@
 import ExcelJS from "exceljs";
-import db from "../../models/index.js";
-
-const { Member } = db;
 
 export const downloadTemplatePinjaman = async (req, res) => {
   try {

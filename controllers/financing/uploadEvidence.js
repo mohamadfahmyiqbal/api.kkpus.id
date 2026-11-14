@@ -170,7 +170,6 @@ const downloadEvidence = async (req, res) => {
   try {
     const { financingId } = req.params;
     const { type } = req.query;
-    const memberId = req.userId;
 
     // Validasi financing application
     const application = await db.FinancingApplication.findOne({

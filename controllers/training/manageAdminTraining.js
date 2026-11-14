@@ -1,5 +1,5 @@
 import db from "../../models/index.js";
-const { Curriculum, Material, Evaluation, Ranking } = db;
+const { Curriculum, Material, Ranking } = db;
 
 export const getAdminCurriculums = async (req, res) => {
   try {

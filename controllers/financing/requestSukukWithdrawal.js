@@ -3,7 +3,6 @@ import db from "../../models/index.js";
 const requestSukukWithdrawal = async (req, res) => {
     const memberId = req.userId;
     const { orderId } = req.params;
-    const { method, bank_name, bank_account_no, cash_name, cash_time, cash_location } = req.body;
 
     const t = await db.sequelize.transaction();
 

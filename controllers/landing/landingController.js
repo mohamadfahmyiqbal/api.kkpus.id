@@ -169,7 +169,7 @@ export const submitContactForm = async (req, res) => {
     }
 
     // Save to database
-    const contactForm = await db.ContactForm.create({
+    await db.ContactForm.create({
       name: name,
       email: email,
       phone: phone || null,

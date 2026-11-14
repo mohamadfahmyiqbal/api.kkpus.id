@@ -62,7 +62,7 @@ export const subscribeToPush = async (req, res) => {
     /**
      * Menggunakan upsert agar satu endpoint (browser) unik tidak terdaftar ganda
      */
-    const [instance, created] = await PushSubscription.upsert({
+    const [, created] = await PushSubscription.upsert({
       member_id: targetId,
       endpoint: endpoint,
       p256dh: keys.p256dh,

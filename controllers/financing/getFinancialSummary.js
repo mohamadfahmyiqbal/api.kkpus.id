@@ -189,8 +189,7 @@ export const getFinancialSummary = async (req, res) => {
       if (item.status === 'UNPAID') {
         if (isPinjaman) pinjaman_sisa_cicilan += amt;
         else if (isArisan) arisan_sisa_cicilan += amt;
-        else if (category === 'pendanaan syariah umkm') {
-        } else {
+        else if (category !== 'pendanaan syariah umkm') {
           if (!category.includes('pelunasan')) {
             jual_beli_sisa_cicilan += amt;
             jual_beli_belum_dibayar_count++;
@@ -199,8 +198,7 @@ export const getFinancialSummary = async (req, res) => {
       } else if (item.status === 'PAID') {
         if (isPinjaman) pinjaman_terbayar += amt;
         else if (isArisan) arisan_terbayar += amt;
-        else if (category === 'pendanaan syariah umkm') {
-        } else jual_beli_terbayar += amt;
+        else if (category !== 'pendanaan syariah umkm') jual_beli_terbayar += amt;
       }
     });
 

@@ -1,7 +1,5 @@
 // middleware/rateLimitMiddleware.js
 import rateLimit from 'express-rate-limit';
-import { ipKeyGenerator } from 'express-rate-limit';
-import { logger } from '../utils/logger.js';
 
 // Konfigurasi dari environment variables atau default
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;

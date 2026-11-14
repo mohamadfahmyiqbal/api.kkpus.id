@@ -1,7 +1,7 @@
 // services/forgotPasswordService.js
 import db from "../models/index.js";
 import { logger } from "../utils/logger.js";
-import { hashOTP, verifyOTP } from "../utils/otpHelper.js";
+import { hashOTP } from "../utils/otpHelper.js";
 import notificationService from "./notificationService.js";
 
 const { Member, ForgotPasswordSession, PasswordResetToken } = db;

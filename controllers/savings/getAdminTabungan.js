@@ -1,5 +1,4 @@
 import db from "../../models/index.js";
-import { Sequelize } from "sequelize";
 
 export const getAdminTabungan = async (req, res) => {
   try {

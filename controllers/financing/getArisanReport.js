@@ -12,7 +12,7 @@ const getArisanReport = async (req, res) => {
     }
 
     const { all } = req.query;
-    const { ArisanParticipant, ArisanBatch, ArisanProgram, ArisanPayment, ArisanDraw, Member } = db;
+    const { ArisanParticipant, ArisanBatch, ArisanProgram, ArisanDraw, Member } = db;
 
     const currentYear = new Date().getFullYear();
 
@@ -35,7 +35,6 @@ const getArisanReport = async (req, res) => {
       ]
     });
 
-    const participantIds = participants.map(p => p.arisan_participant_id);
     const memberIds = participants.map(p => p.member_id);
     const batchIds = [...new Set(participants.map(p => p.arisan_batch_id))];
 
@@ -86,7 +85,6 @@ const getArisanReport = async (req, res) => {
       });
 
       const term = p.batch?.program?.term_months || p.batch?.participants_quota || 0;
-      const targetAmount = parseFloat(p.batch?.program?.target_amount || 0);
       const totalExpected = parseFloat(p.batch?.monthly_installment || p.batch?.program?.monthly_contribution || 0) * term;
       const sisa_cicilan = Math.max(0, totalExpected - total_pembayaran);
 

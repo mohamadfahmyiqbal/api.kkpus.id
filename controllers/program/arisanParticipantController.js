@@ -1,6 +1,6 @@
 import db from "../../models/index.js";
 
-const { ArisanParticipant, Member, ArisanBatch } = db;
+const { ArisanParticipant, Member } = db;
 
 export const getParticipantsByBatch = async (req, res) => {
   try {

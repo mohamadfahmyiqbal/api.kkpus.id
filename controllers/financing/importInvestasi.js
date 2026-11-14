@@ -27,7 +27,6 @@ export const importInvestasi = async (req, res) => {
       const nilaiInvestasi = parseFloat(row["Nilai Investasi (Rp)"]) || 0;
       const durasi = parseInt(row["Durasi (Bulan)"]) || 12;
       const profitRate = parseFloat(row["Proyeksi Bagi Hasil (%)"]) || 10;
-      const keterangan = row["Keterangan"] || "Import Investasi Halal";
 
       // Jika nama produk kosong atau nilai investasi 0, lewati baris ini (tidak diimpor)
       if (!namaProduk || nilaiInvestasi <= 0) {

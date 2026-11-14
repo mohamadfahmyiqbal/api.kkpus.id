@@ -1,7 +1,6 @@
 // 📁 controllers/billing/createMidtransTransaction.js
 import db from "../../models/index.js";
 import { v4 as uuidv4 } from "uuid";
-import { verifySecureToken } from "../../middleware/MidAnggota.js";
 import crypto from "crypto";
 import { prepareBillItems } from "../../services/billingHelper.js";
 import { requestMidtransCharge } from "../../services/midtransPaymentHandler.js";
@@ -75,8 +74,6 @@ export const createMidtransTransaction = async (req, res) => {
 
     // 4. Request ke Midtrans Core API via backend (server key only)
     const FRONTEND_URL = process.env.FRONTEND_URL || "https://kkpus.id";
-    const pageName = "invoicePage";
-    const returnPage = tx_category === "MEMBER_REGISTRATION" ? "registrationPage" : "billingPage";
     
     // Generate signed token for frontend payload (not raw payment data)
     const successToken = crypto

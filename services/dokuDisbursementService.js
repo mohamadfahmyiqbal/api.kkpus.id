@@ -1,7 +1,5 @@
 // 📁 services/dokuDisbursementService.js
-import axios from "axios";
 import db from "../models/index.js";
-import { dokuRequest, getDokuConfig } from "./dokuService.js";
 import { transferBankSnap } from "./dokuSnapService.js";
 
 /**
@@ -92,7 +90,6 @@ export const normalizeBankCode = (bankName) => {
  */
 export const initiateDokuDisbursement = async (data, transaction) => {
   const { withdrawalId, amount, memberId, memberName, bankAccount } = data;
-  const config = getDokuConfig();
 
   const formattedBankCode = normalizeBankCode(bankAccount.bank);
   const targetAccountNumber = String(bankAccount.accountNumber || "").replace(/\D/g, "");

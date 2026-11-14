@@ -1,7 +1,4 @@
 import ExcelJS from "exceljs";
-import db from "../../models/index.js";
-
-const { Member, FinancingApplication } = db;
 
 export const downloadTemplateCicilanJualBeli = async (req, res) => {
   try {

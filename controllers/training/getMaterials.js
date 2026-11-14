@@ -80,7 +80,7 @@ const getMaterialDetail = async (req, res) => {
     const sanitizedMaterial = material.toJSON ? material.toJSON() : { ...material };
     if (Array.isArray(sanitizedMaterial.quiz_questions)) {
       sanitizedMaterial.quiz_questions = sanitizedMaterial.quiz_questions.map((q) => {
-        const { correct_answer, correctAnswer, ...safeQuestion } = q;
+        const { correct_answer: _ca, correctAnswer: _ca2, ...safeQuestion } = q;
         return safeQuestion;
       });
     }
