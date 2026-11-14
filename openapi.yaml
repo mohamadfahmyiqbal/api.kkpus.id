@@ -271,6 +271,70 @@ paths:
         '200':
           description: Metrik keuangan harian, saldo total, NPL, dan antrean
 
+  /api/billing/process-payment:
+    post:
+      tags:
+        - Billing & Payment
+      summary: Buat checkout pembayaran tagihan atau simpanan
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  example: 50000
+                bill_item_ids:
+                  type: array
+                  items:
+                    type: integer
+                tx_category:
+                  type: string
+                  example: simpanan_wajib
+      responses:
+        '200':
+          description: Transaksi berhasil dibuat, mengembalikan token payment gateway
+        '429':
+          description: Terlalu banyak percobaan pembayaran
+
+  /api/billing/manual-payment:
+    post:
+      tags:
+        - Billing & Payment
+      summary: Submit bukti transfer pembayaran manual
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - proof
+                - bill_id
+                - bank_account_id
+              properties:
+                proof:
+                  type: string
+                  format: binary
+                  description: File bukti transfer (JPG, PNG, PDF, max 5MB)
+                bill_id:
+                  type: integer
+                bank_account_id:
+                  type: integer
+      responses:
+        '200':
+          description: Bukti pembayaran manual berhasil disubmit untuk diverifikasi
+        '429':
+          description: Terlalu banyak percobaan upload
+
 components:
   securitySchemes:
     BearerAuth:
