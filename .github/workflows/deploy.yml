@@ -9,6 +9,17 @@ on:
 jobs:
   qa:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: koperasi
+          MYSQL_USER: kkpusid
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - uses: actions/checkout@v4
 
@@ -20,28 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint & Fix
-        run: npm run lint:fix
-
-      - name: Start MySQL
-        run: |
-          sudo systemctl start mysql
-          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root_password'; FLUSH PRIVILEGES;"
-
-      - name: Create test database
-        run: |
-          sudo mysql -uroot -proot_password -e "
-          CREATE DATABASE IF NOT EXISTS koperasi;
-          CREATE USER IF NOT EXISTS 'kkpusid'@'localhost' IDENTIFIED BY 'test_password';
-          GRANT ALL PRIVILEGES ON koperasi.* TO 'kkpusid'@'localhost';
-          FLUSH PRIVILEGES;
-          "
+      - name: Lint
+        run: npm run lint
 
       - name: Test CI
         env:
           NODE_ENV: test
           DB_DIALECT: mysql
-          DB_HOST: localhost
+          DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_NAME: koperasi
           DB_USER: kkpusid
