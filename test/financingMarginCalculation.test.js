@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { calculateFlatMargin, calculateAnnuityMargin } from "../services/financingCalculationHelper.js";
 
 describe("Simulation: Perhitungan Margin Flat vs Anuitas Syariah", () => {

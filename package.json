@@ -30,6 +30,15 @@
       "es2022": true,
       "node": true
     },
+    "overrides": [
+      {
+        "files": ["*.cjs", "**/*.cjs", "npm_audit.js", "npm_lint.js", "test-database.js", "test-db-vps.js", "services/ratGenerator.js"],
+        "env": {
+          "node": true,
+          "commonjs": true
+        }
+      }
+    ],
     "rules": {
       "no-unused-vars": [
         "warn",

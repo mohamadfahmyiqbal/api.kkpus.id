@@ -12,9 +12,15 @@ let vapidConfigured = false;
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   try {
-    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
-    vapidConfigured = true;
-    console.log("✅ Web-Push VAPID configured.");
+    // Validate public key length (uncompressed P-256 point = 65 bytes in base64url)
+    const pubBuffer = Buffer.from(VAPID_PUBLIC, "base64url");
+    if (pubBuffer.length !== 65) {
+      console.warn("⚠️ Invalid VAPID_PUBLIC_KEY length (expected 65 bytes decoded). Push disabled.");
+    } else {
+      webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+      vapidConfigured = true;
+      console.log("✅ Web-Push VAPID configured.");
+    }
   } catch (error) {
     console.error("❌ Web-Push VAPID config error:", error.message);
   }

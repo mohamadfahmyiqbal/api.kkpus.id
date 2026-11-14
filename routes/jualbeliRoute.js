@@ -7,7 +7,6 @@ import {
   createTransaction,
   getTransactionHistory,
   getTransactionDetail,
-  getTransactionOptions,
   getJualBeliReport
 } from "../controllers/jualbeli/jualbeliController.js";
 import { importJualBeli } from "../controllers/jualbeli/importJualBeli.js";

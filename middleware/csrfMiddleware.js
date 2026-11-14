@@ -31,7 +31,7 @@ export const verifyCsrfToken = (req, res, next) => {
   }
 
   const cookieToken = req.cookies ? req.cookies[CSRF_COOKIE_NAME] : null;
-  const headerToken = req.headers[CSRF_HEADER_NAME] || req.headers[CSRF_HEADER_NAME.toLowerCase()] || req.body?._csrf;
+  const headerToken = req.headers[CSRF_HEADER_NAME] || req.headers[CSRF_HEADER_NAME.toLowerCase()];
 
   // If no cookie was provided or token mismatch
   if (!cookieToken || !headerToken || cookieToken !== headerToken) {

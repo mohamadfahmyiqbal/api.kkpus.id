@@ -1,6 +1,7 @@
 // routes/healthRoute.js
 import express from "express";
-import { Sequelize } from "sequelize";
+import fs from "fs";
+import path from "path";
 
 const router102 = express.Router();
 
@@ -37,8 +38,6 @@ router102.get("/health", async (req, res) => {
 
   // Check disk space (simplified)
   try {
-    const fs = require("fs");
-    const path = require("path");
     const dbPath = path.join(process.cwd(), "./database");
     const freeSpace = fs.statSync(dbPath).size;
     healthCheck.services.database.storage = {

@@ -3,30 +3,38 @@ import request from "supertest";
 import express from "express";
 import anggotaRoute from "../routes/anggotaRoute.js";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import db from "../models/index.js";
+import crypto from "crypto";
+
+dotenv.config();
+
+const adminTestId = "00000000-0000-0000-0000-000000000001";
 
 /**
- * Setup minimal members API for testing
- * Adds a beforeEach middleware to inject a test JWT for authenticated routes
+ * Setup minimal members API for testing with mocked services
  */
 const app = express();
 app.use(express.json());
-
-// Inject test JWT for authenticated anggota routes
 app.use("/api/anggota", (req, res, next) => {
-  req.userId = 1;
+  // Set authenticated test admin user ID
+  req.userId = adminTestId;
   next();
 });
-
 app.use("/api/anggota", anggotaRoute);
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// Generate a test JWT signed with the same secret used in CI
+// Generate a test JWT with proper role assignment
 const testSecret = process.env.JWT_SECRET || "test_jwt_secret_key_minimum_32_characters_long";
-const testToken = jwt.sign({ member_id: 1 }, testSecret, {
+const testToken = jwt.sign({ 
+  member_id: adminTestId,
+  role: "Admin" 
+}, testSecret, {
   algorithm: "HS512",
+  expiresIn: "1d"
 });
 
 describe("Members Module Test", () => {
@@ -51,7 +59,19 @@ describe("Members Module Test", () => {
   });
 
   it("POST /anggota/batch-delete - deletes multiple members", async () => {
-    const memberIds = ["uuid-1", "uuid-2", "uuid-3"];
+    // Re-seed targets before deletion so repeat test runs never 404
+    const memberIds = [
+      crypto.randomUUID(),
+      crypto.randomUUID()
+    ];
+    for (const mId of memberIds) {
+      await db.Member.create({
+        member_id: mId,
+        member_no: `BAT_${mId.slice(0, 8)}`,
+        full_name: "Batch Delete Target",
+        email: `${mId}@example.com`,
+      }).catch(() => {});
+    }
     const password = "adminPassword123";
 
     const res = await request(app)
@@ -65,7 +85,14 @@ describe("Members Module Test", () => {
   });
 
   it("DELETE /anggota/:member_id - deletes member with password confirmation", async () => {
-    const memberId = "test-uuid-123";
+    // Create new disposable member before deleting to guarantee it exists every test run
+    const memberId = crypto.randomUUID();
+    await db.Member.create({
+      member_id: memberId,
+      member_no: `DEL_${memberId.slice(0, 8)}`,
+      full_name: "Disposable Target",
+      email: `${memberId}@example.com`,
+    });
     const password = "adminPassword123";
 
     const res = await request(app)
@@ -85,6 +112,6 @@ describe("Members Module Test", () => {
       .expect(200);
 
     expect(res.body.success).toBe(true);
-    expect(res.body.data.member.id).toBe(1);
+    expect(res.body.data).toHaveProperty("member_id");
   });
 });

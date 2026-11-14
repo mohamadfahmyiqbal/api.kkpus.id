@@ -3,7 +3,6 @@ import { MidAnggota } from "../middleware/MidAnggota.js";
 import MidRole from "../middleware/MidRole.js";
 import getPendingBills from "../controllers/billing/getPendingBills.js";
 import { getInvoiceDetail } from "../controllers/billing/getInvoiceDetail.js";
-import { createMidtransTransaction } from "../controllers/billing/createMidtransTransaction.js";
 import { createDokuTransaction } from "../controllers/billing/createDokuTransaction.js";
 import getBillingHistory from "../controllers/billing/getBillingHistory.js";
 import { createDepositSukarela } from "../controllers/billing/createDepositSukarela.js";

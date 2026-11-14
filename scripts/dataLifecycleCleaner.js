@@ -38,6 +38,7 @@ export const anonymizeDataForInactiveMembers = async (dryRun = false) => {
   console.log(`Running in ${dryRun ? 'DRY RUN' : 'LIVE'} mode`);
 
   const t = await db.sequelize.transaction();
+  const deletedDataSummary = {};
 
   try {
     // Cari anggota yang berstatus NON-AKTIF

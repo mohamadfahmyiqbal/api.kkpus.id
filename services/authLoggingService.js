@@ -42,7 +42,7 @@ const updateAccountLockout = async (emailOrPhone, reason) => {
   try {
     // Cari atau buat record lockout untuk email/or phone
     let lockoutRecord = await db.AccountLockout.findOne({
-      where: { email_or_phone },
+      where: { email_or_phone: emailOrPhone },
     });
 
     const now = new Date();
@@ -51,7 +51,7 @@ const updateAccountLockout = async (emailOrPhone, reason) => {
     if (!lockoutRecord) {
       // Buat record lockout baru
       lockoutRecord = await db.AccountLockout.create({
-        email_or_phone,
+        email_or_phone: emailOrPhone,
         lockout_reason: reason,
         lockout_start: now,
         lockout_end: lockoutEnd,

@@ -1,7 +1,7 @@
 // 📁 utils/jwtHelpers.js (Helper JWT untuk Backend Node.js)
 
 import { Buffer } from "node:buffer";
-// import { Buffer } from 'buffer'; // Atau hanya ini, tergantung versi Node Anda
+import crypto from "crypto";
 
 /**
  * Meng-encode object ke Base64 URL Safe string (Node.js version).
@@ -42,7 +42,7 @@ export const jwtEncode = (payload, secret) => {
   // Sign the token with HMAC SHA-512
   const signingInput = `${encodedHeader}.${encodedPayload}`;
   const signature = Buffer.from(
-    require('crypto')
+    crypto
       .createHmac('sha512', secret)
       .update(signingInput)
       .digest('base64')

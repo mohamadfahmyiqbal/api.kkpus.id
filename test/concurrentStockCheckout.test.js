@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 describe("Real-time Stock Sync - Concurrent Checkout Simulation", () => {
   it("prevents overselling when concurrent requests arrive simultaneously", async () => {

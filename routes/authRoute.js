@@ -3,7 +3,7 @@ import { registerAccount } from "../controllers/core/auth/registerAccount.js";
 import { accountLogin } from "../controllers/core/auth/accountLogin.js";
 import { logout } from "../controllers/core/auth/logout.js";
 import { getCurrentUser } from "../controllers/core/auth/me.js";
-import { authLimiter, loginLimiter, uploadLimiter, paymentLimiter } from "../middleware/rateLimitMiddleware.js";
+import { authLimiter, loginLimiter } from "../middleware/rateLimitMiddleware.js";
 import { MidAnggota } from "../middleware/MidAnggota.js";
 import { generateCsrfToken, verifyCsrfToken } from "../middleware/csrfMiddleware.js";
 

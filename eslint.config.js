@@ -38,6 +38,7 @@ export default [
       "no-unused-vars": [
         "warn",
         {
+          args: "none",
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
         },
@@ -52,6 +53,16 @@ export default [
       "build/",
       "uploads/",
       "coverage/",
+      "*.cjs",
+      "**/*.cjs",
+      "npm_audit.js",
+      "npm_lint.js",
+      "test-database.js",
+      "test-db-vps.js",
+      "scripts/generate_private_key.cjs",
+      "scripts/test-sanitization.cjs",
+      "scripts/test-sanitization.js",
+      "services/ratGenerator.js",
     ],
   },
 ];

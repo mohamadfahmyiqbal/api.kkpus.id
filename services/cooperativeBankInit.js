@@ -23,6 +23,13 @@ export const initCooperativeBanks = async (db) => {
   // These operations are MySQL-specific and tables may not exist yet in test env
   if (process.env.NODE_ENV === "test" && process.env.DB_DIALECT === "sqlite") {
     console.log("⚠️ Skip initCooperativeBanks: test environment with SQLite dialect");
+    // Still sync tables so SQLite test DB has the schema
+    try {
+      await db.sequelize.sync({ alter: true });
+      console.log("✅ SQLite tables synced for test environment");
+    } catch (syncErr) {
+      console.error("⚠️ Gagal sync SQLite tables:", syncErr.message);
+    }
     return;
   }
 
@@ -96,6 +103,13 @@ export const initCooperativeBanks = async (db) => {
         });
         console.log("✅ Peran Anggota berhasil dibuat.");
       }
+    }
+
+    if (db.AccountLockout) {
+      await db.AccountLockout.sync({ alter: false });
+    }
+    if (db.LoginAttempt) {
+      await db.LoginAttempt.sync({ alter: false });
     }
 
     // 1. Sync tabel cooperative_bank_accounts jika belum ada
